@@ -1,0 +1,54 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<script src="jquery-2.2.0.js"></script>
+	<script src="propsManager.js"></script>
+	<script src="parser.js"></script>
+	<style>
+		span{
+			margin-right:10px;
+		}
+	</style>
+</head>
+
+<body>
+<select id="scl_id" onchange="select()"></select>
+склонение:<span id="scl"></span>
+число:<span id="num"></span>
+род:<span id="gender"></span>
+одушевленность:<span id="hum"></span>
+<div id="words"></div>
+
+<script>
+var DB = load();
+function load(){
+	var DBstr = localStorage.getItem('DB');
+	$('#db').val(DBstr);
+	return JSON.parse(DBstr);
+}
+
+var $select = $('#scl_id');
+for(var i in DB.noun_types){
+	DB.noun_types[i].words=[];
+	$('<option value="'+i+'">'+i+'</option>').appendTo($select);
+}
+for(var w in DB.nouns){
+	DB.noun_types[DB.nouns[w].type].words.push(w);
+}
+select();
+
+function select(){
+	var id = $('#scl_id').val();
+	$('#scl').text(DB.noun_types[id].склонение);
+	$('#num').text(DB.noun_types[id].число);
+	$('#gender').text(DB.noun_types[id].род);
+	$('#hum').text(DB.noun_types[id].одушевленность);
+	$('#words').text(DB.noun_types[id].words);
+}
+
+</script>
+</body>
+
+</html>

@@ -1,0 +1,346 @@
+ <!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>test-parser</title>
+
+  <script src="jquery-2.2.0.js"></script>
+
+  <script src="propsManager.js"></script>
+  <link href="mocha.css" rel="stylesheet" />
+  <script src="mocha.js"></script>
+  <script src="chai.js"></script>
+  <script>
+	//mocha.checkLeaks();
+    //mocha.globals(['jQuery']);
+    mocha.setup('bdd');
+    var assert = chai.assert;
+  </script>
+
+<script src="parser.js"> </script>
+
+  </head>
+<body>
+	<form>
+		<textarea id="in" cols="50" rows="10"></textarea>
+		<textarea id="out" cols="50" rows="10"></textarea>
+		<input type="button" onclick="Parser.apply()" value="parse"/>
+	</form>
+
+	<div id="mocha"/>
+<script>
+copyProps(Parser,window);
+;(function(){
+'use strict';
+describe('isGood',function(){
+	it('sould be TRUE for: number 0',function(){
+		assert.equal(isGood(0),true);
+	})
+	it('sould be TRUE for: number 2',function(){
+		assert.equal(isGood(2),true);
+	})
+	it('sould be TRUE for: empty string',function(){
+		assert.equal(isGood(''),true);
+	})
+	it('sould be TRUE for: not empty string',function(){
+		assert.equal(isGood('123'),true);
+	})
+	it('sould be TRUE for: {}',function(){
+		assert.equal(isGood({}),true);
+	})
+	it('sould be TRUE for: {err:0}',function(){
+		assert.equal(isGood({err:0}),true);
+	})
+	it('sould be FALSE for: {err:1}',function(){
+		assert.equal(isGood({err:1}),false);
+	})
+	it('sould be FALSE for: {err:2}',function(){
+		assert.equal(isGood({err:2}),false);
+	})
+	it('sould be FALSE for: undefined',function(){
+		assert.equal(isGood(),false);
+	})
+})
+describe('notFatal',function(){
+	it('sould be TRUE for: number 0',function(){
+		assert.equal(isGood(0),true);
+	})
+	it('sould be TRUE for: number 2',function(){
+		assert.equal(isGood(2),true);
+	})
+	it('sould be TRUE for: empty string',function(){
+		assert.equal(isGood(''),true);
+	})
+	it('sould be TRUE for: not empty string',function(){
+		assert.equal(isGood('123'),true);
+	})
+	it('sould be TRUE for: {}',function(){
+		assert.equal(notFatal({}),true);
+	})
+	it('sould be TRUE for: {err:0}',function(){
+		assert.equal(notFatal({err:0}),true);
+	})
+	it('sould be TRUE for: {err:1}',function(){
+		assert.equal(notFatal({err:1}),true);
+	})
+	it('sould be FALSE for: {err:2}',function(){
+		assert.equal(notFatal({err:2}),false);
+	})
+	it('sould be FALSE for: undefined',function(){
+		assert.equal(notFatal(),false);
+	})
+})
+describe('txt',function(){
+	it('should retrun text for matching text',function(){
+		assert.strictEqual(txt('qwer').exec('qwer'),'qwer')
+	})
+	it('should retrun Fatal error (undefined) for not matching text',function(){
+		assert(!notFatal(txt('qwer').exec('qweq')))
+		assert.strictEqual((txt('qwer').exec('qweq',{x:0})),undefined)
+	})
+})
+describe('Pattern.exec',function(){
+	it('does not affet on (any...) result, if position is passed',function(){
+		assert.strictEqual((txt('qwer').exec('qweq',{x:0})),undefined)
+	})
+	describe('check remaining chars',function(){
+		it('returns error "unparsed chars are remained" with res:result, if such is true',function(){
+			//console.dir(txt('qwer').exec('qwerq'));
+			assert.deepEqual(txt('qwer').exec('qwerq'),
+				{err:1,where:4,what:'unparsed chars are remained',res:"qwer"});
+		})
+		it('not affet on (any...) result, if readed exactly all chars',function(){
+			assert.strictEqual(txt('qwer').exec('qwer'),'qwer');
+		})
+	})
+	it('replaces undefined error to new FatalError(<last_position>,"unknown error")',function(){
+		assert.deepEqual(txt('qwer').exec('asdf'),new FatalError(0,'unknown error'))
+	})
+})
+describe('Pattern.then',function(){
+	it('executes transform_result, if it passed',function(){
+		assert.deepEqual(txt('qWeR').then((r,x)=>({pos:x,res:r.toLowerCase()})).exec('qWeR'),{pos:0,res:'qwer'})
+	})
+	it('execute error_transform, if it passed',function(){
+		assert.deepEqual(txt('qWeR').then(null,(x,r)=>({})).exec('qeR',{x:0}),{})
+	})
+})
+describe('rgx (don\'t forget to write /^.../)',function(){
+	it('returns std RegExp result, if matches',function(){
+		var res = rgx(/^((?:[^:\/?#]+):)?(?:\/\/(([^:\/?#]*)(?::([^:\/?#]*))?))?([^?#]*)(\?([^#]*))?(#(.*))?\s*$/)
+			.exec('http://www.google.com:80/search?q=javascript#test')
+		assert.strictEqual(res[0],'http://www.google.com:80/search?q=javascript#test');
+		assert.strictEqual(res[1],'http:');
+		assert.strictEqual(res[2],'www.google.com:80');
+		assert.strictEqual(res[3],'www.google.com');
+		assert.strictEqual(res[4],'80');
+		assert.strictEqual(res[5],'/search');
+		assert.strictEqual(res[6],'?q=javascript');
+		assert.strictEqual(res[7],'q=javascript');
+		assert.strictEqual(res[8],'#test');
+		assert.strictEqual(res[9],'test');
+	})
+	it('returs undefined, if not matches',function(){
+		assert.strictEqual(rgx(/^qq/).exec('asd',{x:0}),undefined)
+	})
+})
+describe('opt',function(){
+	it('doesn\'t affect at result, if it is not an error',function(){
+		assert.strictEqual(opt(txt('qwer')).exec('qwer'),'qwer')
+	})
+	it('returns empty result not error ({err:0}), if occurs an error',function(){
+		assert.deepEqual(opt(txt('qwer')).exec('nwer',{x:0}),{err:0})
+	})
+})
+describe('seq & need',function(){
+	describe('need()',function(){
+		it('return all arguments as array, if all match',function(){
+			assert.deepEqual(seq(need(),
+				txt('asdf'),txt('qwer'),txt('zxcv')).
+				exec('asdfqwerzxcv'),
+				['asdf','qwer','zxcv'])
+		})
+	})
+	describe('need(n)',function(){
+		it('return only one specified argument, if all match',function(){
+			assert.deepEqual(seq(need(1),
+				txt('asdf'),txt('qwer'),txt('zxcv')).
+				exec('asdfqwerzxcv'),
+				'qwer')
+		})
+	})
+	describe('need(n,m,...)',function(){
+		it('return specified arguments as array, if all match',function(){
+			assert.deepEqual(seq(need(2,0,1),
+				txt('asdf'),txt('qwer'),txt('zxcv')).
+				exec('asdfqwerzxcv'),
+				['zxcv','asdf','qwer'])
+		})
+	})
+	it('returns first fatal error, if it is occured',function(){
+		assert.deepEqual(seq(need(),
+			txt('asdf').then((r,x)=>new ParseError(x,'error1',r)),//ignore
+			txt('qwer').then(null,x=>new FatalError(x,'error')),
+			txt('zxcv'))
+			.exec('asdfq',{x:0}),
+			new FatalError(4,'error')
+		)
+	})
+	it('returns result array (with ParseErrors as it\'s items) as ParseError, if an ParseError is occured',
+		function(){
+			var arr = ['asdf',new ParseError(4,'error1','qwer'),new ParseError(8,'error2','zxcv')];
+			arr.err = 1;
+			arr.what = [new ParseError(4,'error1','qwer'),new ParseError(8,'error2','zxcv')];
+			assert.deepEqual(seq(need(),
+				txt('asdf'),
+				txt('qwer').then((r,x)=>new ParseError(x,'error1',r)),
+				txt('zxcv').then((r,x)=>new ParseError(x,'error2',r)))
+				.exec('asdfqwerzxcv',{x:0}),
+				arr
+			)
+		})
+})
+describe('rep',function(){
+	it('returns array (may be empty), until it expects Parse or Fatal Error, only one argument',function(){
+		assert.deepEqual(rep(txt('qwe')).exec('qweqweqwe'),['qwe','qwe','qwe'])
+		assert.deepEqual(rep(txt('qwe')).exec('qwe'),['qwe'])
+		assert.deepEqual(rep(txt('qwe')).exec(''),[])
+		assert.deepEqual(rep(txt('qwe').then((r,x)=>new ParseError(x,'err',r))).exec('qweqweqwe',{x:0}),[])
+	})
+	describe('with options min (default 0) & max (default +Infinity)',function(){
+		it('returns all needed items, if does not expect any errors within the required',function(){
+			assert.deepEqual(rep(txt('qwe'),{min:2}).exec('qweqwe'),['qwe','qwe'])
+			//...
+		})
+		it('returns result array (with ParseErrors as it\'s items) as ParseError, \
+if expect an ParseError within the required')
+		it('returns the FatalError, if it is occured within the required')
+		it('does not read more then specified in max')
+	})
+	describe('separator and its transformator',function(){
+		it('works')
+		it('their transformator works')
+	})
+})
+describe('Pattern with text',function(){
+	describe('exec',function(){
+		describe('simple branch - call from short call branch',function(){
+		})
+		describe('short call branch',function(){
+			it('if text equals given - return text',function(){
+				assert.deepEqual(txt('abc').exec('abc'),'abc')
+			})
+		})
+	})
+	describe('then',function(){
+		describe('without error handling',function(){
+			
+		})
+		describe('with error handling',function(){
+			
+		})
+	})
+})
+var name = rgx(/^[a-z]+/i)
+.then(m => m[0].toLowerCase(), 
+pos => new FatalError(pos,name.message));
+name.message = 'ожидался идентификатор';
+
+var until_quote = rgx(/^[^"&]*/i);
+
+var quoted = seq(need(1),txt('"'), until_quote, txt('"'))
+		.then(r=>r[0], pos=>new FatalError(pos,quoted.message));
+quoted.message = 'ожидался строковый литерал';
+
+var wsp = rgx(/^\s+/);
+
+var attr_ = seq(need(0,2),name, txt('='), quoted).then(r => ({ name: r[0], value: r[1] }));
+
+
+
+
+var attr = rgx(/^([a-zA-Z_][a-zA-Z0-9_]*)(?:\s*=\s*"([^"&]*)")?/m)
+		.then(	m=>({name:m[1], value : m[2]===undefined?null:m[2]}),
+				pos=>new FatalError(pos,attr.message)
+		)
+attr.message = 'ожидался атрибут вида имя="значение"'
+//если в атрибуте возможно экранирование, тот  это существенно усложнит attr
+
+var attrs = rep(attr, opt(wsp)).then(r => {
+    var m = {}; 
+    r.forEach(a => (m[a.name] = a.value));
+    return m;
+});
+
+var goodOpenTag = seq(need(0,1),
+	rgx(/^<\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*/).then(null,pos=>new FatalError(pos,name.message)),
+	attrs,rgx(/^\s*>/))
+.then(r=>({type:0, name:r[0][1], attrs:r[1]}),
+	(pos,e)=>(e===undefined ? new FatalError(pos,goodOpenTag.message) : e)
+)
+goodOpenTag.message='не удалось прочитать открывающий тег';
+//можно обернуть в any и последующими попытками вернуть ParseError
+
+function apply(){
+	var input = $('#in').val();
+	
+	var res = JSON.stringify(goodOpenTag.exec(input));
+	
+	$('#out').val(res);
+}
+
+describe('name, rgx, then',function(){
+	it('good match', function(){
+		assert.deepEqual(name.exec('AsDFGh'),'asdfgh')
+	})
+})
+
+describe('seq need(1)',function(){
+	it('match',function(){
+		assert.deepEqual(
+			quoted.exec('"assd f asdf asddf"'),
+			"assd f asdf asddf"
+		)
+	})
+	it('not match',function(){
+		assert.deepEqual(
+			quoted.exec('asd'),
+			new FatalError(0,quoted.message)
+		)
+	})
+})
+
+describe('attr',function(){
+	it('match',function(){
+		
+	})
+})
+
+//<href z="sdfg"type="xcvb"> 
+//<href="sdfg"type="xcvb"> 
+//<a href="sdfg"type="xcvb">
+//<a href="sdfg">
+//<a>
+
+
+var header = seq(txt('<?xml'), wsp, attrs, txt('?>')).then(r => r[2]);
+var tag = seq(txt('<'), opt(txt('/')), name, wsp, attrs, opt(wsp), opt(txt('/')), txt('>'))
+
+/*
+var text = 1;
+var subnode = new Pattern((str, pos) => node.exec(str, pos));
+
+var node = seq(
+    txt('<'), name_, wsp, attrs, txt('>'),
+    rep(any(text, subnode), opt(wsp)),
+    txt('</'), name_, txt('>'))
+    .then(r => ({ name_: r[1], attrs: r[3], nodes: r[5] }));
+
+var xml = seq(header, node).then(r => ({ root: r[1], attrs: r[0] }));
+*/
+
+		mocha.run();
+})()
+	</script>
+</body>
+</html>
