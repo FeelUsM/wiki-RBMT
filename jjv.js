@@ -375,14 +375,12 @@
     } else
       return;
   };
-
-  var checkValidity = function (env, schema_stack, object_stack, options) {
-    var i, len, count, hasProp, hasPattern;
-    var p, v, malformed = false, objerrs = {}, objerr, props, matched;
+  
+  var checkValidity = function (env, schema_stack, object_stack, options, checkingSameObject) {
     var sl = schema_stack.length-1, schema = schema_stack[sl], new_stack;
     var ol = object_stack.length-1, object = object_stack[ol].object, name = object_stack[ol].key, prop = object[name];
-    var errCount, minErrCount;
-
+	var errs;
+	
     if (schema.hasOwnProperty('$ref')) {
       schema_stack= resolveURI(env, schema_stack, schema.$ref);
       if (!schema_stack)
@@ -399,33 +397,64 @@
 			res = target_obj.hasOwnProperty(prop);
 			target_name = prop;
 		}
-		else if(typeof prop === 'object')
-			for(var pp in obj)
+		else if(typeof prop === 'object'){
+			for(var pp in target_obj)
 				if(target_obj[pp]===prop && target_obj.hasOwnProperty(pp)){
 					res = true;
 					target_name = pp;
 					break;
 				}
+		}
 		else
 			return false;
-		if(!options.propLinkCoerce || !res)
+		if(!options.useCoerce || !res)
 			return res;
 		
-		if(options.propLinkCoerce === 'stringify' && typeof prop ==='object')
+		if(options.useCoerce === 'stringify' && typeof prop ==='object' && 
+				schema.hasOwnProperty('stringifyCoerce') && schema.stringifyCoerce==='propLink')
 			prop = object[name] = target_name;
-		else if(options.propLinkCoerce === 'parse' && typeof prop ==='string')
-			prop = object[name] = target_object[target_name];
+		else if(options.useCoerce === 'parse' && typeof prop ==='string' &&
+				schema.hasOwnProperty('parseCoerce') && schema.parseCoerce==='propLink')
+			prop = object[name] = target_obj[target_name];
 		return res;
 	}
+	
+	// #todo придумать, как делать доп проверки другими keywords одновременно с isPropertyOf
 	if (schema.hasOwnProperty('isPropertyOf')) {
 		if(!isPropertyOf(schema.isPropertyOf))
 			return {'isPropertyOf': true};
 		else return null;
 	}
 	
+	// перед валидацией stringifyцируем
+	if(!checkingSameObject && options.useCoerce==='stringify' && schema.hasOwnProperty('stringifyCoerce')
+		&& env.stringifyCoerceFuncs.hasOwnProperty(schema.stringifyCoerce))
+			prop = object[name] = env.stringifyCoerceFuncs[schema.stringifyCoerce](
+						prop, schema, object_stack[0].object[object_stack[0].key]);
+	
+	errs =  env.realCheckValidity(env, schema_stack, object_stack, options);
+	
+	// после валидации парсим
+	if(!errs && !checkingSameObject && options.useCoerce==='parse' && schema.hasOwnProperty('parseCoerce')
+		&& env.parseCoerceFuncs.hasOwnProperty(schema.parseCoerce))
+			prop = object[name] = env.parseCoerceFuncs[schema.parseCoerce](
+						prop, schema, object_stack[0].object[object_stack[0].key]);
+	
+	return errs;
+  }
+  
+  // #todo сделать возможной работу с циклическими ссылками (strictChild:true)
+  
+  var realCheckValidity = function (env, schema_stack, object_stack, options) {
+    var i, len, count, hasProp, hasPattern;
+    var p, v, malformed = false, objerrs = {}, objerr, props, matched;
+    var sl = schema_stack.length-1, schema = schema_stack[sl], new_stack;
+    var ol = object_stack.length-1, object = object_stack[ol].object, name = object_stack[ol].key, prop = object[name];
+    var errCount, minErrCount;
+
     if (schema.hasOwnProperty('type')) {
       if (typeof schema.type === 'string') {
-        if (options.useCoerce && env.coerceType.hasOwnProperty(schema.type))
+        if (options.typeCoerce && env.coerceType.hasOwnProperty(schema.type))
           prop = object[name] = env.coerceType[schema.type](prop);
         if (!env.fieldType[schema.type](prop))
           return {'type': schema.type};
@@ -441,17 +470,17 @@
 
     if (schema.hasOwnProperty('allOf')) {
       for (i = 0, len = schema.allOf.length; i < len; i++) {
-        objerr = env.checkValidity(env, schema_stack.concat(schema.allOf[i]), object_stack, options);
+        objerr = env.checkValidity(env, schema_stack.concat(schema.allOf[i]), object_stack, options, true);
         if (objerr)
           return objerr;
       }
     }
 
-    if (!options.useCoerce && !options.useDefault && !options.removeAdditional) {
+    if (!options.typeCoerce && !options.useDefault && !options.removeAdditional) {
       if (schema.hasOwnProperty('oneOf')) {
         minErrCount = Infinity;
         for (i = 0, len = schema.oneOf.length, count = 0; i < len; i++) {
-          objerr = env.checkValidity(env, schema_stack.concat(schema.oneOf[i]), object_stack, options);
+          objerr = env.checkValidity(env, schema_stack.concat(schema.oneOf[i]), object_stack, options, true);
           if (!objerr) {
             count = count + 1;
             if (count > 1)
@@ -475,7 +504,7 @@
         objerrs = null;
         minErrCount = Infinity;
         for (i = 0, len = schema.anyOf.length; i < len; i++) {
-          objerr = env.checkValidity(env, schema_stack.concat(schema.anyOf[i]), object_stack, options);
+          objerr = env.checkValidity(env, schema_stack.concat(schema.anyOf[i]), object_stack, options, true);
           if (!objerr) {
             objerrs = null;
             break;
@@ -493,7 +522,7 @@
       }
 
       if (schema.hasOwnProperty('not')) {
-        objerr = env.checkValidity(env, schema_stack.concat(schema.not), object_stack, options);
+        objerr = env.checkValidity(env, schema_stack.concat(schema.not), object_stack, options, true);
         if (!objerr)
           return {'not': true};
       }
@@ -502,7 +531,7 @@
         minErrCount = Infinity;
         for (i = 0, len = schema.oneOf.length, count = 0; i < len; i++) {
           new_stack = clone_stack(object_stack);
-          objerr = env.checkValidity(env, schema_stack.concat(schema.oneOf[i]), new_stack, options);
+          objerr = env.checkValidity(env, schema_stack.concat(schema.oneOf[i]), new_stack, options, true);
           if (!objerr) {
             count = count + 1;
             if (count > 1)
@@ -529,7 +558,7 @@
         minErrCount = Infinity;
         for (i = 0, len = schema.anyOf.length; i < len; i++) {
           new_stack = clone_stack(object_stack);
-          objerr = env.checkValidity(env, schema_stack.concat(schema.anyOf[i]), new_stack, options);
+          objerr = env.checkValidity(env, schema_stack.concat(schema.anyOf[i]), new_stack, options, true);
           if (!objerr) {
             copy_stack(new_stack, object_stack);
             objerrs = null;
@@ -549,7 +578,7 @@
 
       if (schema.hasOwnProperty('not')) {
         new_stack = clone_stack(object_stack);
-        objerr = env.checkValidity(env, schema_stack.concat(schema.not), new_stack, options);
+        objerr = env.checkValidity(env, schema_stack.concat(schema.not), new_stack, options, true);
         if (!objerr)
           return {'not': true};
       }
@@ -564,7 +593,7 @@
                 return {'dependencies': schema.dependencies[p][i]};
               }
           } else {
-            objerr = env.checkValidity(env, schema_stack.concat(schema.dependencies[p]), object_stack, options);
+            objerr = env.checkValidity(env, schema_stack.concat(schema.dependencies[p]), object_stack, options,true);
             if (objerr)
               return objerr;
           }
@@ -727,16 +756,18 @@
 
   var defaultOptions = {
     useDefault: false,
-    useCoerce: false,
+    typeCoerce: false,
+	useCoerce: false, // stringify / parse
     checkRequired: true,
     removeAdditional: false,
-	propLinkCoerce: false//'stringify'/'parse'
   };
 
   function Environment() {
     if (!(this instanceof Environment))
       return new Environment();
 
+	this.stringifyCoerceFuncs = {};
+	this.parseCoerceFuncs = {};
     this.coerceType = {}; // === addTypeCoercion(type, func) ===
     this.fieldType = clone(fieldType);
     this.fieldValidate = clone(fieldValidate);
@@ -747,6 +778,7 @@
 
   Environment.prototype = {
     checkValidity: checkValidity,
+    realCheckValidity: realCheckValidity,
     validate: function (name, object, options) {
       var schema_stack = [name], 
 		errors = null, 
@@ -769,7 +801,7 @@
       errors = this.checkValidity(this, schema_stack, object_stack, options);
 
       if (errors)
-        return {validation: errors.hasOwnProperty('schema') ? errors.schema : errors};
+        return errors; //{validation: errors.hasOwnProperty('schema') ? errors.schema : errors};
       else
         return null;
     },
@@ -784,6 +816,14 @@
 
     addTypeCoercion: function (type, func) {
       this.coerceType[type] = func;
+    },
+
+    addParseCoercion: function (name, func) {
+      this.parseCoerceFuncs[name] = func;
+    },
+
+    addStringifyCoercion: function (name, func) {
+      this.stringifyCoerceFuncs[name] = func;
     },
 
     addCheck: function (name, func) {
