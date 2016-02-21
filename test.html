@@ -4,10 +4,11 @@
 <head>
 	<meta charset="utf-8">
 	<script src="jquery-2.2.0.js"></script>
+	<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>-->
 	<script src="propsManager.js"></script>
 	<script src="parser.js"></script>
 	<script src="jjv.js"></script>
-	<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>-->
+	<script src="meta_schema.js"></script>
 	<style>
 		body{
 			padding:10px;
@@ -35,22 +36,23 @@
 			border: 1px solid #000;
 			padding: 10px;		
 		}
+		/*----*/
 		.noun-dialog{
 			text-align: center
 		}
-		.common-dialog div{
+		.noun-dialog div{
 			margin:4px;
 			white-space:nowrap;
 		}
-		.common-dialog input[type='text']{
-			width:100px;
-		}
-		.common-dialog button{
+		.noun-dialog button{
 			margin-left:5px;
 			margin-right:5px;
 		}
-		.common-dialog .button-set{
+		.noun-dialog .button-set{
 			text-align:right
+		}
+		.noun-dialog .anchor{
+			display: none;
 		}
 		.noun-table{
 			text-align: left;
@@ -59,9 +61,7 @@
 		.noun-table td{
 			height:24px;
 		}
-		.noun-table td.word{
-			width:106px;
-		}
+		/*----*/
 		select.fixed{
 			background-color: #0f0;
 		}
@@ -74,14 +74,13 @@
 	<br>
 
 	<input type="text" id="in_text" size="120"/>
-	<button onclick="dialog_add_noun($('#in_text').val())">add noun</button>
+	<button onclick="dialog_add_word($('#in_text').val())">add noun</button>
 
 	<hr/>
 	<div  id="unknown_words"/>
 <script>
 'use strict';
 copyProps(Parser,window);
-var $$ = $; // $ - для элементов в DOM, $$ - для элементов в воздухе
 var parse_URI = /^((?:[^:\/?#]+):)?(?:\/\/(([^:\/?#]*)(?::([^:\/?#]*))?))?([^?#]*)(\?([^#]*))?(#(.*))?\s*$/;
 //                1x           x 1 x      23         3x   4         4x 2x 5      56  7     76 8 9  98
 /*	lication.
@@ -96,286 +95,12 @@ var parse_URI = /^((?:[^:\/?#]+):)?(?:\/\/(([^:\/?#]*)(?::([^:\/?#]*))?))?([^?#]
 \8	hash		#test
 \9				test
 */
-var schemas = new jjv;
-var DB_schema = {
-	$schema:'my_meta_schema',
-	id:'DB',
-	description:'dictionary',
-	type:'object',
-	required:['noun_types','nouns'],
-	properties:{
-		noun_types:{
-			id:'noun_types',
-			patternProperties:{
-				'^[0-9]+$':{
-					id:'noun_type',
-					required:["ип","рп","дп","вп","тп","пп","число","род","одушевленность","склонение"],
-					properties:{
-						"ип":{type:'string'},
-						"рп":{type:'string'},
-						"дп":{type:'string'},
-						"вп":{type:'string'},
-						"тп":{type:'string'},
-						"пп":{type:'string'},
-						"число":{enum:['ед','мн']},
-						"род":{enum:['м','ж','с','о']},
-						"одушевленность":{enum:['true','false']},//перенести в noun
-						"склонение":{type:'string'}
-					},
-					additionalProperties:false,
-				},
-			},
-			additionalProperties:false,
-		},
-		nouns:{
-			patternProperties:{
-				'^[а-яА-ЯёЁйЙ]+$':{
-					id:'noun',
-					required:['type'],
-					properties:{
-						type:{isPropertyOf:'/noun_types'}
-					},
-					additionalProperties:true,
-				},
-			},
-			additionalProperties:false,
-		},
-	},
-	additionalProperties:true,
-}
-schemas.addSchema('DB',DB_schema);
-(function(){
-	var my_meta_schema = {
-    "id": "my_meta_schema",
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "description": "Core schema meta-schema",
-    "definitions": {
-        "schemaArray": {
-            "type": "array",
-            "minItems": 1,
-            "items": { "$ref": "#" }
-        },
-        "positiveInteger": {
-            "type": "integer",
-            "minimum": 0
-        },
-        "positiveIntegerDefault0": {
-            "allOf": [ { "$ref": "#/definitions/positiveInteger" }, { "default": 0 } ]
-        },
-        "simpleTypes": {
-            "enum": [ "null", "boolean", "integer", "number", "string", "array", "object" ]
-        },
-        "stringArray": {
-            "type": "array",
-            "items": { "type": "string" },
-            "minItems": 1,
-            "uniqueItems": true
-        },
-		//additions:
-		"$data": {
-			"type": "object",
-			"required": [ "$data" ],
-			"properties": {
-				"$data": { "type": "string", "format": "relative-json-pointer" }
-			},
-			"additionalProperties": true
-		}
-    },
-    "type": "object",
-    "properties": {
-        "id": {
-            "type": "string",
-            "anyOf": [	{"format": "uri"}, {"format": "identifier"} ]
-        },
-        "$schema": {
-            "type": "string",
-            "anyOf": [	{"format": "uri"}, {"format": "identifier"} ]
-        },
-        "title": {
-            "type": "string"
-        },
-        "description": {
-            "type": "string"
-        },
-        "default": {},
-        "multipleOf": { "oneOf": [
-			{
-				"type": "number",
-				"minimum": 0,
-				"exclusiveMinimum": true
-			},
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "maximum": { "oneOf":[
-			{ "type": "number" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "exclusiveMaximum": { "type": "boolean", "default": false },
-        "minimum": { "oneOf": [
-            { "type": "number" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "exclusiveMinimum": { "type": "boolean", "default": false },
-        "maxLength": { "oneOf": [
-			{ "$ref": "#/definitions/positiveInteger" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "minLength": { "oneOf": [
-			{ "$ref": "#/definitions/positiveIntegerDefault0" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "pattern": { "oneOf": [
-			{ "type": "string", "format": "regex" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "additionalItems": { "anyOf": [
-                { "type": "boolean" },
-                { "$ref": "#" }
-            ],
-            "default": {}
-        },
-        "items": { "anyOf": [
-                { "$ref": "#" },
-                { "$ref": "#/definitions/schemaArray" }
-            ],
-            "default": {}
-        },
-        "maxItems": { "oneOf": [
-			{ "$ref": "#/definitions/positiveInteger" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "minItems": { "oneOf": [
-			{ "$ref": "#/definitions/positiveIntegerDefault0" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "uniqueItems": { "oneOf": [
-			{ "type": "boolean", "default": false },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "maxProperties": { "oneOf": [
-			{ "$ref": "#/definitions/positiveInteger" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "minProperties": { "oneOf": [
-			{ "$ref": "#/definitions/positiveIntegerDefault0" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "required": { "$ref": "#/definitions/stringArray" },
-        "additionalProperties": { "anyOf": [
-                { "type": "boolean" },
-                { "$ref": "#" }
-            ],
-            "default": {}
-        },
-        "definitions": {
-            "type": "object",
-            "additionalProperties": { "$ref": "#" },
-            "default": {}
-        },
-        "properties": {
-            "type": "object",
-            "additionalProperties": { "$ref": "#" },
-            "default": {}
-        },
-        "patternProperties": {
-            "type": "object",
-            "additionalProperties": { "$ref": "#" },
-            "default": {}
-        },
-        "dependencies": {
-            "type": "object",
-            "additionalProperties": { "anyOf": [
-				{ "$ref": "#" },
-				{ "$ref": "#/definitions/stringArray" }
-            ]}
-        },
-        "enum": { "oneOf": [
-			{
-				"type": "array",
-				"minItems": 1,
-				"uniqueItems": true
-			},
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-        "type": { "anyOf": [
-			{ "$ref": "#/definitions/simpleTypes" },
-			{
-				"type": "array",
-				"items": { "$ref": "#/definitions/simpleTypes" },
-				"minItems": 1,
-				"uniqueItems": true
-			}
-        ]},
-        "allOf": { "$ref": "#/definitions/schemaArray" },
-        "anyOf": { "$ref": "#/definitions/schemaArray" },
-        "oneOf": { "$ref": "#/definitions/schemaArray" },
-        "not": { "$ref": "#" },
-		// === additions ===
-		"$ref": { "type":"string", "format":"json-reference" },
-		"readOnly": { "oneOf": [
-			{ "type": "boolean" },
-			{ "$ref":"#/definitions/$data" }
-		]},
-		"constant": { },
-		"isPropertyOf": { "oneOf": [
-			{ "type": "string", "format": "relative-json-pointer" },
-			{ "$ref":"#/definitions/$data" }
-		]},
-		"format": { "oneOf": [
-			{ "type": "string", "enum": [
-				"relative-json-pointer",
-				"json-reference",
-				"regex",
-				"alpha",
-				"alphanumeric",
-				"identifier",
-				"hexadecimal",
-				"numeric",
-				"date-time",
-				"uppercase",
-				"lowercase",
-				"hostname",
-				"uri",
-				"email",
-				"ipv4",
-				"ipv6"
-			]},
-			{ "$ref":"#/definitions/$data" }
-		]}
-    },
-    "additionalProperties": false, //modified
-    "dependencies": {
-        "exclusiveMaximum": [ "maximum" ],
-        "exclusiveMinimum": [ "minimum" ],
-		"properties": [ "additionalProperties" ], //modified
-		"patternProperties": [ "additionalProperties" ], //modified
-		"items": { "anyOf": [
-			{
-				"properties": {
-					"items": { "type": "object" }
-				},
-				"additionalProperties": true
-			},
-			{
-				"required": [ "items", "additionalItems" ],
-				"properties": {
-					"items": { "type": "array" }
-				},
-				"additionalProperties": true
-			}
-		]} //modified
-    },
-    "default": {}
-};
-	var res = schemas.addSchema('my_meta_schema',my_meta_schema).validate('my_meta_schema',my_meta_schema);
-	if(res)
-		console.dir(res);
-	res = schemas.validate('my_meta_schema',DB_schema)
-	if(res)
-		console.dir(res);
-})();
-
-function internal_link_word_click(event){
+/*
+ * при клике ЛКМ на ссылку парсится ее href и открывается dialog_add_word, 
+ * а для открытия в новом окне - это обычная ссылка
+ * + функции добавления и снятия такого поведения
+ */
+function click_internal_link_word_handler(event){
 	if(event.which==1){// ЛКМ
 		event.preventDefault();
 		var options = parse_URI_params(parse_URI.exec($(this).attr('href'))[6]);
@@ -383,24 +108,49 @@ function internal_link_word_click(event){
 		dialog_add_word(options.word,options);
 	}
 }
-jQuery.fn.add_internal_link_word = function(word,options){
-	var $this = this;
-	//console.dir($this)
-	options.word = word;
-	return $this.attr('href',location.pathname + make_URI_params(options)).
-		click(internal_link_word_click);
-}
-jQuery.fn.remove_internal_link_word = function(){
-	var $this = this;
-	return $this.removeAttr('href').off('click',internal_link_word_click);
-}
-function select_select_handler(event){
+/*
+ * создает события select_select, его надо вешать на click
+ */
+function click_handler_select_select(event){
 	var pos = this.getBoundingClientRect();
 	if(!(event.clientX>=pos.left && event.clientX<pos.right && 
-		event.clientY>=pos.top && event.clientY<pos.bottom))
+			event.clientY>=pos.top && event.clientY<pos.bottom)){
 		$(this).trigger('select_select');
+	}
 }
-
+/*
+ * создает события fix_select и unfix_select, его надо вешать на select_select
+ * требует следующей инициализации
+ * .prepend('<option value="">не фиксировать</option>').find('option[value=""]').hide();
+ */
+function select_handler_fix_unfix_select(ev){
+	var $this = $(this);
+	if($this.val()==''){ // выбрали не фиксировать
+		$this.removeClass('fixed').find('option[value=""]').hide();
+		$this.trigger('unfix_select');
+	}
+	else{ // выбрали элемент
+		if(!$this.hasClass('fixed'))
+			$this.addClass('fixed').find('option[value=""]').show();
+		$this.trigger('fix_select');
+	}
+}
+/*
+ * совершаем change и кидаем событие change
+ */
+function set_value(obj,value){
+  obj.value = value;
+  $(obj).trigger('change')
+}
+function set_checked(obj,checked){
+  obj.checked = checked;
+  $(obj).trigger('change')
+}
+/*
+ * диалоговое окно, которое можно вызывать одно поверх ругого стеком
+ * запрещает переходы на элементы вне его мышкой и табуляцией
+ * а так же обрабатывает esc
+ */
 function Dialog() {
 	this._$base = $('<div><div class="shadow"></div></div>');
 	var self = this;
@@ -420,12 +170,9 @@ Dialog.prototype = {
 			[contenteditable="true"][tabindex!="-1"],datalist[tabindex!="-1"],\
 			meter[tabindex!="-1"],progress[tabindex!="-1"]'
 		);
-		// #todo поставить обработчик события focus на document
-		//если у вас открыто диалоговое окно, вы проверяете где лежит у вас объект, получивший фокус
-		//если объект находится в контенте, то вы принудительно передаете фокус на первый элемент в диалоговом окне
 		//console.dir(this.$tabable);
 		this.$tabable.each(function(){
-			$this = $(this);
+			var $this = $(this);
 			console.assert($this.data('stored_tabindex')===undefined);
 			var tmp = $this.attr('tabindex')
 			$this.data('stored_tabindex',tmp?tmp:0);
@@ -437,7 +184,7 @@ Dialog.prototype = {
 	},
 	close: function () {
 		this.$tabable.each(function(){
-			$this = $(this);
+			var $this = $(this);
 			var tmp = $this.data('stored_tabindex');
 			$this.attr('tabindex',tmp);
 			$this.removeData('stored_tabindex');
@@ -467,312 +214,663 @@ function invert_num(str){
 	if(str=='мн')	return 'ед';
 	if(str=='ед')	return 'мн';
 }
+function noun2plural(word){
+	if(/мя$/.test(word))	return word.replace(/^(.*)мя$/,'$1мена');
+	if(/ец$/.test(word))	return word.replace(/^(.*)ец$/,'$1цы');
+	if(/ие$/.test(word))	return word.replace(/^(.*)ие$/,'$1ия');
+	if(/ье$/.test(word))	return word.replace(/^(.*)ье$/,'$1ья');
+	if(/ий$/.test(word))	return word.replace(/^(.*)ий$/,'$1ии');
+	if(/ия$/.test(word))	return word.replace(/^(.*)ия$/,'$1ии');
 
-function dialog_add_word(word,options){
-	dialog_add_noun(word,options);
+	if(/[оёе]к$/.test(word))return word.replace(/^(.*)[оёе]к$/,'$1ки');
+	if(/[кгчхш]$/.test(word))	return word.replace(/^(.*)$/,'$1и');
+	if(/[^аоуыиэюяеёь]$/.test(word)) return word.replace(/^(.*)$/,'$1ы');// исключение: стул
+	
+	if(/[кгчшх]а$/.test(word))	return word.replace(/^(.*)а$/,'$1и');
+	if(/а$/.test(word))		return word.replace(/^(.*)а$/,'$1ы');
+	
+	if(/[^и]o$/.test(word))	return word.replace(/^(.*)о$/,'$1а');
+	if(/[яйь]$/.test(word))	return word.replace(/^(.*)[яйь]$/,'$1и');
+	if(/[еи]$/.test(word))	return word;// несклоняемые
+	console.log('не смог придумать множественное число для '+word);
+	return word;
+}
+function noun2singular(word, gender){
+	gender = gender || 'ж';
+	if(/мена$/.test(word))	return word.replace(/^(.*)мена$/,'$1мя');
+	if(/ия$/.test(word))	return word.replace(/^(.*)ия$/,'$1ии');
+	if(/ии$/.test(word))	
+		if(gender=='ж')		return word.replace(/^(.*)ий$/,'$1ия');
+		else				return word.replace(/^(.*)ия$/,'$1ий');
+	if(/ы$/.test(word))	
+		if(gender=='ж')		return word.replace(/^(.*)ы$/,'$1а');
+		else				return word.replace(/^(.*)ы$/,'$1');
+	if(/и$/.test(word))	
+		if(gender=='ж')		return word.replace(/^(.*)и$/,'$1ь');
+		else				return word.replace(/^(.*)и$/,'$1');
+	if(/ра$/.test(word))	return word.replace(/^(.*)а$/,'$1');
+	if(/а$/.test(word))	return word.replace(/^(.*)а$/,'$1о');
+	if(/[еи]$/.test(word))	return word;// несклоняемые
+	console.log('не смог придумать единственное число для '+word);
+	return word;
 }
 
-//<input type="text"></input>
 function dialog_add_noun(word,options){
 	"use strict";
-	// === переменные, которые в процессе диалога не меняются ===================================================
+	options = options || {};
+	// === переменные, которые в процессе диалога не меняются ================================================
 	// ни чего не меняем, просто проверяем непротиворечивость существующего и рекомендованного числа слова
-	//var 
-	if(word in DB.nouns && options && options.число && options.число!=DB.noun_types[DB.nouns[word].type].число){
+	if(word in DB.nouns && options && options.число && options.число!=DB.nouns[word].type.число){
 		alert('Что-то не совпадает: \n'+
 			options.other_num+' - '+invert_num(options.число)+'. число\n ссылается на \n'+
-			word+' - '+DB.noun_types[DB.nouns[word].type].число+'. число\n как на то же слово в другом числе\n проверьте его тоже'
+			word+' - '+DB.nouns[word].type.число+'. число\n как на то же слово в другом числе'
 		);
-		
 	}
 		
 	// заполняем массив с подходящими склонениями, и сортируем по релевантности
-	// а именно по окончаниям и рекомендованному числу
-	var proper_types = [{i:-1,r:0}];
-	(function(){ // инициализация и сортировка подходящих склонений
+	// а именно по окончаниям
+	var proper_types = [];
+	(function(proper_types){ // инициализация и сортировка подходящих склонений
 		var find_needed_num = false;
 		for( var i in DB.noun_types ){
 			var rgx = new RegExp(DB.noun_types[i].ип+'$');
 			var res; 
 			if( res = rgx.exec(word) ){
-				proper_types.push({i:i,r:word.length-res.index});
-				if(options && options.число && options.число == DB.noun_types[i].число){
-					find_needed_num = true;
-					proper_types[proper_types.length].r+=5;
-				}
+				proper_types.push({
+					link:DB.noun_types[i],
+					r:word.length-res.index,
+					available:true,
+					name: i,
+				});
 			}
 		}
-		if(!find_needed_num)
-			proper_types[0].r+=5;
 		proper_types.sort((l,r)=>(l.r-r.r));// по убыванию по .r
-	})()
+	})(proper_types);
+	//console.dir(proper_types);
 	
-	// === элементы, которые в процессе диалога не меняются =================================================
+	// === элементы, которые в процессе диалога не меняются ====================================================
 	// #todo расставить title-ы - подсказки
-	var $element = $('\
-		<form class="noun-dialog">\
-			<h2 style="margin-bottom:0">Существительное: <a id="wiktionarylink" target="_blank"></a></h2>\
+	var $form = $('\
+		<form class="noun-dialog" id="'+word+'">\
+ 			<h2 id="selflink" style="margin-bottom:0">Существительное: \
+			'+word+' <a target="_blank" class="anchor">#</a></h2>\
 			<div style="">\
-				<span style="float:left;">\
-					<input type="checkbox" id="other_num_flag"><label id="other_num_label"></label></input>\
-					<input type="text" id="other_num_edit"></input>\
-					<a id="other_num_link">#</a>\
+				<span style="display: inline-block; float:left; line-height:3em;">\
+					<input type="checkbox" name="other_num_flag" id="other_num_flag"><label for="other_num_flag" id="other_num_label"></label></input>\
+					<input type="text" name="other_num_edit"></input>\
+					<a target="_blank" id="other_num_link">#</a>\
 				</span>\
 				<div style="display:inline-block;vertical-align:middle">\
-					<a href="">wiktionary</a><br>\
-					<input id="wiki_flag" type="checkbox"><a id="wiki_link" target="_blank">wiki</a></input>\
+					<a target="_blank" id="wiktionary_link">wiktionary</a><br>\
+					<input name="wiki_flag" type="checkbox"><a id="wiki_link" target="_blank">wiki</a></input>\
 				</div>\
 			</div>\
 			<div>\
-				<select id="num">\
+				<select name="число">\
 					<option value="ед">ед. число</option>\
 					<option value="мн">мн. число</option>\
 				</select>\
-				<select id="gender">\
+				<select name="род">\
 					<option value="м">мужской род</option>\
 					<option value="ж">женский род</option>\
 					<option value="с">средний род</option>\
 					<option value="о">общий род</option>\
 				</select>\
-				<select id="hum">\
-					<option value="true">одушевленное</option>\
-					<option value="false">неодушевленное</option>\
+				<select name="одушевленность">\
+					<option value="одушевленное">одушевленное</option>\
+					<option value="неодушевленное">неодушевленное</option>\
 				</select>\
 			</div>\
 			<table id="main_table" class="noun-table"></table>\
 			<div>\
-				<button id="left">&lt;-</button>\
-				<button id="right">-&gt;</button>\
+				(<span id="selected"/><span id="available"/>)\
+				<button type="button" name="left">&lt;-</button>\
+				<button type="button" name="right">-&gt;</button>\
 			</div>\
 			<div>\
 				<span title="ни на что не влияет">название склонения:</span>\
-				<input title="ни на что не влияет" type="text" id="склонение"></input>\
+				<input title="ни на что не влияет" type="text" name="склонение"></input>\
 			</div>\
+			<br/>комментарий:<br/><textarea style="width: 100%"></textarea>\
 			<div class="button-set">\
-				<button id="OK">добавить</button>\
-				<button id="cancel">назад</button>\
+				<button type="button" name="reset">как было</button>\
+				<button type="button" name="OK">добавить</button>\
+				<button type="button" name="cancel">назад</button>\
 			</div>\
 		</form>\
 	');
-	// заполняем таблицу ячейками
-	var $tr = $(
-		'<tr>\
-			<td class="define"></td>\
-			<td class="word"></td>\
-		</tr>'
-	);
-	var $table = $element.find('#main_table');
-	// заполняем падежными словами
-	for(var x in css_padej_classes){
-		$table.append($tr.clone().addClass(css_padej_classes[x]).find('.define').text(padej_words[x][0]).end());
-	}
-	
-	// вешаем ссылку на викисловарь #todo сделать зависимой от наличия единственного числа слова
-	$element.find('#wiktionarylink').text(word).
-		attr('href','http://ru.wiktionary.org/wiki/'+encodeURIComponent(word));
+	var form = $form[0];
+	var $table = $form.find('#main_table');
+	var $style = $('<style/>').appendTo($('head'));
+	var sheet = $style[0].sheet;
+
+	// настройка элементов, которые в процессе диалога не меняются
+	function static_init(){
+		//console.log('static_init');
+		//настройка самоссылки
+		var $self = $form.find('#selflink');
+		var $a = $self.find('a').attr('href',location.pathname + make_URI_params({word:word}));
+		$self.hover(function(){$a.show();},function(){$a.hide();})
 		
-	var $wiki_flag = $element.find('#wiki_flag')
-	var $other_num_edit = $element.find('#other_num_edit');
-	var $other_num_flag = $element.find('#other_num_flag')
+		// заполняем падежными словами
+		var $tr = $(
+			'<tr>\
+				<td class="define"></td>\
+				<td class="word"></td>\
+			</tr>'
+		);
+		for(var x in css_padej_classes){
+			$table.append($tr.clone().addClass(css_padej_classes[x]).find('.define').text(padej_words[x][0]).end());
+		}
+		if(['а','о','у','ы','и','э'].indexOf(word[0])!=-1) { //обработка о/об
+			$table.find('.'+css_padej_classes['пп']+' .define').text(padej_words['пп'][1]);// пробел необходим
+		}
+
+		// инициализируем число, род, одушевленность
+		$(form.число).add(form.род).add(form.одушевленность).click(click_handler_select_select)
+			.on('select_select',select_handler_fix_unfix_select)
+			.prepend('<option value="">не фиксировать</option>').find('option[value=""]').hide();
+			
+		// устанавливаем ширину edit-ов
+		var $tmp = $('<select><option>'+word+'</option></select>').appendTo($('body'));
+		var width = $tmp.width();
+		$tmp.remove();
+		sheet.insertRule('#'+word+' input[type="text"]{ width:'+width+'px}',sheet.cssRules.length);
+		$(form.склонение).width(100);
+	}
+	static_init();
+	
+	// === поведенческие функции и обработчики без глобальных переменных ======================================
+	function update_wiki_link(){
+		//console.log('update_wiki_link');
+		var text;
+		if(form.other_num_flag.checked && form.число.value=='мн')
+			text = form.other_num_edit.value
+		else text = word;
+		if(form.wiki_flag.checked)
+			$form.find('#wiki_link').attr('href','http://ru.wikipedia.org/wiki/'+encodeURIComponent(text));
+		else
+			$form.find('#wiki_link').removeAttr('href');
+	}
+	$(form.wiki_flag).add(form.число).add(form.other_num_edit).change(update_wiki_link);
+	
+	function update_wiktionary_href(){
+		//console.log('update_wiktionary_href');
+		var text;
+		if(form.other_num_flag.checked && form.число.value=='мн')
+			text = form.other_num_edit.value
+		else text = word;
+		$form.find('#wiktionary_link').
+			attr('href','http://ru.wiktionary.org/wiki/'+encodeURIComponent(text));
+	}
+	$(form.other_num_flag).add(form.число).add(form.other_num_edit).change(update_wiktionary_href);
+	
+	function show_hide_other_num(){
+		if(form.other_num_flag.checked===true){
+			//.log('show_other_num');
+			$(form.other_num_edit)	.show();
+			$form.find('#other_num_link').show();
+			if(! word in DB.nouns && !options.other_num)
+				set_value(form.other_num_edit, 
+					(options.число && options.число=='мн') ? noun2singular(word) : noun2plural(word)
+				);				
+		}
+		else if(form.other_num_flag.checked===false){
+			//console.log('hide_other_num');
+			$(form.other_num_edit).hide();
+			$form.find('#other_num_link').hide();
+		}
+		else 
+			console.warn(form.other_num_flag.checked);
+	}
+	$(form.other_num_flag).change(show_hide_other_num);
+	
+	function update_other_num_label(){
+		//console.log('update_other_num_label');
+		$form.find('#other_num_label').text(invert_num(form.число.value)+'. число');
+	}
+	$(form.число).change(update_other_num_label);
+	
+	function update_other_num_href(){
+		//console.log('update_other_num_href');
+		$form.find('#other_num_link').attr('href',location.pathname + make_URI_params({
+			word: form.other_num_edit.value,
+			число: invert_num(form.число.value),
+			other_num: word,
+		}));
+	}
+	$(form.other_num_edit).add(form.число).change(update_other_num_href);
+	
+	function update_hum(){
+		var $yes = $(form.одушевленность).find('option[value="одушевленное"]');
+		var $no = $(form.одушевленность).find('option[value="неодушевленное"]');
+
+		if(form.число.value == 'мн'){
+			$yes.text('одушевлённые');
+			$no.text('неодушевлённые');
+		}
+		else if(form.род.value == 'м'){
+			$yes.text('одушевлённый');
+			$no.text('неодушевлённый');
+		}
+		else if(form.род.value == 'ж'){
+			$yes.text('одушевлённая');
+			$no.text('неодушевлённая');
+		}
+		else if(form.род.value == 'с'){
+			$yes.text('одушевлённое');
+			$no.text('неодушевлённое');
+		}
+		else if(form.род.value == 'о'){
+			$yes.text(Math.random()>0.5 ? 'одушевлённый' : 'одушевлённая');
+			$no.text(Math.random()>0.5 ? 'неодушевлённый' : 'неодушевлённая');
+		}
+	}
+	$(form.число).add(form.род).change(update_hum);
 	
 	// === глобальные переменные =============================================================================
-	var selected = 0;
+	var selected = -1; // == -1 - доступные типы отсутствуют
+	var selected_modified = false; // true - если ручное изменение доступного типа
 	
-	// === поведенческие функции и обработчики ==================================================================
+	// === внутренние поведенческие функции и обработчики =====================================================
 
-	// вывод на экран выбранного склонения
-	function select(x){
-		console.log(x)
-		if(x == -1){
-			$input = $('<input type="text" value="'+word+'"></input>')
-			for(var x in css_padej_classes){
-				$element.find('#main_table .'+css_padej_classes[x]+' .word').
-					empty().append($input.clone());
-			}
-		}
-		else{
-			var type = DB.noun_types[x];
-			console.assert(type);
-			$element.find('#num').val(type.число);
-			$element.find('#gender').val(type.род);
-			$element.find('#hum').val(type.одушевленность);
-			$element.find('#склонение').val(type.склонение);
-			var i = (new RegExp(type.ип+'$')).exec(word).index;
-			
-			var root = word.slice(0,i);
-			for(var x in css_padej_classes){
-				$element.find('#main_table .'+css_padej_classes[x]+' .word').
-					text(root+type[x]);
-			}
-		}
-	};
-	
-	// смена текущего склонения
-	$element.find('#right').click(function(){
-		if(++selected >= proper_types.length)
-			selected = 0;
-		select(proper_types[selected].i);
-	});
-	$element.find('#left').click(function(){
-		if(--selected < 0)
-			selected = proper_types.length-1;
-		select(proper_types[selected].i);
-	});
-
-	// [не]отображение wiki link'а
-	function render_wiki_link(){
-		if($wiki_flag.prop('checked'))
-			$element.find('#wiki_link').attr('href','http://ru.wikipedia.org/wiki/'+encodeURIComponent(word));
+	function draw_proper_num(){
+		if(selected == -1 || selected_modified)
+			$form.find('#selected').text('новое для ');
 		else
-			$element.find('#wiki_link').removeAttr('href');
+			$form.find('#selected').text('№'+proper_types[selected].name+' из ');
 	}
-	$wiki_flag.change(render_wiki_link);
+	function select(x){ // and draw
+		selected = x;
+		draw_proper_num();
 
-	// изменение ссылки на слово в другом числе
-	function get_other_num(){
-		return $element.find('#other_num_flag').prop('checked') ? $element.find('#other_num_edit').val() : false;
-	}
-	function change_other_link(){
-		$element.find('#other_num_link').add_internal_link_word(
-			$element.find('#other_num_edit').val(),
-			{other_num:word,'число':$element.find('#num').val()=='мн'?'ед':'мн'}
-		);
-	}
-	$other_num_edit.on('change',change_other_link);
-	// [не]отображение ссылки на слово в другом числе
-	function render_other_num(){
-		$element.find('#other_num_label').text(
-			$element.find('#num').val()=='мн' ? 'ед. число' : 'мн. число'
-		)
-		if($element.find('#other_num_flag').prop('checked')){
-			$element.find('#other_num_edit').show();
-			$element.find('#other_num_link').show();
+		if(x == -1 || selected_modified){
+			is_void_sklon_name();
+			// все что не заполнено - заполнить по умолчанию
+			if(form.число.value=='')  set_value(form.число, 'ед');
+			if(form.род.value=='') set_value(form.род, 'м');
+			if(form.одушевленность.value=='') set_value(form.одушевленность, 'одушевленное');
+			for(var p in css_padej_classes){
+				var $td = $table.find('.'+css_padej_classes[p]+' .word');//' .word' - пробел важен
+				if($td.children()[0]){
+					if($td.children().val().trim()=='')
+						$td.children().val(word);
+				}
+				else if($td.text().trim() =='')
+					$td.text(word);
+			}
+			make_edits();
 		}
 		else{
-			$element.find('#other_num_edit').hide();
-			$element.find('#other_num_link').hide();
-		}
-	}
-	$element.find('#num').on('change',render_other_num);
-	$other_num_flag.on('change',render_other_num);
-
-	// === инициализация переменных и элементов значениями по умолчанию =========================================
-	
-	if(word in DB.nouns){
-		proper_types.forEach((o,i)=>{ if(o.i==DB.nouns[word].type) selected=i; })
-		//selected = proper_types.indexOf(DB.nouns[word].type);
-		//console.assert(selected != -1);
-		$element.find('#OK').text('изменить');
-	}
-	else{
-		if(options && options.число){
-			$element.find('#num').val(options.число).attr('disabled','disabled');
-		}
-	}
-	
-	select(proper_types[selected].i);
-	
-	if(word in DB.nouns)  $wiki_flag.prop('checked',DB.nouns[word].wiki);
-	render_wiki_link();
-	
-	// другое число
-	$other_num_edit.val(
-		DB.nouns[word] && DB.nouns[word].othen_num ? DB.nouns[word].othen_num :
-		options && options.othen_num ? options.othen_num :
-		word
-	)
-	$element.find('#other_num_flag').prop('checked',
-		DB.nouns[word] && DB.nouns[word].other_num !== undefined ? DB.nouns[word].other_num :
-		options && options.other_num !== undefined ? options.other_num :
-		true
-	)
-	
-	change_other_link();
-	render_other_num();
-
-	// === завершающие функции и обработчики ==================================================================
-	var dialog = new Dialog;
-	$element.find('#OK').click(function(){
-		//добавить склонение
-		if(	proper_types[selected].i==-1 ||
-			DB.noun_types[proper_types[selected].i].число != $element.find('#num').val() ||
-			DB.noun_types[proper_types[selected].i].род != $element.find('#gender').val() ||
-			DB.noun_types[proper_types[selected].i].одушевленность != $element.find('#hum').val() ||
-			DB.noun_types[proper_types[selected].i].склонение != $element.find('#склонение').val() 
-		){
-			var new_type = {};
-			// заполнить прочие параметры
-			new_type.число = $element.find('#num').val();
-			new_type.род = $element.find('#gender').val();
-			new_type.одушевленность = $element.find('#hum').val();
-			new_type.склонение = $element.find('#склонение').val();
-			
-			if(proper_types[selected].i==-1){
-				//найти корень и отделить окончания
-				var $table = $element.find('#main_table');
-				function diff_pos(s1,s2){
-					var i;
-					for(i=0; i<s1.length; i++){
-						if(s1.charAt(i)!=s2.charAt(i))
-							break;
-					}
-					return i;
-				}
-				var root = $table.find('.'+css_padej_classes['ип']+' .word input').val();
-				for(var p in css_padej_classes){
-					root = root.slice(0,diff_pos(root,
-						$table.find('.'+css_padej_classes[p]+' .word input').val()));
-				}
-				for(var p in css_padej_classes){
-					new_type[p] = $table.find('.'+css_padej_classes[p]+' .word input').val().slice(root.length);
-				}
+			console.assert(proper_types[x]);
+			var type = proper_types[x].link;
+			set_value(form.число, type.число);
+			set_value(form.род, type.род);
+			if(type.одушевленность) set_value(form.одушевленность, 'одушевленное');
+			else                    set_value(form.одушевленность, 'неодушевленное');
+			set_value(form.склонение, type.склонение);
+			var root = word.slice(0,(new RegExp(type.ип+'$')).exec(word).index);
+			for(var p in css_padej_classes){
+				$table.find('.'+css_padej_classes[p]+' .word').
+					text(root+type[p]);
 			}
-			else{
-				for(var p in css_padej_classes){
-					new_type[p] = DB.noun_types[proper_types[selected].i][p];
-				}
-			}
-			
-			//console.dir(new_type);
+		}
+		compare_data();
+	}
+	
+	function draw_available_count(){
+		//console.log('draw_available_count');
+		var cnt = 0;
+		for(var i = 0; i<proper_types.length; i++)
+			if(proper_types[i].available)
+				cnt++;
+		$form.find('#available').text(cnt+' подходящ'+(cnt===1 ? 'его' : 'их'));
+	}
+	function update_available(){
+		//console.log('update_available');
+		//console.dir(proper_types)
+		// расставляем флаги кто доступен, кто нет
+		for(var i = 0; i<proper_types.length; i++)
+			proper_types[i].available = true;
+		function filter(prop,name,transform_val){
+			if($(form[name]).hasClass('fixed'))
+				for(var i = 0; i<proper_types.length; i++)
+					if(proper_types[i].link[prop] != transform_val(form[name].value))
+						proper_types[i].available = false;
+		}
+		filter('число','число',r=>r);
+		filter('род','род',r=>r);
+		filter('одушевленность','одушевленность',r=>r==='одушевленное');
+		
+		draw_available_count();
 
-			//если в точности такого склонения нет - добавить, и в любом случае выставить proper_types[selected].i
-			var eq = false;
-			met:for(var x in DB.noun_types){
-				// #todo содержимое типа всегда может увеличить вложенность
-				// => нужно сделать универсальный рекурсивную функцию сравнеия
-				for(var y in DB.noun_types[x])
-					if(DB.noun_types[x][y] != new_type[y])
-						continue met;
-				proper_types[selected].i = x;
-				eq = true;
+		// === устанавливаем selected на доступное склонение ===
+		if(selected == -1){ // из состояния ничего недоступно
+			if(proper_types.length > 0) selected = 0; // начинаем поиск с 0
+			else { select(-1); return; }; // остаемся в состоянии ничего недоступно
+		}
+		else if(proper_types[selected].available) // если доступность не изменилась
+			return; // ничего не делаем
+		// ищем доступные микросклонения с меньшим индексом
+		for(var i = selected; i>=0; i--)
+			if(proper_types[i].available){
+				select(i);
+				return;
+			}
+		// ищем доступные микросклонения с большим индексом
+		for(var i = selected; i!=proper_types.length; i++)
+			if(proper_types[i].available){
+				select(i);
+				return;
+			}
+		// нет доступных микросклонений
+		select(-1);
+	}
+	$(form.число).add(form.род).add(form.одушевленность)
+		.on('fix_select',update_available).on('unfix_select',update_available);
+		
+	function is_void_sklon_name(){
+		if(!selected_modified && selected != -1) return;
+		var suffix = form.число.value=='мн' ? ' мн' : '';
+		if(form.other_num_edit.value in DB.nouns)
+			set_value(form.склонение, DB.nouns[form.other_num_edit.value].type.склонение + suffix);
+		else
+			set_value(form.склонение, suffix.trim());
+	}
+	function generate_type(){
+		//найти корень и отделить окончания
+		var words = {};
+		for(var p in css_padej_classes){
+			var $word = $table.find('.'+css_padej_classes[p]+' .word')
+			if($word.children().length==0)
+				words[p] = $word.text().trim();
+			else
+				words[p] = $word.children().val().trim();
+		}
+		function diff_pos(s1,s2){
+			var i;
+			for(i=0; i<s1.length; i++){
+				if(s1.charAt(i)!=s2.charAt(i))
+					break;
+			}
+			return i;
+		}
+		var root = words['ип'];
+		for(var p in words)
+			root = root.slice(0,diff_pos(root,words[p]));
+		var new_type = {};
+		for(var p in css_padej_classes)
+			new_type[p] = words[p].slice(root.length);
+		new_type.число = form.число.value;
+		new_type.род = form.род.value;
+		new_type.одушевленность = form.одушевленность.value==='одушевленное';
+		new_type.склонение = form.склонение.value;
+		return new_type;
+	}
+	function find_sklon(){
+		//console.log('find_sklon');
+		var type = generate_type();
+		var found = false;
+		var i;
+		for(i=0; i< proper_types.length; i++){
+			if(!proper_types[i].available)
+				continue;
+			var eq = true;
+			for(var p in type)
+				if(p!='склонение' && type[p]!=proper_types[i].link[p]){
+					eq = false;
+					break;
+				}
+			if(eq){
+				found = true;
 				break;
 			}
-			if(!eq){
-				var id = DB.freeId('noun_types');
-				DB.noun_types[id] = new_type;
-				DB.commit();
-				proper_types[selected].i = id+'';
+		}
+		if(found){
+			selected_modified = false;
+			select(i);
+			return;
+		}
+		selected_modified = true;
+		is_void_sklon_name();
+		compare_data();
+		draw_proper_num();
+	}
+	function make_edits(){
+		$table.find('.word').each(function(){
+			var $this = $(this);
+			if($this.children().length!=0)	return;
+			var cur_word = $this.text();
+			$this.html('<input type="text" value="'+cur_word+'"></input>');
+			$this.children().change(function(event){
+				if(this.value.trim()==''){
+					this.value = word;
+				}
+				find_sklon();
+			});
+		})
+	}
+	$table.find('.word').click(function(event){
+		if(event.target !== event.currentTarget) return;
+		make_edits();
+		$(this).children()[0].focus();
+	});
+		
+	// смена текущего склонения
+	$(form.right).click(function(){
+		if(selected == -1) return;
+		selected_modified = false;
+		while(++selected < proper_types.length)
+			if(proper_types[selected].available){
+				select(selected);
+				return;
+			}
+		for(selected = 0; selected < proper_types.length; selected++){
+			if(proper_types[selected].available){
+				select(selected);
+				return;
 			}
 		}
-		//добавить слово
-		if(!(word in DB.nouns))
-			DB.nouns[word] = {};
-		if(	DB.nouns[word].type !== proper_types[selected].i ||
-			DB.nouns[word].wiki !== $wiki_flag.prop('checked') ||
-			DB.nouns[word].other_num !== get_other_num()
-		){//слово изменилось
-			DB.nouns[word].type = proper_types[selected].i;
-			DB.nouns[word].wiki = $wiki_flag.prop('checked');
-			DB.nouns[word].other_num = get_other_num();
-			DB.commit();
+		console.error('нет доступных склонений');
+		select(-1)
+	});
+	$(form.left).click(function(){
+		if(selected == -1) return;
+		selected_modified = false;
+		while(--selected >= 0)
+			if(proper_types[selected].available){
+				select(selected);
+				return;
+			}
+		for(selected = proper_types.length; selected-- >0 ; ){
+			if(proper_types[selected].available){
+				select(selected);
+				return;
+			}
 		}
-		dialog.close()
+		console.error('нет доступных склонений')
+		select(-1)
 	});
-	$element.find('#cancel').click(function(){
-		dialog.close()
-	});
+		
+	// === внешние поведенческие функции и обработчики =====================================================
+
+	function init_from_DB(){
+		var data = DB.nouns[word];
+		set_checked(form.wiki_flag, data.wiki);
+		if(data.other_num){ // если имеется, то имеет приоритет над options.other_num
+			set_checked(form.other_num_flag, true);
+			set_value(form.other_num_edit, data.other_num);
+		}
+		else{
+			set_checked(form.other_num_flag, false);
+			set_value(form.other_num_edit, 
+				(options.число && options.число=='мн') ? noun2singular(word) : noun2plural(word));
+		}
+		// иначе устанавливается отдельно
+		for(var i = 0; i<proper_types.length; i++)
+			if(proper_types[i].link === data.type){
+				select(i);
+				// здесь повезло, что при последовательном ограничении (число, род, одушевленность)
+				// selected не должен измениться, не смотря на то, что update_available будет вызываться
+				// сначала с неограниченными родом и одушевленностью, а потом с неограниченоой одушевленностью
+				$(form.число).add(form.род).add(form.одушевленность).trigger('select_select');
+				console.assert(selected === i);
+				return;
+			}
+		console.error('type не найден в proper_types');
+		select(-1);
+	}
+
+	function init_without_DB(){
+		set_checked(form.wiki_flag, true);
+		set_checked(form.other_num_flag, true);
+		if(options.other_num){
+			set_value(form.other_num_edit, options.other_num);
+			if(options.other_num in DB.nouns){
+				//console.log('other_num_init')
+				var other_data = DB.nouns[options.other_num];
+				set_checked(form.wiki_flag, other_data.wiki);
+				set_value(form.род, other_data.type.род);
+					$(form.род).trigger('select_select');
+				set_value(form.одушевленность, other_data.type.одушевленность ? 'одушевленное' : 'неодушевленное');
+					$(form.одушевленность).trigger('select_select');
+				// название склонения зависит от выбранного склонения, или если нет подходящих 
+				//select вызовет is_void_sklon_name
+			}
+		}
+		else
+			set_value(form.other_num_edit, 
+				(options.число && options.число=='мн') ? noun2singular(word) : noun2plural(word)
+			);
+		if(options.число){
+			set_value(form.число, options.число);
+			$(form.число).trigger('select_select');
+			// #todo сделать form.число disabled
+		}
+		else{
+			set_value(form.число,'ед');
+			update_available();/*с целью вызова select(...)*/
+		}
+	}
+	
+	function get_data_for_save(){
+		var data = {};
+		data.wiki = form.wiki_flag.checked;
+		if(form.other_num_flag.checked)
+			data.other_num = form.other_num_edit.value;
+		data.custom = selected==-1 || selected_modified;
+		data.type = data.custom ? generate_type() : proper_types[selected].link;
+		if(!data.custom && form.склонение.value != data.type.склонение)
+			data.rename_type = form.склонение.value.trim();
+		return data;
+	}
+	
+	function save_data(data){
+		var custom = data.custom;
+		delete data.custom;
+		if(custom){
+			var id = DB.freeId('noun_types');
+			DB.noun_types[id] = data.type;
+		}
+		else if(data.rename_type){
+			data.type.склонение = data.rename_type;
+			delete data.rename_type;
+		}
+		var other_num;
+		if(data.other_num && data.other_num!=word && !DB.nouns.hasOwnProperty(data.other_num)){
+			other_num = data.other_num;
+			delete data.other_num;
+		}
+		DB.nouns[word] = data;
+		if(options.need_link) 
+			DB.nouns[options.need_link].other_num = word;
+		//else console.log('need_link не обнаружен');
+		if(other_num)
+			dialog_add_noun(other_num,{ "число":invert_num(data.type.число), other_num: word, need_link: word });
+		
+		DB.commit(word,custom);// #todo need_link
+	}
+	$(form.OK).click(function(){ 
+		set_value(form.other_num_edit, form.other_num_edit.value.trim());
+		if(form.other_num_edit.value==='')
+			set_checked(form.other_num_flag,false);
+		if(form.other_num_flag.checked && form.other_num_edit.value===word && form.склонение.value!='несклоняемое' &&
+			!confirm('слова во множественном и в единственном числе совпадают')
+			){
+			
+			return;
+		}
+		set_value(form.склонение, form.склонение.value.trim());
+		if(form.склонение.value===''){
+			alert('название склонения не должно быть пустым');
+			return;
+		}
+		save_data(get_data_for_save());
+		dialog.close() 
+		$style.remove();
+	})
+	
+	function show_hide_buttons(show_h){
+		if(show_h)
+			$(form.OK).add(form.reset).show();
+		else
+			$(form.OK).add(form.reset).hide();
+	}
+	function compare_data(){
+		if(!DB.nouns.hasOwnProperty(word))	return;
+		var data = get_data_for_save();
+		//if(data.custom)                                     console.log('отличие custom');
+		//else if(data.rename_type)                           console.log('отличие склонение');
+		//else if(data.type != DB.nouns[word].type)           console.log('отличие type');
+		//else if(data.wiki != DB.nouns[word].wiki)           console.log('отличие wiki');
+		//else if(data.other_num != DB.nouns[word].other_num) console.log('отличие other_num');
+		show_hide_buttons(data.custom ||
+			data.rename_type ||
+			data.type != DB.nouns[word].type || 
+			data.wiki != DB.nouns[word].wiki || 
+			data.other_num != DB.nouns[word].other_num)
+	}
+	$(form.склонение).keydown(compare_data);
+	$(form.склонение).change(compare_data);
+	// вешается только если word in DB
+	
+	function reset(){
+		if(DB.nouns.hasOwnProperty(word))
+			init_from_DB();
+		else
+			init_without_DB();
+	}
+	$(form.reset).click(reset);
+	
+	function init(){
+		//console.log('init');
+		if(DB.nouns.hasOwnProperty(word)){
+			init_from_DB();
+			if(!form.other_num_flag.checked && options.other_num ){
+				set_checked(form.other_num_flag, true);
+				set_value(form.other_num_edit, options.other_num);
+			}
+			$(form.OK).text('изменить');
+			$(form.other_num_flag).add(form.wiki_flag).change(compare_data)
+			$(form.склонение).add(form.other_num_edit).keypress(compare_data);
+			compare_data();
+		}
+		else{
+			init_without_DB();
+			$(form.reset).hide();
+		}
+	}
+	init();
+	
 	// === запуск ==============================================================================================
-	dialog.show($element);
+	
+	var dialog = new Dialog;
+	$(form.cancel).click(function(){
+		dialog.close()
+		$style.remove();
+	})
+	dialog.show($form);
+	//console.log('=== диалог создан ===')
 }
 
 
@@ -785,15 +883,19 @@ function dialog_add_noun(word,options){
 
 
 
+function dialog_add_word(word,options){
+	dialog_add_noun(word,options);
+}
 
 
-function parse(){
+
+function parse(input_str){
 	var tokenizer = rep(
 		any(collect,
 			rgx(/^[\w']+/).then(r=>r[0]),
 			rgx(/^[,!\.\?]/).then(r=>({type:r[0]}))
 		),rgx(/^\s*/));
-	var arr = tokenizer.exec($('#in_text').val().trim());
+	var arr = tokenizer.exec(input_str);
 	alert(JSON.stringify(arr));
 }
 
@@ -803,23 +905,94 @@ function parse(){
 
 //===================================================================
 //функции для загрузки загрузки
-
-/*
-localStorage.
-setItem(id, score)
-getItem(id)
-removeItem(id)
-clear();
-*/
+function schemas_init(){
+var noun_schema = {
+	$schema: 'my_meta_schema',
+	id: 'noun',
+	description: 'dictionary',
+	type: 'object',
+	required: ['noun_types','nouns'],
+	properties: {
+		noun_types: {
+			id: 'noun_types',
+			uniquePatternProperties: {
+				'^[0-9]+$': {
+					id: 'noun_type',
+					required: [ "ип","рп","дп","вп","тп","пп","число","род","склонение" ],
+					properties: {
+						"ип": { type: 'string' },
+						"рп": { type: 'string' },
+						"дп": { type: 'string' },
+						"вп": { type: 'string' },
+						"тп": { type: 'string' },
+						"пп": { type: 'string' },
+						"число": { enum: [ 'ед','мн' ] },
+						"род": { enum: [ 'м','ж','с','о' ] },
+						"склонение": { type: 'string', minLength: 1 },
+						"одушевленность": { type: [ 'boolean' ] },
+					},
+					additionalProperties: false,
+				},
+			},
+			additionalProperties: false,
+		},
+		nouns: {
+			patternProperties: {
+				'^[а-яА-ЯёЁйЙ]+$': {
+					id:'noun',
+					required: [ 'type', 'wiki' ],
+					properties: {
+						type: { isPropertyOf: '/noun_types', parseCoerce: 'propLink', stringifyCoerce: 'propLink' },
+						wiki: { type: ['boolean'] },
+						other_num: { isPropertyOf: '/nouns' },
+					},
+					additionalProperties:true,
+				},
+			},
+			additionalProperties:false,
+		},
+	},
+	additionalProperties:true,
+}
+	schemas.addSchema('noun',noun_schema);
+	var res = schemas.validate('my_meta_schema',noun_schema)
+	if(res){
+		console.dir(res);
+		alert('noun схема не валидна');
+	}
+}
 function load_init_DB(){
+	/*
+	localStorage.
+	setItem(id, score)
+	getItem(id)
+	removeItem(id)
+	clear();
+	*/
 	var DB =  JSON.parse(localStorage.getItem('DB'));
 	DB.commit = function(path){//пока path игнорируем
+		var errs = schemas.validate('noun',this,{useCoerce:'stringify'})
+		if(errs) { 
+			console.log('DB перед записью не соответствует noun-схеме:');
+			console.dir(errs);
+			console.dir(this);
+			console.log('----');
+			schemas.validate('noun',this,{useCoerce:'parse'})
+			return;
+		}
 		localStorage.setItem('DB',JSON.stringify(this))
+		var errs = schemas.validate('noun',this,{useCoerce:'parse'})
+		if(errs) { 
+			console.log('DB после записи не соответствует noun-схеме'); 
+			console.dir(errs); 
+			console.dir(this);
+			console.log('----');
+		}
 	}
 	DB.freeId = function(name){
 		var n=-1;
 		var u = users.current<<8;
-		for(var i in DB[name]){
+		for(var i in this[name]){
 			var x = +i;
 			if(x>=u && x<u+256)
 				if(x > n)
@@ -829,13 +1002,18 @@ function load_init_DB(){
 			_throw('пора реализовывать вторичный id пользователя');
 		return n+1;
 	}
-	var errs = schemas.validate('DB',DB)
-	if(errs) alert(JSON.stringify(errs));
-	else     alert('validated');
+	
+	schemas_init();
+	var errs = schemas.validate('noun',DB,{useCoerce:'parse'})
+	if(errs) {
+		console.log('DB не соответствует noun-схеме');
+		console.dir(errs);
+		console.dir(this);
+		console.log('----');
+		alert('DB не соответствует noun-схеме');
+	}
 	return DB;
 }
-
-//$(window).on('beforeunload',this.commit.bind(this));
 
 //пока не предполагается создавать в нескольких экземплярах
 function Users(){
@@ -869,17 +1047,17 @@ function Users(){
 	this.add = function(user){
 		var i = this.all.length;
 		this.all[i] = user;
-		this.$selector.append($$('<option>').val(i).text(user));
+		this.$selector.append($('<option>').val(i).text(user));
 		return i;
 	}
 	//инициализация селектора
-	var $$useropts=$$().
-			add($$('<option>').val('not_a_user').text('не выбрано')).
-			add($$('<option>').val('add_user').text('Добавить пользователя'));
+	var $useropts=$().
+			add($('<option>').val('not_a_user').text('не выбрано')).
+			add($('<option>').val('add_user').text('Добавить пользователя'));
 	this.all.forEach(function(name,i){
-		$$useropts = $$useropts.add($$('<option>').val(i).text(name))
+		$useropts = $useropts.add($('<option>').val(i).text(name))
 	});
-	this.$selector.change(change_user).append($$useropts);
+	this.$selector.change(change_user).append($useropts);
 	this.current = this.DB.current;
 	
 	function change_user(){
@@ -957,6 +1135,8 @@ if('word' in location.params){
 }
 
 console.log('test.html загружен');
+
+//dialog_add_word($('#in_text').val())
 </script>
 </body>
 
