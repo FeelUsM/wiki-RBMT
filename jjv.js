@@ -446,11 +446,12 @@
   // #todo сделать возможной работу с циклическими ссылками (strictChild:true)
   
   var realCheckValidity = function (env, schema_stack, object_stack, options) {
-    var i, len, count, hasProp, hasPattern;
+    var i, len, count, hasProp, hasPattern, hasUniquePattern;
     var p, v, malformed = false, objerrs = {}, objerr, props, matched;
     var sl = schema_stack.length-1, schema = schema_stack[sl], new_stack;
     var ol = object_stack.length-1, object = object_stack[ol].object, name = object_stack[ol].key, prop = object[name];
     var errCount, minErrCount;
+	var hash = {}, key;
 
     if (schema.hasOwnProperty('type')) {
       if (typeof schema.type === 'string') {
@@ -617,7 +618,11 @@
 
       hasProp = schema.hasOwnProperty('properties');
       hasPattern = schema.hasOwnProperty('patternProperties');
-      if (hasProp || hasPattern) {
+	  hasUniquePattern = schema.hasOwnProperty('uniquePatternProperties');
+      if (hasProp || hasPattern || hasUniquePattern) {
+		if(hasUniquePattern)
+			for (p in schema.uniquePatternProperties)
+				hash[p] = {};
         i = props.length;
         while (i--) {
           matched = false;
@@ -638,6 +643,26 @@
                   objerrs[props[i]] = objerr;
                   malformed = true;
                 }
+              }
+          }
+          if (hasUniquePattern) {
+            for (p in schema.uniquePatternProperties)
+              if (schema.uniquePatternProperties.hasOwnProperty(p) && props[i].match(p)) {
+                matched = true;
+                objerr = env.checkValidity(env, schema_stack.concat(schema.uniquePatternProperties[p]), object_stack.concat({object: prop, key: props[i]}), options);
+                if (objerr !== null) {
+                  objerrs[props[i]] = objerr;
+                  malformed = true;
+                }
+				else {
+					key = JSON.stringify(prop[props[i]]);
+					if (hash[p].hasOwnProperty(key)){
+					  objerrs[props[i]] = { uniquePatternProperties: true };
+					  malformed = true;
+					}
+					else
+					  hash[p][key] = true;
+				}
               }
           }
           if (matched)

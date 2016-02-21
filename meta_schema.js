@@ -11,6 +11,11 @@ if(!schemas) schemas = new jjv;
             "minItems": 1,
             "items": { "$ref": "#" }
         },
+		"schemaList": {
+            "type": "object",
+            "additionalProperties": { "$ref": "#" },
+            "default": {}
+        },
         "positiveInteger": {
             "type": "integer",
             "minimum": 0
@@ -123,21 +128,10 @@ if(!schemas) schemas = new jjv;
             ],
             "default": {}
         },
-        "definitions": {
-            "type": "object",
-            "additionalProperties": { "$ref": "#" },
-            "default": {}
-        },
-        "properties": {
-            "type": "object",
-            "additionalProperties": { "$ref": "#" },
-            "default": {}
-        },
-        "patternProperties": {
-            "type": "object",
-            "additionalProperties": { "$ref": "#" },
-            "default": {}
-        },
+        "definitions": { "$ref": "#/definitions/schemaList" },
+        "properties": { "$ref": "#/definitions/schemaList" },
+        "patternProperties": { "$ref": "#/definitions/schemaList" },
+        "uniquePatternProperties": { "$ref": "#/definitions/schemaList" },
         "dependencies": {
             "type": "object",
             "additionalProperties": { "anyOf": [
