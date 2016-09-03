@@ -303,3 +303,12 @@ if(!schemas) schemas = new jjv;
 		alert('мета-схема не валидна');
 	}
 })();
+/*
+#todo
+	strictMinimum
+	strictMaximum
+	requredProperties
+	oneOfPropSchemas
+	allOfPropSchemas
+	anyOfPropSchemas
+*/
