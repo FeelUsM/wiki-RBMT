@@ -182,6 +182,15 @@ if(!schemas) schemas = new jjv;
 		"exclusiveMinimum": { "type": "boolean", "default": false },
 		// если true - то строго
 		// + зависимость "exclusiveMinimum": [ "minimum" ],
+		// Additions:
+		"strictMaximum": { "oneOf":[ // число будет валидно, если оно строго меньше
+			{ "type": "number" },
+			{ "$ref": "#/definitions/$data" }//added
+		]},
+		"strictMinimum": { "oneOf":[ // число будет валидно, если оно строго больше
+			{ "type": "number" },
+			{ "$ref": "#/definitions/$data" }//added
+		]},
 	/* === для строк === */
 		"maxLength": { "oneOf": [
 			{ "$ref": "#/definitions/positiveInteger" },
@@ -256,6 +265,17 @@ if(!schemas) schemas = new jjv;
 			]}
 		},
 		"default": {}, // если свойство отсутствует - его можно создать
+		// Additions:
+		"oneOfPropSchemas": { "$ref": "#/definitions/schemaArray" },
+		// одна из этих схем, будучи объединенной с текущей схемой, должна дать валидную схему.
+		// Так же как oneOf, только общие свойства из всех этих схем
+		// могут быть вынесены в текущую, 
+		// и additionalProperties:false объединяет свойства
+		"allOfPropSchemas": { "$ref": "#/definitions/schemaArray" },
+		// все эти схемы, будучи объединенные с текущей схемой, должны дать валидную схему.
+		// Так же как allOf, только общисвойства из всех этих схем
+		// могут быть вынесены в текущую, 
+		// и additionalProperties:false объединяет свойства
 	// === additions ===
 		"$ref": { "type":"string", "format":"json-reference" }, // #todo сделать ввиде отдельной схемы, а потом объединить их третьей схемой
 		// вместо описания схемы можно предоставить ссылку на схему при помощи $ref
