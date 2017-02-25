@@ -1,147 +1,280 @@
-var schemas;
-if(!schemas) schemas = new jjv;
-(function(){
-	var my_meta_schema = {
-	"id": "my_meta_schema", // название схемы
-	"$schema": "http://json-schema.org/draft-04/schema#", // версия/схема этой схемы
-	"description": "Core schema's meta-schema", // описание этой схемы
-	"definitions": { // определения
-		"schemaArray": { 
-			"type": "array", // массив
-			"minItems": 1, // содержащий по крайней мере 1 элемент
-			"items": { "$ref": "#" } // каждый элемент - это схема (?)
+/*
+!!! генерация GUI по JSON-схеме - интересная идея
+автоматические указатели (абсолютные) - к JSON-схеме не относятся
+	после парсинга {$pointer:'address'} превращаются в конкретную ссылку
+	перед stringify-кацией неконтролируемым образом циклические ссылки разрываются и превращаются в {$pointer:'address'}
+		можно просмотренные объекты/массивы складывать в WeakMap, с путями к ним
+	также в этом преобразователе можно задать другое имя свойства (не $pointer)
+
+	валидатор должен быть готов к циклическим структурам
+	
+ручные указатели - относительные - задаются в схеме
+format - задаются в валидаторе: 
+	текстовая проверка
+	объектная проверка
+	преобразование из текста в объект с проверкой
+	преобразование из объекта в текст с проверкой
+	
+равенство - deepEqual
+*/
+{
+	id: "http://json-schema.org/draft-04/schema#",
+	$schema: "http://json-schema.org/draft-04/schema#",
+	description: "Core schema meta-schema",
+	definitions: {
+		realSchema: { // !!!! added !!!!, многие { $ref: "#" } заменены на { $ref: "#/definitions/realSchema" }
+			oneOf: [
+				{ $ref: "#" },
+				{
+					type: "object",
+					requiredProperties: { $ref: { type: "string", format: "json-pointer" } }
+				}
+			]
+		}
+		schemaArray: {
+			type: "array",
+			minItems: 1,
+			items: { $ref: "#/definitions/realSchema" }
 		},
-		"schemaList": {
-			"type": "object", // объект
-			"additionalProperties": { "$ref": "#" }, // каждое свойство которого - схема
-			"default": {} // если отсутствует, можно считать, что присутствует и равен пустому объекту
+		positiveInteger: {
+			type: "integer",
+			minimum: 0
 		},
-		"positiveInteger": {
-			"type": "integer", // цело число
-			"minimum": 0 // которое >=0
+		positiveIntegerDefault0: {
+			allOf: [ { $ref: "#/definitions/positiveInteger" }, { default: 0 } ]
 		},
-		"positiveIntegerDefault0": {
-			"allOf": [ { "$ref": "#/definitions/positiveInteger" }, { "default": 0 } ]
-			// является positiveInteger, если отсутствует, можно считать, что присутствует и равен 0
+		simpleTypes: {
+			enum: [ "array", "boolean", "integer", "null", "number", "object", "string",
+				"rel_pointer" // !!!! added !!!!
+			]
 		},
-		"simpleTypes": { // здесь перечислены все примитивные типы JSON
-			"enum": [ "null", "boolean", "integer", "number", "string", "array", "object" ]
-			// должен быть равен одной из перечисленных строк
-			// Напоминание: "number" включают "integer". 
+		stringArray: {
+			type: "array",
+			items: { type: "string" },
+			minItems: 1,
+			uniqueItems: true
 		},
-		"stringArray": {
-			"type": "array", // массив
-			"items": { "type": "string" }, // со строковыми элементами
-			"minItems": 1, // содержащий по крайней мере 1 элемент
-			"uniqueItems": true // все эелементы разные
-		},
-		//additions:
-		"$data": { // для почти каждого ключевого слова можно вместо его значения предоставить ссылку/указатель на это значение
-			"type": "object", // объект
-			"required": [ "$data" ], // содержащий по крайней мере одно свойство "$data"
-			"properties": {
-				"$data": { "type": "string", "format": "relative-json-pointer" }
-				// которое является строкой формата relative-json-pointer
+		// !!!! added !!!!
+		$data: { // для почти каждого ключевого слова можно вместо его значения предоставить ссылку/указатель на это значение из документа
+			type: "object", // объект
+			requiredProperties: {
+				$data: {
+					type: "string",
+					format: "relative-json-pointer" // - относительно текущего проверяемого значения
+				} 
 			},
 			"additionalProperties": true
-		}
-	},
-	"type": "object", // JSON schema должна быть объектом
-	"properties": { // и может иметь следующие свойства, которые называются keywords
-	/* === общие === */
-		"id": { // строка формата uri или identifier
-			// идентификатор этой схемы, на который можно ссылаться как на JSON-reference или как на идентификатор
-			/*	пример:
-				{
-					"id": "http://x.y.z/rootschema.json#",
-					"schema1": {
-						"id": "#foo"
+		},
+		// === for smth type(s) ===
+		forNum: {
+			properties: {
+				multipleOf: { oneOf: [
+					{
+						type: "number",
+						strictMinimum: 0
 					},
-					"schema2": {
-						"id": "otherschema.json",
-						"nested": {
-							"id": "#bar"
-						},
-						"alsonested": {
-							"id": "t/inner.json#a"
-						}
+					{ $ref: "#/definitions/data"} // !!!! added !!!!
+					// в этом случае перед проверкой текущего значения проверяется указываемый этой ссылкой объект,
+					// что он число и строго больше 0, и так везде
+				]},
+				maximum: { oneOf: [
+					{
+						type: "number"
 					},
-					"schema3": {
-						"id": "some://where.else/completely#"
+					{ $ref: "#/definitions/data"} // !!!! added !!!!
+				]},
+				strictMaximum: { oneOf: [ // !!!! added !!!!
+					{
+						type: "number"
+					},
+					{ $ref: "#/definitions/data"}
+				]},
+				exclusiveMaximum: {
+					type: "boolean",
+					default: false
+				},
+				minimum: { oneOf: [
+					{
+						type: "number"
+					},
+					{ $ref: "#/definitions/data"} // !!!! added !!!!
+				]},
+				strictMinimum: { oneOf: [ // !!!! added !!!!
+					{
+						type: "number"
+					},
+					{ $ref: "#/definitions/data"}
+				]},
+				exclusiveMinimum: {
+					type: "boolean",
+					default: false
+				}
+			}
+		},
+		forString: {
+			properties: {
+				maxLength: { oneOf: [
+					{ $ref: "#/definitions/positiveInteger" },
+					{ $ref: "#/definitions/data"} // !!!! added !!!!
+				]},
+				minLength: { oneOf: [
+					{ $ref: "#/definitions/positiveIntegerDefault0" },
+					{ $ref: "#/definitions/data"} // !!!! added !!!!
+				]},
+				pattern: { oneOf: [
+					{
+						type: "string",
+						format: "regex"
+					},
+					{ $ref: "#/definitions/data"} // !!!! added !!!!
+				]}
+			}
+		},
+		forArray: {
+			properties: {
+				uniqueItems: {
+					type: "boolean",
+					default: false
+				},
+				items: {
+					anyOf: [
+						{ $ref: "#/definitions/realSchema" },
+						{ $ref: "#/definitions/schemaArray" }
+					],
+					default: {}
+				},
+				additionalItems: {
+					anyOf: [
+						{ type: "boolean" },
+						{ $ref: "#/definitions/realSchema" }
+					],
+					default: false // !!!! modified !!!!
+				},
+				maxItems: { $ref: "#/definitions/positiveInteger" },
+				minItems: { $ref: "#/definitions/positiveIntegerDefault0" },
+				contain: { // !!!! added !!!!
+					type: "array",
+					minItems: 1,
+					uniqueItems: true
+				}
+			}
+		},
+		forObject: {
+			properties: {
+				required: { $ref: "#/definitions/stringArray" },
+				requiredProperties: { // !!!! added !!!!
+					type: "object",
+					additionalProperties: { $ref: "#/definitions/realSchema" },
+					default: {}
+				},
+				properties: {
+					type: "object",
+					additionalProperties: { $ref: "#/definitions/realSchema" },
+					default: {}
+				},
+				patternProperties: {
+					type: "object",
+					additionalProperties: { $ref: "#/definitions/realSchema" },
+					default: {}
+				},
+				additionalProperties: {
+					anyOf: [
+						{ type: "boolean" },
+						{ $ref: "#/definitions/realSchema" }
+					],
+					default: false // !!!! changed !!!!
+				},
+				maxProperties: { $ref: "#/definitions/positiveInteger" },
+				minProperties: { $ref: "#/definitions/positiveIntegerDefault0" },
+				dependencies: {
+					type: "object",
+					additionalProperties: {
+						anyOf: [
+							{ $ref: "#/definitions/realSchema" },
+							{ $ref: "#/definitions/stringArray" }
+						]
 					}
 				}
-				на эти схемы можно ссылаться следующим образом:
-
-				# (document root)
-					http://x.y.z/rootschema.json# 
-				#/schema1
-					http://x.y.z/rootschema.json#foo 
-				#/schema2
-					http://x.y.z/otherschema.json# 
-				#/schema2/nested
-					http://x.y.z/otherschema.json#bar 
-				#/schema2/alsonested
-					http://x.y.z/t/inner.json#a 
-				#/schema3
-					some://where.else/completely# 
-			*/
-			"type": "string",
-			"anyOf": [	{"format": "uri"}, {"format": "identifier"} ]
-		},
-		"$schema": { // строка формата uri или identifier
-			// версия схемы, ввиде ссылки на схему, описывающую эту схему
-			// если в схеме используются другие ключевые слова, у этой схемы должна (SHOULD) быть не стандартная схема
-			// по стандарту, версия схемы должна присутствовать в любой схеме
-			"type": "string",
-			"anyOf": [	{"format": "uri"}, {"format": "identifier"} ]
-		},
-		"title": { // как комментарий (короткий)
-			"type": "string"
-		},
-		"description": { // как комментарий (развернутый)
-			"type": "string"
-		},
-		"definitions": { "$ref": "#/definitions/schemaList" }, // стандартное место для размещения подсхем
-	// если keyword не в состоянии определить валидность значения нек. типа, то оно считается валидным
-	/* === для любых типов === */
-		// пустая схема также как и отсутствующая схема не накладывает ограничений
-		"allOf": { "$ref": "#/definitions/schemaArray" }, // значение удовлетворяет всем заданным схемам
-		"anyOf": { "$ref": "#/definitions/schemaArray" }, // значение удовлетворяет любой из заданных схем
-		"oneOf": { "$ref": "#/definitions/schemaArray" }, // значение удовлетворяет только одной из заданных схем
-		"not": { "$ref": "#" }, // значение не удовлетворяет заданной схеме
-		"enum": { "oneOf": [ // если указано, то значение должно быть одним из этого массива
-			{
-				"type": "array",
-				"minItems": 1,
-				"uniqueItems": true
 			},
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		/* алгоритм сравнения:
-			both are nulls; or
-			both are booleans, and have the same value; or
-			both are strings, and have the same value; or
-			both are numbers, and have the same mathematical value; or
-			both are arrays, and:
-				have the same number of items; and
-				items at the same index are equal according to this definition; or
-			both are objects, and:
-				have the same set of property names; and
-				values for a same property name are equal according to this definition.
-		*/
-		"type": { "anyOf": [
-			{ "$ref": "#/definitions/simpleTypes" }, // значение имеет один заданный тип
-			{
-				"type": "array", // значение имеет один из заданных типов
-				"items": { "$ref": "#/definitions/simpleTypes" },
-				"minItems": 1,
-				"uniqueItems": true
+			dependencies: {
+				pointerAt: [ "minSearchDepth", "maxSearchDepth" ], // !!!! added !!!!
+				exclusiveMaximum: [ "maximum" ],
+				exclusiveMinimum: [ "minimum" ]
 			}
-		]},
-		"format": { "oneOf": [
-			{ "type": "string", "enum": [
+		},
+		forArrayOrObject: { // !!!! added !!!!
+			properties: {
+				additionalAllOf: { $ref: "#/definitions/schemaArray" },
+				additionalAnyOf: { $ref: "#/definitions/schemaArray" },
+				additionalOneOf: { $ref: "#/definitions/schemaArray" },
+				/* !!!!
+					три свойства выше:
+					перед проверкой на additionalProperties или additionalItems текущей схемы
+					проверяются схемы, перечисленные здесь
+						внутри них additionalProperties или additionalItems - true
+						при возвращени - items, requiredProperties, properties и patternProperties и required
+						объединяются с текущими,
+					после чего производится проверка на на additionalProperties или additionalItems текущей схемы
+					todo: придумать и записать алгоритм преобразования этой байды в allOf, anyOf и oneOf
+						items, requiredProperties, properties и patternProperties и required
+						 - перемещаются (и копируется) в каждый элемент, и объединяется с имеющимися
+						если схема назначения - ссылка, то она копируется
+						остальные свойства - перемещаются с заменой
+						это прокатит только с OneOf
+						AllOf - можно объединить в один, и там не важно, allOf или oneOf
+						AnyOf - можно переделать в 2^n случаев oneOf и объединений
+						помимо того, что это просто не эффективно, объединение схем потребует интеллектуальных усилий, а это еще огрмная куча разных вариантов
+						=> все должно реализовываться вручную:
+						
+						внутри схем внутри additionalSmthOf additionalProperties или additionalItems по умолчанию true
+						а также каждая схема (после собственной валидации) возвращает набор проверенных свойств
+							(за счет items (если массив), requiredProperties, properties и patternProperties и required)
+						после чего выполняется additionalProperties или additionalItems корневой схемы
+						но, additionalOneOf определяет удачность варианта только вместе с 
+							additionalProperties или additionalItems корневой схемы
+				*/
+			}
+		},
+	},
+	type: "object",
+	properties: {
+	//{ === общие === 
+		id: {
+			type: "string",
+			format: "uri"
+		},
+		$schema: {
+			type: "string",
+			format: "uri"
+		},
+		title: {
+			type: "string"
+		},
+		description: {
+			type: "string"
+		},
+		definitions: {
+			type: "object",
+			additionalProperties: { $ref: "#" },
+			default: {}
+		},
+	//}
+	//{ === для любых типов === 
+		allOf: { $ref: "#/definitions/schemaArray" },
+		anyOf: { $ref: "#/definitions/schemaArray" },
+		oneOf: { $ref: "#/definitions/schemaArray" },
+		not: { $ref: "#/definitions/realSchema" },
+		enum: {
+			type: "array",
+			minItems: 1,
+			uniqueItems: true
+		},
+		equal: { "$ref": "#/definitions/$data" }, // !!!! added !!!!
+		format: { // !!!! addition !!!!
+			type: "string",
+			enum: [
 				"relative-json-pointer", // /^\d*(\/.*)?$/
-				"json-reference", // /^([_a-zA-Z][-_a-zA-Z0-9]*)?(#(\/.*)?)?$/
+				"json-pointer", // /^([_a-zA-Z][-_a-zA-Z0-9]*)?(#(\/.*)?)?$/
 				"regex", // отсутствует в jjv
 				"alpha", // /^[a-zA-Z]+$/
 				"alphanumeric", // /^[a-zA-Z0-9]+$/
@@ -156,179 +289,145 @@ if(!schemas) schemas = new jjv;
 				"email", // /^(?:[\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+\.)*[\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+@(?:(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-](?!\.)){0,61}[a-zA-Z0-9]?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9\-](?!$)){0,61}[a-zA-Z0-9]?)|(?:\[(?:(?:[01]?\d{1,2}|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d{1,2}|2[0-4]\d|25[0-5])\]))$/
 				"ipv4", // /^(\d?\d?\d)\.(\d?\d?\d)\.(\d?\d?\d)\.(\d?\d?\d)$/ и последнее число<=255
 				"ipv6" // /^((?=.*::)(?!.*::.+::)(::)?([\dA-F]{1,4}:(:|\b)|){5}|([\dA-F]{1,4}:){6})((([\dA-F]{1,4}((?!\3)::|:\b|$))|(?!\2\3)){2}|(((2[0-4]|1\d|[1-9])?\d|25[0-5])\.?\b){4})$/
-			]},
-			{ "$ref":"#/definitions/$data" }
-		]},
-	/* === для целых чисел === */
-		"multipleOf": { "oneOf": [ // число будет валидно, если оно делится на заданное число
-			{ // число строго большее нуля
-				"type": "number",
-				"minimum": 0,
-				"exclusiveMinimum": true
-			},
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		"maximum": { "oneOf":[ // число будет валидно, если оно не*строго меньше
-			{ "type": "number" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		"exclusiveMaximum": { "type": "boolean", "default": false },
-		// если true - то строго
-		// + зависимость "exclusiveMaximum": [ "maximum" ],
-		"minimum": { "oneOf": [ // число будет валидно, если оно не*строго больше
-			{ "type": "number" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		"exclusiveMinimum": { "type": "boolean", "default": false },
-		// если true - то строго
-		// + зависимость "exclusiveMinimum": [ "minimum" ],
-		// Additions:
-		"strictMaximum": { "oneOf":[ // число будет валидно, если оно строго меньше
-			{ "type": "number" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		"strictMinimum": { "oneOf":[ // число будет валидно, если оно строго больше
-			{ "type": "number" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-	/* === для строк === */
-		"maxLength": { "oneOf": [
-			{ "$ref": "#/definitions/positiveInteger" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		"minLength": { "oneOf": [
-			{ "$ref": "#/definitions/positiveIntegerDefault0" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		"pattern": { "oneOf": [
-			{ "type": "string", "format": "regex" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-	/* === для массивов === */
-		"additionalItems": { "anyOf": [
-				{ "type": "boolean" }, // true эквивалентно пустой схеме
-				{ "$ref": "#" } // см. items
-			],
-			"default": {}
+			]
 		},
-		"items": { "anyOf": [
-				{ "$ref": "#" }, // если это схема, то ВСЕ эементы должны удовлетворять этой схеме, независимо от additionalItems
-				{ "$ref": "#/definitions/schemaArray" } // если это массив схем, то 
-					// элементы с индексом, меньшим размера этого массива должны удовлетворять соотв. схеме
-					// иначе они должны удовлетворять additionalItems
-			],
-			"default": {}
-		},
-		// если additionalItems == false && items - массив и в проверяемом массиве элементов больше чем в items - валидация провалена
-		"maxItems": { "oneOf": [ // максимальное кол-во элементов в массиве
-			{ "$ref": "#/definitions/positiveInteger" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		"minItems": { "oneOf": [ // минимальное кол-во элементов в массиве
-			{ "$ref": "#/definitions/positiveIntegerDefault0" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		"uniqueItems": { "oneOf": [ // должны ли элементы массива быть уникальными
-			{ "type": "boolean", "default": false },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-	/* === для объектов === */
-		"maxProperties": { "oneOf": [ // максимальное кол-во свойств в объекте
-			{ "$ref": "#/definitions/positiveInteger" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		"minProperties": { "oneOf": [ // минимальное кол-во свойств в объекте
-			{ "$ref": "#/definitions/positiveIntegerDefault0" },
-			{ "$ref": "#/definitions/$data" }//added
-		]},
-		"required": { "$ref": "#/definitions/stringArray" }, // список обязательно присутствующих свойств в объекте
-		"additionalProperties": { "anyOf": [
-				{ "type": "boolean" }, // true эквивалентно пустой схеме
-				{ "$ref": "#" } // испоьзуется для свойства только если оно не подошло ни для properties ни для patternProperties
-			],
-			"default": {}
-		},
-		// если свойство подходит под properties и под несколько паттернов из patternProperties,
-		// то оно должно удовлетворять всем этис схемам
-		"properties": { "$ref": "#/definitions/schemaList" }, // точные названия свойств и схемы к ним
-		"patternProperties": { "$ref": "#/definitions/schemaList" }, // паттерны для имен свойств и схемы к ним
-		// если additionalProperties === false то, если из списка всех свойств удалить перечисленные в properties
-		// а потом все, которые подпадают хоть под один regexp из patternProperties, и после этого что-то останется, 
-		// то валидация провалена
-		"uniquePatternProperties": { "$ref": "#/definitions/schemaList" },
-		"dependencies": {
-			"type": "object",
-			"additionalProperties": { "anyOf": [
-				{ "$ref": "#" }, // если объект имеет это свойство, то объект должен удовлетворять этой схеме
-				{ "$ref": "#/definitions/stringArray" } // // если объект имеет это свойство, то объект должен 
-					// иметь свойства, перечисленные в массиве
-			]}
-		},
-		"default": {}, // если свойство отсутствует - его можно создать
-		// Additions:
-		"oneOfPropSchemas": { "$ref": "#/definitions/schemaArray" },
-		// одна из этих схем, будучи объединенной с текущей схемой, должна дать валидную схему.
-		// Так же как oneOf, только общие свойства из всех этих схем
-		// могут быть вынесены в текущую, 
-		// и additionalProperties:false объединяет свойства
-		"allOfPropSchemas": { "$ref": "#/definitions/schemaArray" },
-		// все эти схемы, будучи объединенные с текущей схемой, должны дать валидную схему.
-		// Так же как allOf, только общисвойства из всех этих схем
-		// могут быть вынесены в текущую, 
-		// и additionalProperties:false объединяет свойства
-	// === additions ===
-		"$ref": { "type":"string", "format":"json-reference" }, // #todo сделать ввиде отдельной схемы, а потом объединить их третьей схемой
-		// вместо описания схемы можно предоставить ссылку на схему при помощи $ref
-		"readOnly": { "oneOf": [ // и зачем ???
-			{ "type": "boolean" },
-			{ "$ref":"#/definitions/$data" }
-		]},
-		"constant": { }, // есть же enum ???
-		"isPropertyOf": { "oneOf": [ // вот это полезно, но только в js а не json
-			{ "type": "string", "format": "relative-json-pointer" },
-			{ "$ref":"#/definitions/$data" }
-		]},
-		"parseCoerce": { "type": "string" },
-		"stringifyCoerce": { "type": "string" }
+		default: {},
+		// + при разборе дописывает, а при stringify-кации - если равно, удаляет
+	//}
+	//{ === относительные указатели === // !!!! added !!!!
+		instanceOf: { format: "json-pointer" }, // то же самое, что и pointerAt, при searechDepth: 1
+		pointerAt: { format: "json-pointer" },
+		minSearchDepth: {
+			type: "integer",
+			minimum: 0
+		}
+		maxSearchDepth: {
+			type: "integer",
+			minimum: { $data: "../minSearchDepth" }
+		}
+		/* !!!!
+			проверяет, есть ли значение, по адрусу документа, относительно адреса схемы
+			при разборе - за О(1)
+			при stringify-кации - производит поиск заданной глубины
+		*/
+	//}
 	},
-	"additionalProperties": false, //modified
-	// по стандарту схема может содержать другие свойства, они огнорируются, там например можно содержать другие подсхемы
-	// каждый валидатор может добавлять свои ключевые слова, которые должны игнорироваться другими валидаторами
-	"dependencies": {
-		"exclusiveMaximum": [ "maximum" ],
-		"exclusiveMinimum": [ "minimum" ],
-		"properties": [ "additionalProperties" ], //modified
-		"patternProperties": [ "additionalProperties" ], //modified
-		"items": { "anyOf": [
-			{
-				"properties": {
-					"items": { "type": "object" }
-				},
-				"additionalProperties": true
-			},
-			{
-				"required": [ "items", "additionalItems" ],
-				"properties": {
-					"items": { "type": "array" }
-				},
-				"additionalProperties": true
-			}
-		]} //modified
-	},
-	"default": {}
-};
-	var res = schemas.addSchema('my_meta_schema',my_meta_schema).validate('my_meta_schema',my_meta_schema);
-	if(res){
-		console.dir(res);
-		alert('мета-схема не валидна');
+	dependencies: {
+		pointerAt: [ "minSearchDepth", "maxSearchDepth" ] // !!!! added !!!!
 	}
-})();
-/*
-#todo
-	strictMinimum
-	strictMaximum
-	requredProperties
-	oneOfPropSchemas
-	allOfPropSchemas
-	anyOfPropSchemas
-*/
+	additionalOneOf: [
+		{	additionalAnyOf: [ // если type не указан, можно писать что угодно
+				{ $ref: "#/definitions/forNum" },
+				{ $ref: "#/definitions/forString" },
+				{ $ref: "#/definitions/forArray" },
+				{ $ref: "#/definitions/forObject" },
+				{ $ref: "#/definitions/forArrayOrObject" }
+			]
+		},
+		{	additionalAnyOf: [ // если type указан и чего-то не содержит, то об этом писать нельзя
+				{ // "boolean", "null"
+					requiredProperties: {
+						type: {
+							anyOf: [
+								{ enum: [ "boolean", "null" ] },
+								{
+									type: "array",
+									items: { $ref: "#/definitions/simpleTypes" },
+									minItems: 1,
+									uniqueItems: true,
+									contain: [ "boolean", "null" ]
+								}
+							]
+						}
+					}
+				},
+				{ // "integer", "number"
+					requiredProperties: {
+						type: {
+							anyOf: [
+								{ enum: [ "integer", "number" ] },
+								{
+									type: "array",
+									items: { $ref: "#/definitions/simpleTypes" },
+									minItems: 1,
+									uniqueItems: true,
+									contain: [ "integer", "number" ]
+								}
+							]
+						}
+					},
+					additiionalAllOf: [ { $ref: "#/definitions/forNum" } ]
+				},
+				{ // "string"
+					requiredProperties: {
+						type: {
+							anyOf: [
+								{ enum: [ "string" ] },
+								{
+									type: "array",
+									items: { $ref: "#/definitions/simpleTypes" },
+									minItems: 1,
+									uniqueItems: true,
+									contain: [ "string" ]
+								}
+							]
+						}
+					},
+					additiionalAllOf: [ { $ref: "#/definitions/forString" } ]
+				},
+				{ // "array"
+					requiredProperties: {
+						type: {
+							anyOf: [
+								{ enum: [ "array" ] },
+								{
+									type: "array",
+									items: { $ref: "#/definitions/simpleTypes" },
+									minItems: 1,
+									uniqueItems: true,
+									contain: [ "array" ]
+								}
+							]
+						}
+					},
+					additiionalAllOf: [ { $ref: "#/definitions/forArray" } ]
+				},
+				{ // "object"
+					requiredProperties: {
+						type: {
+							anyOf: [
+								{ enum: [ "object" ] },
+								{
+									type: "array",
+									items: { $ref: "#/definitions/simpleTypes" },
+									minItems: 1,
+									uniqueItems: true,
+									contain: [ "object" ]
+								}
+							]
+						}
+					},
+					additiionalAllOf: [ { $ref: "#/definitions/forObject" } ]
+				},
+				{ // "array", "object"
+					requiredProperties: {
+						type: {
+							anyOf: [
+								{ enum: [ "array", "object" ] },
+								{
+									type: "array",
+									items: { $ref: "#/definitions/simpleTypes" },
+									minItems: 1,
+									uniqueItems: true,
+									contain: [ "array", "object" ]
+								}
+							]
+						}
+					},
+					additiionalAllOf: [ { $ref: "#/definitions/forArrayOrObject" } ]
+				}
+			]
+		}
+	],
+	default: {}
+}
