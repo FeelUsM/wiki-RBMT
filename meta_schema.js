@@ -18,7 +18,7 @@ format - задаются в валидаторе:
 равенство - deepEqual
 */
 {
-	id: "http://json-schema.org/draft-04/schema#",
+	id: "http://json-schema.org/draft-04/schema-modified#",
 	$schema: "http://json-schema.org/draft-04/schema#",
 	description: "Core schema meta-schema",
 	definitions: {
@@ -44,9 +44,7 @@ format - задаются в валидаторе:
 			allOf: [ { $ref: "#/definitions/positiveInteger" }, { default: 0 } ]
 		},
 		simpleTypes: {
-			enum: [ "array", "boolean", "integer", "null", "number", "object", "string",
-				"rel_pointer" // !!!! added !!!!
-			]
+			enum: [ "null", "boolean", "integer", "number", "string" , "array", "object" ]
 		},
 		stringArray: {
 			type: "array",
@@ -55,7 +53,7 @@ format - задаются в валидаторе:
 			uniqueItems: true
 		},
 		// !!!! added !!!!
-		$data: { // для почти каждого ключевого слова можно вместо его значения предоставить ссылку/указатель на это значение из документа
+		data: { // для почти каждого ключевого слова можно вместо его значения предоставить ссылку/указатель на это значение из документа
 			type: "object", // объект
 			requiredProperties: {
 				$data: {
@@ -269,7 +267,7 @@ format - задаются в валидаторе:
 			minItems: 1,
 			uniqueItems: true
 		},
-		equal: { "$ref": "#/definitions/$data" }, // !!!! added !!!!
+		equal: { "$ref": "#/definitions/data" }, // !!!! added !!!!
 		format: { // !!!! addition !!!!
 			type: "string",
 			enum: [
