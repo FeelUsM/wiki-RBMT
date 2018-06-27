@@ -2,75 +2,126 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<script src="jquery-3.1.1.js"></script>
+	<script src="jquery-3.2.1.js"></script>
 </head>
 <body>
 	<script>
-	function update() {
+	// имена и значения измененных ключей
+	var Changed={};
+	// 
+	function show(showname){
+		console.log("show: "+showname);
+		if(showname!==undefined) $('#select').val(showname);
+		var name = $('#select').val();
+		if(name===null){ alert('что показывать-то? ключ не выбран'); return; }
+		var data = name in Changed ? Changed[name] : localStorage.getItem(name);
+		if(data===null){ alert('ключ '+name+' отсутствует'); return; }
+		$('#data').val(data);
+		$('#chapter').text((name in Changed ? '* ':'')+name);
+	}
+	// 
+	function update(showname) {
 		var $select = $('#select');
 		$select.empty();
-		for(var name in localStorage)
-			$select.append($('<option>').val(name).text(name));
-		show()
+		for(var i=0; i<localStorage.length; i++)
+			if(localStorage.key(i) in Changed)
+				$select.append($('<option>').val(localStorage.key(i)).text("* "+localStorage.key(i)));
+			else
+				$select.append($('<option>').val(localStorage.key(i)).text(localStorage.key(i)));
+		$select.attr("size",localStorage.length);
+		show(showname)
 	}
 	function add() {
 		var name = prompt('введите имя ключа');
-		if(name===null) return;
+		if(name===null) { return; }
+		if(name==='') { alert("имя ключа не введено"); return; }
 		if(name in localStorage) { alert('ключ '+name+' уже существует'); return;}
 		localStorage.setItem(name,'');
-		$('#select').append($('<option>').val(name).text(name));
-		$('#select').val(name);
-		show()
+		update(name);
 	}
 	function remove() {
 		var name = $('#select').val();
-		if(name===null) { confirm('а удалять-то?'); return; }
+		if(name===null) { alert('ключ для удаления не выбран'); return; }
+		else { if(!confirm("действительно удалить ключ "+name+"?")) return; }
 		localStorage.removeItem(name);
+		delete Changed[name];
 		update(); // - > show()
 	}
 	
-	function show(){
-		var name = $('#select').val();
-		if(name===null){ alert('а что показывать-то?'); return; }
-		var data = localStorage.getItem(name);
-		if(data===null){ alert('ключ '+name+' отсутствует'); return; }
-		if($('#JSON').prop('checked')) {
-			try{
-				var data_j = JSON.parse(data);
-				data = JSON.stringify(data_j,'',4)
-			}
-			catch(err){
-				$('#JSON').prop('checked',false)
-			}
-		}
-		$('#data').val(data);
-	}
 	function save(){
 		var name = $('#select').val();
 		if(name===null){ alert('а куда сохранять-то?'); return; }
-		var data = $('#data').val()
-		if($('#JSON').prop('checked')) {
-			try{
-				var data_j = JSON.parse(data);
-				data = JSON.stringify(data_j)
-			}
-			catch(err){
-				alert(err.message)
-				return
+		var data = $('#data').val();
+		if(name in Changed){
+			if(data!==Changed[name]){
+				alert('временно сохраненные и отображаемые данные не совпадают, используем отображаемые');
+				data=Changed[name];
 			}
 		}
 		localStorage.setItem(name,data);
+		delete Changed[name];
+	}
+	function change(){
+		var name = $('#select').val();
+		if(name===null){ alert('выберите, что вы редактируете'); return; }
+		var upd = !(name in Changed);
+		Changed[name] = $('#data').val();
+		if(upd) update(name);
+		changelinecol()
+	}
+	function discard(){
+		var name = $('#select').val();
+		if(name===null){ alert('выберите, что вы редактируете'); return; }
+		delete Changed[name];
+		update(name);
+	}
+	
+	function changelinecol(){
+		$('#pos').text($('#data').prop("selectionStart"));
+	}
+	function formatJSON(){
+		var obj;
+		try{
+			obj=JSON.parse($('#data').val());
+		}
+		catch(e){
+			alert('Ошибка ' + e.name + ":" + e.message + "\n" + e.stack);
+			return;
+		}
+		$('#data').val(JSON.stringify(obj,'',4))
+	}
+	function compressJSON(){
+		var obj;
+		try{
+			obj=JSON.parse($('#data').val());
+		}
+		catch(e){
+			alert('Ошибка ' + e.name + ":" + e.message + "\n" + e.stack);
+			return;
+		}
+		$('#data').val(JSON.stringify(obj))
 	}
 	
 	</script>
-	<select id="select" onchange="show()"></select>
-	<button onclick="save()">записать</button>
-	<button onclick="show()">показать из БД</button>
-	<button onclick="add()">добавить</button>
-	<button onclick="remove()">удалить</button>
-	<input type="checkbox" id="JSON" onchange="show()">JSON</input>
+	<button onclick="add()">add</button>
+	<button onclick="remove()">remove</button>
+	<button onclick="save()">save</button>
+	<button onclick="discard()">discard changes</button>
+	<button onclick="formatJSON()">format as JSON</button>
+	<button onclick="compressJSON()">JSON compress</button>
+	<span id="chapter"></span>
 	<br>
-	<textarea id="data" rows="30" cols="100"></textarea>
+	<select id="select" onchange="show()"></select>
+	<textarea id="data" rows="30" cols="100" onchange="change()" 
+		onclick="changelinecol()"
+		ondblclick="changelinecol()"
+		onfocus="changelinecol()"
+		onkeydown="changelinecol()"
+		onkeypress="changelinecol()"
+		onmousedown="changelinecol()"
+	></textarea>
+	<br>
+	line: <span id="line"></span>, column: <span id="col"></span>, position: <span id="pos"></span>
 	<script>
 	update()
 	</script>
