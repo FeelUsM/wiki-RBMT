@@ -8,14 +8,17 @@ from parse_system import *
 
 
 def I(**args):
-    if len(args)!=1:
-        raise ValueError()
-    p=[i for i in args.items()][0]
-    if p[0] not in {'maindep','dep','nodep','punct','nomer','quantity',
-                   'main','ip'}:
-        raise ValueError()
-    return p
+#	if len(args)!=1:
+#		raise ValueError()
+	i=iter(args.items())
+	p=next(i)
+	assert p[0] in {'maindep','dep','nodep','punct','nomer','quantity',
+				   'main','ip'} 
+	assert isinstance(p[1],Struct) or isinstance(p[1],S)
+	for k,v in i:
+		setattr(p[1],k,v)
 
+	return p #(p[0], p[1], args)
 
 # In[28]:
 
