@@ -148,25 +148,29 @@ def ch_sentence(s):
 
 # [a-zA-Z]+
 def sp_word(str,pos):
-    pos1=pos
-    while pos1<len(str) and         (str[pos1]>='a' and str[pos1]<='z' or str[pos1]>='A' and str[pos1]<='Z') :
-        pos1+=1
-    if pos1==pos:
-        return []
+	pos1=pos
+	while pos1<len(str) and \
+			(str[pos1]>='a' and str[pos1]<='z' or str[pos1]>='A' and str[pos1]<='Z' or\
+				str[pos1]=='-' and pos1+1<len(str) and pos1-1>=0 and\
+					(str[pos1+1]>='a' and str[pos1+1]<='z' or str[pos1+1]>='A' and str[pos1+1]<='Z') and\
+					(str[pos1-1]>='a' and str[pos1-1]<='z' or str[pos1-1]>='A' and str[pos1-1]<='Z')) :
+		pos1+=1
+	if pos1==pos:
+		return []
 
-    if str[pos:pos1]=='I':
-        return [(pos1,S('I'))]
+	if str[pos:pos1]=='I':
+		return [(pos1,S('I'))]
 
-    s=S(str[pos:pos1].lower())
-    if str[pos:pos1].islower():
-        pass
-    elif str[pos:pos1].istitle():
-        s.attrs.changers={ch_title}
-    elif str[pos:pos1].isupper():
-        s.attrs.changers={ch_upper}
-    else:
-        print(s,' - перепутаны заглавные и малые буквы')
-    return [(pos1,s)]
+	s=S(str[pos:pos1].lower())
+	if str[pos:pos1].islower():
+		pass
+	elif str[pos:pos1].istitle():
+		s.attrs.changers={ch_title}
+	elif str[pos:pos1].isupper():
+		s.attrs.changers={ch_upper}
+	else:
+		print(s,' - перепутаны заглавные и малые буквы')
+	return [(pos1,s)]
 
 
 # In[10]:
@@ -250,40 +254,63 @@ def tokenize(s) : return [i for i in tokenizer(s)]
 #объекты из словаря и паттернов копируются (полностью), потом из них строится дерево
 
 #в эти копии потом добваляется .attrs
-def word(w):
+def W(w):
     assert type(w)==str
     return lambda s,p:         [(p+1,deepcopy(s[p]))] if p<len(s) and s[p]==w else []
 
-def fromdict(d):
+def D(d):
     assert type(d)==dict
-    def p_fromdict(s,p):
+    def p_from_dict(s,p):
         if p<len(s) and s[p] in d:
             tmp=deepcopy(d[s[p]])
             tmp.attrs=deepcopy(s[p].attrs)
             return [(p+1,tmp)]
         else:
             return []
-    return p_fromdict
+    return p_from_dict
 
-def p_seq(s,p,patterns,handler,numbers=None):
-# p_seq(s,p,[p0,p1,p2,p3],handle,[0,2,3]) ->
-# for k:
-#   (pos1,rez1) = sp_seq(s,p,[p0,p1,p2,p3]) [k]
-#   rezs.append((pos1,handle(rezs[0],rezs[2],rezs[3],)))
-    if numbers==None : numbers=range(len(patterns))
-    rezs=[]
-    for (pos1,rez1) in sp_seq(s,p,patterns):
-        m=[False for i in range(len(patterns))]
-        for i in numbers: m[i]=True
-        for i in range(max(numbers)):
-            if not m[i]: SAttrs.to_right(rez1[i],rez1[i+1])
-        for i in range(len(patterns)-1,max(numbers),-1):
-            if not m[i]: SAttrs.to_left(rez1[i-1],rez1[i])
-        rez2=handler(*[rez1[i] for i in numbers])
-#        for i in rez1:
-#            if isinstance(i,StDeclinable):
-#                i.check_attrs('p_seq')
-#        if isinstance(rez2,StDeclinable):
-#                rez2.check_attrs('p_seq:'+handler.__name__)
-        rezs.append((pos1,rez2))
-    return rezs
+def seq(patterns,handler,numbrs=None):
+	numbers = range(len(patterns)) if numbrs==None else numbrs
+	def p_seq(s,p):
+		# p_seq(s,p,[p0,p1,p2,p3],handle,[0,2,3]) ->
+		# for k:
+		#   (pos1,rez1) = sp_seq(s,p,[p0,p1,p2,p3]) [k]
+		#   rezs.append((pos1,handle(rezs[0],rezs[2],rezs[3],)))
+		rezs=[]
+		for (pos1,rez1) in sp_seq(s,p,patterns):
+			m=[False for i in range(len(patterns))]
+			for i in numbers: m[i]=True
+			for i in range(max(numbers)):
+				if not m[i]: SAttrs.to_right(rez1[i],rez1[i+1])
+			for i in range(len(patterns)-1,max(numbers),-1):
+				if not m[i]: SAttrs.to_left(rez1[i-1],rez1[i])
+			rez2=handler(*[rez1[i] for i in numbers])
+			#        for i in rez1:
+			#            if isinstance(i,StDeclinable):
+			#                i.check_attrs('p_seq')
+			#        if isinstance(rez2,StDeclinable):
+			#                rez2.check_attrs('p_seq:'+handler.__name__)
+			rezs.append((pos1,rez2))
+		return rezs
+	return p_seq
+
+ELSE=42 # some unusial constant
+def alt(*args):
+    def p_alt(s,p):
+        rezs=[]
+        for patt in args:
+            if patt==ELSE:
+                if len(rezs)>0 : return rezs
+            else:
+                rezs+=patt(s,p)
+        return rezs
+    return p_alt
+
+def rule1(patt,rule):
+	def p_rule1(s,p):
+		rezs_in=patt(s,p)
+		rezs=[]
+		for p1,r in rezs_in:
+			rezs.append((p1,rule(r)))
+		return rezs
+	return p_rule1

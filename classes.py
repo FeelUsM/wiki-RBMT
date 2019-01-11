@@ -13,7 +13,7 @@ def I(**args):
 	i=iter(args.items())
 	p=next(i)
 	assert p[0] in {'maindep','dep','nodep','punct','nomer','quantity',
-				   'main','ip'} 
+				   'main','ip','dp','vp'} 
 	assert isinstance(p[1],Struct) or isinstance(p[1],S)
 	for k,v in i:
 		setattr(p[1],k,v)
@@ -73,7 +73,7 @@ show_verb_map={}
 class StVerb(Struct):
 # main maindep ip rp dp vp tp pp gde kogda skolko
     __slots__=['word','oasp','asp','_form','_rod','_chis','_pers']
-    def __init__(self,word,oasp=0,asp=None,form=None,rod=0,chis=0,pers=0):
+    def __init__(self,word,oasp=0,asp=None,form=None,chis=0,rod=0,pers=0):
         if type(word)==str:
             Struct.__init__(self)
             self.word=word
