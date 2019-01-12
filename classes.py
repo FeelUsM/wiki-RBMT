@@ -177,23 +177,23 @@ class StDeclinable(Struct):
     
     @staticmethod
     def odush_checker(odush):
-        if type(odush)!=bool : raise TypeError('odush must be bool')
+        if type(odush)!=bool : raise TypeError('odush must be bool, not '+repr(odush))
         return odush
         
     @staticmethod
     def rod_checker(rod):
-        if rod!='m' and rod!='g' and rod!='s' : raise TypeError('rod must be m or g or s')
+        if rod!='m' and rod!='g' and rod!='s' : raise TypeError('rod must be m or g or s, not '+repr(rod))
         return rod
 
     @staticmethod
     def chis_checker(chis):
-        if chis!='ed' and chis!='mn' : raise TypeError('chis must be ed or mn')
+        if chis!='ed' and chis!='mn' : raise TypeError('chis must be ed or mn, not '+repr(chis))
         return chis
 
     @staticmethod
     def pad_checker(pad):
         if pad!='ip' and pad!='rp' and pad!='dp' and pad!='vp' and pad!='tp' and pad!='pp' : 
-            raise TypeError('pad must be ip, rp, dp, vp, tp or pp')
+            raise TypeError('pad must be ip, rp, dp, vp, tp or pp, not '+repr(pad))
         return pad
 
     def __init__(self,word,o=None,r=None,c=None,p=None):
@@ -296,7 +296,14 @@ class StNoun(StDeclinable):
                     if i[0]=='dep' or i[0]=='maindep' :
                         i[1].chis=val
 
-    pers=3
+    pers=3 #for pronoun
+    npad=property()
+    @npad.getter
+    def npad(self):
+        return ''
+    @npad.setter
+    def npad(self,val):
+        pass
         
     def __repr__(self):
         return 'StNoun<'+str(id(self))+'>('+            (repr(self.talk) if self.word==None                  else repr(self.word)+','+repr(self.och))+','+            self.post_repr()
@@ -309,12 +316,14 @@ class StNoun(StDeclinable):
 
 # Местоимение личное
 class StProNoun(StNoun):
-    __slots__='pers'
-    def __init__(self,word=None,och=0,pers=None,o=None,r=None,c=None,p=None):
+    __slots__=['pers','npad']
+    def __init__(self,word=None,och=0,pers=None,o=None,r=None,c=None,p=None,npad=''):
         assert type(word)==str
         StNoun.__init__(self,word,och,o,r,c,p)
         assert pers in {1,2,3}
         self.pers=pers
+        assert npad in {'', 'n'} # его/него
+        self.npad=npad
 
 
 # In[34]:

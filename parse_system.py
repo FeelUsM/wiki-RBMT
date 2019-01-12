@@ -30,7 +30,7 @@ import re
 # In[4]:
 
 
-PUNCT_CHARS=".,:;?!'-"
+PUNCT_CHARS=".,:;?!'-\""
 
 
 # In[5]:
@@ -58,7 +58,7 @@ class SAttrs:
             ',tags='+repr(self.tags)+')'
     
     @staticmethod
-    def join(arr):
+    def join(arr): #todo сделать поддержку ch_open
         def subr(g):
             yield str(next(g))
             for i in g:
@@ -145,6 +145,8 @@ def ch_upper(s):
 def ch_sentence(s):
     if len(s)==0: return ''
     return s[0].upper()+s[1:]
+def ch_open(s): # для открывающихся кавычек
+	return s
 
 # [a-zA-Z]+
 def sp_word(str,pos):
@@ -178,7 +180,7 @@ def sp_word(str,pos):
 
 def sp_punct(str,pos):
     pos1=pos
-    while pos1<len(str) and str[pos1] in PUNCT_CHARS :
+    if pos1<len(str) and str[pos1] in PUNCT_CHARS : # по одному символу, ... - добавим потом
         pos1+=1
     return [] if pos1==pos else [(pos1,S(str[pos:pos1]))]
 
@@ -306,6 +308,15 @@ def alt(*args):
         return rezs
     return p_alt
 
+def p_alt(s,p,*args):
+	rezs=[]
+	for patt in args:
+		if patt==ELSE:
+			if len(rezs)>0 : return rezs
+		else:
+			rezs+=patt(s,p)
+	return rezs
+
 def rule1(patt,rule):
 	def p_rule1(s,p):
 		rezs_in=patt(s,p)
@@ -314,3 +325,12 @@ def rule1(patt,rule):
 			rezs.append((p1,rule(r)))
 		return rezs
 	return p_rule1
+
+def CW(ru,en=None,):
+    r=deepcopy(ru)
+    r.attrs=SAttrs() if en==None else en.attrs
+    return r
+	
+def add_changer(x,changer):
+	x.attrs.changers |= {changer}
+	return x
