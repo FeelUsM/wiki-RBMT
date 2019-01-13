@@ -37,65 +37,76 @@ PUNCT_CHARS=".,:;?!'-\""
 
 
 class SAttrs:
-    __slots__=['pre','changers','tags']
-    def __init__(self,pre='',changers=None,tags=None):
-        if changers==None: changers=set()
-        if tags==None: tags=set()
-        self.pre=pre
-        self.changers=changers
-        self.tags=tags
-    def change(self,s):
-        for changer in self.changers:
-            s=changer(s)
-        # todo gtags
-        return self.pre+s
-    def __repr__(self):
-#			'<'+str(id(self))+'>'+\
-        return 'SAttrs'+\
+	__slots__=['pre','changers','tags']
+	def __init__(self,pre='',changers=None,tags=None):
+		if changers==None: changers=set()
+		if tags==None: tags=set()
+		self.pre=pre
+		self.changers=changers
+		self.tags=tags
+	def change(self,s):
+		for changer in self.changers:
+			s=changer(s)
+		# todo gtags
+		return self.pre+s
+	def __repr__(self):
+	#			'<'+str(id(self))+'>'+\
+		return 'SAttrs'+\
 			'(pre='+repr(self.pre)+            ',changers='+(('{'+
-                ','.join('<'+i.__name__+'>' for i in self.changers)+'}') \
-                    if len(self.changers)>0 else 'set()')+\
-            ',tags='+repr(self.tags)+')'
-    
-    @staticmethod
-    def join(arr): #todo сделать поддержку ch_open
-        def subr(g):
-            yield str(next(g))
-            for i in g:
-                s=str(i)
-                if i.attrs.pre!='' or re.fullmatch('['+re.escape(PUNCT_CHARS)+']*',s):
-                    yield s
-                else: yield ' '+s
-        return ''.join(subr(iter(arr)))
+				','.join('<'+i.__name__+'>' for i in self.changers)+'}') \
+					if len(self.changers)>0 else 'set()')+\
+			',tags='+repr(self.tags)+')'
 
-    @staticmethod
-    def to_right(l,r):
-        if r.attrs.pre=='':
-            r.attrs.pre=l.attrs.pre
-        r.attrs.changers|=l.attrs.changers
-        r.attrs.tags|=l.attrs.tags
-        return r
-    @staticmethod
-    def to_left(l,r):
-        l.attrs.change|=r.attrs.change
-        l.attrs.tags|=r.attrs.tags
-        return l
+	#@staticmethod
+	def join(self,arr): #todo сделать поддержку ch_open
+		def subr(g):
+			yield str(next(g))
+			for i in g:
+				s=str(i)
+				if i.attrs.pre!='' or re.fullmatch('['+re.escape(PUNCT_CHARS)+']*',s):
+					yield s
+				else: yield ' '+s
+		global CH_ANTI_SENTENCE
+		if ch_sentence in self.changers:
+			stored = CH_ANTI_SENTENCE
+			CH_ANTI_SENTENCE = ch_none
+			
+		r = ''.join(subr(iter(arr)))
+		
+		if ch_sentence in self.changers:
+			CH_ANTI_SENTENCE = stored
+		return r
+
+	@staticmethod
+	def _to_right(l,r):
+		if r.attrs.pre=='':
+			r.attrs.pre=l.attrs.pre
+		r.attrs.changers|=l.attrs.changers
+		r.attrs.tags|=l.attrs.tags
+		return r
+	@staticmethod
+	def _to_left(l,r):
+		l.attrs.change|=r.attrs.change
+		l.attrs.tags|=r.attrs.tags
+		return l
 
 
 # In[6]:
 
 
 class S(str): # строка с атрибутом
-    __slots__='attrs'
-    def __new__(cls,s,attrs=None):
-        return str.__new__(cls,s)
-    def __init__(self,s,attrs=None):
-        self.attrs = attrs if attrs!=None else SAttrs()
-        
-    def __repr__(self):
-        return 'S('+str.__repr__(self)+','+repr(self.attrs)+')'
-    def __str__(self):
-        return self.attrs.change(str.__str__(self))
+	__slots__='attrs'
+	def __new__(cls,s,attrs=None):
+		return str.__new__(cls,s)
+	def __init__(self,s,attrs=None):
+		self.attrs = attrs if attrs!=None else SAttrs()
+		
+	def __repr__(self):
+		return 'S('+str.__repr__(self)+','+repr(self.attrs)+')'
+	def __str__(self):
+		return self.attrs.change(str.__str__(self))
+	def tostr(self):
+		return str(self)
 
 #.pre - строка - вместо начальных пробелов
 #.tags - множество пар строк - объединяется
@@ -145,6 +156,11 @@ def ch_upper(s):
 def ch_sentence(s):
     if len(s)==0: return ''
     return s[0].upper()+s[1:]
+CH_ANTI_SENTENCE=ch_title
+def ch_anti_sentence(s):
+    return CH_ANTI_SENTENCE(s)
+def ch_none(s):
+	return s
 def ch_open(s): # для открывающихся кавычек
 	return s
 
@@ -271,9 +287,12 @@ def D(d):
             return []
     return p_from_dict
 
-def seq(patterns,handler,numbrs=None):
-	numbers = range(len(patterns)) if numbrs==None else numbrs
+def seq(patterns,handler):#,numbrs=None
+	#numbers = range(len(patterns)) if numbrs==None else numbrs
 	def p_seq(s,p):
+		return [(pos,handler(*rez)) for pos,rez in sp_seq(s,p,patterns)]
+		
+		assert False, 'unused'
 		# p_seq(s,p,[p0,p1,p2,p3],handle,[0,2,3]) ->
 		# for k:
 		#   (pos1,rez1) = sp_seq(s,p,[p0,p1,p2,p3]) [k]

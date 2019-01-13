@@ -6,6 +6,16 @@ from parse_system import *
 
 # In[27]:
 
+DEBUGGING_ID=True
+def repr_id(self):
+	global DEBUGGING_ID
+	return '<'+str(id(self))+'>' if DEBUGGING_ID else ''
+	
+DEBUGGING_ATTRS=True
+def repr_attrs(self):
+	global DEBUGGING_ATTRS
+	return '_'+repr(self.attrs) if DEBUGGING_ATTRS else ''
+
 
 def I(**args):
 #	if len(args)!=1:
@@ -15,38 +25,82 @@ def I(**args):
 	assert p[0] in {'maindep','dep','nodep','punct','nomer','quantity',
 				   'main','ip','dp','vp'} 
 	assert isinstance(p[1],Struct) or isinstance(p[1],S)
-	for k,v in i:
-		setattr(p[1],k,v)
-
-	return p #(p[0], p[1], args)
+#	for k,v in i:
+#		setattr(p[1],k,v)
+	args.pop(p[0])
+	return (p[0], p[1], args)#p
+	
+def get_property(**kwarg):
+	assert len(kwarg)==1
+	prop, tup= next(iter(kwarg.items()))
+	if len(tup)==2:
+		return getattr(tup[1],prop)
+	elif len(tup)==3:
+		if prop in tup[2]:
+			return tup[2][prop]
+		else:
+			return getattr(tup[1],prop)
+	else:
+		raise RuntimeError('bad tuple')
+def set_property(tup,**kwarg):
+	assert len(kwarg)==1
+	prop, val= next(iter(kwarg.items()))
+	if len(tup)==2:
+		setattr(tup[1],prop,val)
+	elif len(tup)==3:
+		tup[2][prop]=val
+	else:
+		raise RuntimeError('bad tuple')
 
 # In[28]:
 
 
 class Struct:
-    __slots__=['attrs','talk']
-    def __init__(self,attrs=None):
-        if attrs==None:
-            self.attrs=SAttrs()
-        elif type(attrs)==list:
-#            self.attrs=SAttrs()
-            self.attrs=SAttrs(pre=attrs[0][1].attrs.pre)
-            attrs[0][1].attrs.pre=''
-            pass # выделеие общих тегов
-        else:
-            self.attrs=attrs
-        #self.talk=talk    #массив структур или туплов (строка-тип, ...)
-    def __repr__(self):
-        raise NotImplementedError('virtual function')
-    def __str__(self):
-        raise NotImplementedError('virtual function')
-    def check_attrs(self,mes):
-        if self.word==None:
-            if self.talk[0][1].attrs.pre!='':
-                print(repr(self))
-            assert self.talk[0][1].attrs.pre=='', mes
+	__slots__=['attrs','talk']
+	def __init__(self,attrs=None):
+		if attrs==None:
+			self.attrs=SAttrs()
+		elif type(attrs)==list:
+			raise RuntimrError('pulling attrs does not supported')
+	#            self.attrs=SAttrs()
+			self.attrs=SAttrs(pre=attrs[0][1].attrs.pre)
+			attrs[0][1].attrs.pre=''
+			pass # выделеие общих тегов
+		else:
+			self.attrs=attrs
+		#self.talk=talk    #массив структур или туплов (строка-тип, ...)
+	def __repr__(self):
+		raise NotImplementedError('virtual function')
+	def __str__(self):
+		raise NotImplementedError('virtual function')
+	def check_attrs(self,mes):
+		if self.word==None:
+			if self.talk[0][1].attrs.pre!='':
+				print(repr(self))
+			assert self.talk[0][1].attrs.pre=='', mes
 
+	def pull_deferred(self):
+		if not hasattr(self,'talk'): return
+		for tup in self.talk:
+			for prop,val in tup[2].items():
+				if prop=='attrs_from_left':
+					SAttrs._to_right(val,tup[1])
+				elif prop=='attrs_from_right':
+					SAttrs._to_left(tup[1],val)
+				else: setattr(tup[1],prop,val)
+			tup[2].clear()
+			if isinstance(tup[1],Struct):
+				tup[1].pull_deferred()
+		if self.attrs.pre=='':
+			self.attrs.pre=self.talk[0][1].attrs.pre
+			self.talk[0][1].attrs.pre=''
+		return self
+		
+	def tostr(self):
+		self.pull_deferred()
+		return self.__str__()
 
+		
 # In[29]:
 
 
@@ -54,15 +108,14 @@ class StC(Struct): # Container
 # nodep
     def __init__(self,talk):
         assert type(talk)==list
-        Struct.__init__(self,talk)
+        Struct.__init__(self)
         self.talk=talk
         
     def __repr__(self):
-        return 'StContainer<'+str(id(self))+'>('+            repr(self.talk) +')'#_'+repr(self.attrs)
+        return 'StContainer'+repr_id(self)+'('+            repr(self.talk) +')'+repr_attrs(self)
 
     def __str__(self):
-        return self.attrs.change( SAttrs.join(i[1] for i in self.talk) )
-    
+        return self.attrs.change( self.attrs.join(i[1] for i in self.talk) )
 
 
 # In[30]:
@@ -72,99 +125,116 @@ show_verb_map={}
 
 class StVerb(Struct):
 # main maindep ip rp dp vp tp pp gde kogda skolko
-    __slots__=['word','oasp','asp','_form','_rod','_chis','_pers']
-    def __init__(self,word,oasp=0,asp=None,form=None,chis=0,rod=0,pers=0):
-        if type(word)==str:
-            Struct.__init__(self)
-            self.word=word
-            assert oasp==None or type(oasp)==str ,                'oasp should be str or None'
-            self.oasp=oasp
-        else:
-            Struct.__init__(self,word)# для тегов
-            self.word=None
-            self.talk=word
+	__slots__=[
+		'word', # None или слово - индекс для отображения
+		'oasp', # None или слово - с противоположной совершенностью
+		
+		'asp',	# 'sov'/'nesov' - аспект
+		'_form',# 'neopr'/'povel'/'nast' - форма-наклонение-время
+		'_rod', # 'm'/'g'/'s'
+		'_chis',# 'ed'/'mn'
+		'_pers' # 1/2/3 - лицо
+	]
+	def __init__(self,word,oasp=0,asp=None,form=None,chis=0,rod=0,pers=0):
+		if type(word)==str:
+			Struct.__init__(self)
+			self.word=word
+			assert oasp==None or type(oasp)==str ,                'oasp should be str or None'
+			self.oasp=oasp
+		else:
+			Struct.__init__(self)
+			self.word=None
+			self.talk=word
 
-            found=None
-            for i in word:
-                if i[0]=='main' or i[0]=='maindep':
-                    if found!=None:
-                        raise ValueError('we must have only one main or maindep')
-                    found =i[1]
-                    if asp!=None or form!=None or chis!=0 or pers!=0:
-                        raise ValueError('main or maindep may conflits with asp/form/pers')
-                    asp=found.asp
-                    form=found.form
-                    rod=found.rod
-                    chis=found.chis
-                    pers=found.pers
-        assert asp=='sov' or asp=='nesov' , 'asp should be "sov" or "nesov"'
-        assert form=='neopr' or form=='povel' or form=='nast' ,            'form should be "neopr" or "povel" or "nast"'
-        assert form=='neopr' and chis==None or                 form!='neopr' and (chis=='ed' or chis=='mn'),            'wrong chis'
-        assert (form=='neopr' or form=='povel') and rod==None or                 not(form=='neopr' or form=='povel') and (rod in {'m','g','s'}),            'wrong rod'
-        assert (form=='neopr' or form=='povel') and pers==None or                 not(form=='neopr' or form=='povel') and (pers in {1,2,3}),            'wrong person'
-        self.asp=asp
-        self._form=form
-        self._rod=rod
-        self._chis=chis
-        self._pers=pers
-    
-    form=property()
-    @form.getter
-    def form(self):
-        return self._form
-    @form.setter
-    def form(self,val):
-        self._form=val
-        if self.word==None:
-            for i in self.talk:
-                if i[0]=='dep' or i[0]=='maindep' :
-                    i[1].form=val
-                
-    rod=property()
-    @rod.getter
-    def rod(self):
-        return self._rod
-    @rod.setter
-    def rod(self,val):
-        self._rod=val
-        if self.word==None:
-            for i in self.talk:
-                if i[0]=='dep' or i[0]=='maindep' :
-                    i[1].rod=val
-                
-    chis=property()
-    @chis.getter
-    def chis(self):
-        return self._chis
-    @chis.setter
-    def chis(self,val):
-        self._chis=val
-        if self.word==None:
-            for i in self.talk:
-                if i[0]=='dep' or i[0]=='maindep' :
-                    i[1].chis=val
-                
-    pers=property()
-    @pers.getter
-    def pers(self):
-        return self._pers
-    @pers.setter
-    def pers(self,val):
-        self._pers=val
-        if self.word==None:
-            for i in self.talk:
-                if i[0]=='dep' or i[0]=='maindep' :
-                    i[1].pers=val
-                
-    def __repr__(self):
-            #'<'+str(id(self))+'>'+\
-        return 'StVerb'+            '('+(repr(self.talk) if self.word==None                  else repr(self.word)+','+repr(self.oasp))+','+            'asp='+repr(self.asp)+','+            'form='+repr(self.form)+','+            'chis='+repr(self.chis)+','+            'pers='+repr(self.pers)+')'
+			found=None
+			for i in word:
+				if i[0]=='main' or i[0]=='maindep':
+					if found!=None:
+						raise ValueError('we must have only one main or maindep')
+					found =i#[1]
+					if asp!=None or form!=None or chis!=0 or pers!=0:
+						raise ValueError('main or maindep may conflits with asp/form/chis/pers')
+					asp=get_property(asp=found)
+					form=get_property(form=found)
+					rod=get_property(rod=found)
+					chis=get_property(chis=found)
+					pers=get_property(pers=found)
+		assert asp=='sov' or asp=='nesov' , \
+				'wrong asp: '+repr(asp)
+		assert form=='neopr' or form=='povel' or form=='nast' , \
+				'wrong form: '+repr(form)
+		assert form=='neopr' and chis==None or \
+			form!='neopr' and (chis=='ed' or chis=='mn'), \
+				'wrong chis: '+repr(chis)
+		assert (form=='neopr' or form=='povel') and rod==None or \
+			not(form=='neopr' or form=='povel') and (rod in {'m','g','s'}), \
+				'wrong rod: '+repr(rod)
+		assert (form=='neopr' or form=='povel') and pers==None or \
+			not(form=='neopr' or form=='povel') and (pers in {1,2,3}), \
+				'wrong pers: '+repr(pers)
+		self.asp=asp
+		self._form=form
+		self._rod=rod
+		self._chis=chis
+		self._pers=pers
 
-    def __str__(self):
-        return self.attrs.change(
-            SAttrs.join(i[1] for i in self.talk)
-                if self.word==None else show_verb_map[self.word](self)
-            )
+	form=property()
+	@form.getter
+	def form(self):
+		return self._form
+	@form.setter
+	def form(self,val):
+		self._form=val
+		if self.word==None:
+			for i in self.talk:
+				if i[0]=='dep' or i[0]=='maindep' :
+					set_property(i,form=val)
+				
+	rod=property()
+	@rod.getter
+	def rod(self):
+		return self._rod
+	@rod.setter
+	def rod(self,val):
+		self._rod=val
+		if self.word==None:
+			for i in self.talk:
+				if i[0]=='dep' or i[0]=='maindep' :
+					set_property(i,rod=val)
+				
+	chis=property()
+	@chis.getter
+	def chis(self):
+		return self._chis
+	@chis.setter
+	def chis(self,val):
+		self._chis=val
+		if self.word==None:
+			for i in self.talk:
+				if i[0]=='dep' or i[0]=='maindep' :
+					set_property(i,chis=val)
+				
+	pers=property()
+	@pers.getter
+	def pers(self):
+		return self._pers
+	@pers.setter
+	def pers(self,val):
+		self._pers=val
+		if self.word==None:
+			for i in self.talk:
+				if i[0]=='dep' or i[0]=='maindep' :
+					set_property(i,pers=val)
+				
+	def __repr__(self):
+		return 'StVerb'+repr_id(self)+'('+(repr(self.talk) if self.word==None else repr(self.word)+','\
+			+repr(self.oasp))+','+ 'asp='+repr(self.asp)+','+ 'form='+repr(self.form)+','+ 'chis='+repr(self.chis)+','+            'pers='+repr(self.pers)+')'+repr_attrs(self)
+
+	def __str__(self):
+		return self.attrs.change(
+			self.attrs.join(i[1] for i in self.talk)
+				if self.word==None else show_verb_map[self.word](self)
+			)
 
 
 # ### Склоняемые
@@ -206,23 +276,24 @@ class StDeclinable(Struct):
             # например для словосочетаний в словаре паттернов
             self.word=word
         elif type(word)==list:
-            Struct.__init__(self,word)# для тегов
+            Struct.__init__(self)
             self.word=None
             self.talk=word
-            assert self.talk[0][1].attrs.pre==''
+            #assert self.talk[0][1].attrs.pre==''
             
             found=None
             for i in word:
                 if i[0]=='maindep':
                     if found!=None:
                         raise ValueError('we must have only one maindep')
-                    found =i[1]
+                    found =i#[1]
                     if o!=None or r!=None or c!=None:
                         raise ValueError('maindep may conflits with o/r/c')
-                    o=found.odush
-                    r=found.rod
-                    c=found.chis
-                    if p==None: p=found.pad
+                    o=get_property(odush=found)
+                    r=get_property(rod=found)
+                    c=get_property(chis=found)
+                    if p==None: 
+                        p=get_property(pad=found)
         self.odush=self.odush_checker(o)
         self.rod  =self.  rod_checker(r)
         self.chis =self. chis_checker(c)
@@ -238,17 +309,17 @@ class StDeclinable(Struct):
         if self.word==None:
             for i in self.talk:
                 if i[0]=='dep' or i[0]=='maindep' :
-                    i[1].pad=val
+                    set_property(i,pad=val)
                 
     def post_repr(self):
-        return 'o='+repr(self.odush)+',r='+repr(self.rod)+            ',c='+repr(self.chis)+',p='+repr(self.pad)+')'#_'+repr(self.attrs)
+        return 'o='+repr(self.odush)+',r='+repr(self.rod)+            ',c='+repr(self.chis)+',p='+repr(self.pad)+')'+repr_attrs(self)
     def __repr__(self):
         raise NotImplementedError('virtual function')
 
     show_map=None
     def __str__(self):
         return self.attrs.change(
-            SAttrs.join(i[1] for i in self.talk)
+            self.attrs.join(i[1] for i in self.talk)
                 if self.word==None else self.show_map[self.word](self)
             )
 
@@ -294,7 +365,7 @@ class StNoun(StDeclinable):
             else:
                 for i in self.talk:
                     if i[0]=='dep' or i[0]=='maindep' :
-                        i[1].chis=val
+                        set_property(i,chis=val)
 
     pers=3 #for pronoun
     npad=property()
@@ -306,7 +377,7 @@ class StNoun(StDeclinable):
         pass
         
     def __repr__(self):
-        return 'StNoun<'+str(id(self))+'>('+            (repr(self.talk) if self.word==None                  else repr(self.word)+','+repr(self.och))+','+            self.post_repr()
+        return 'StNoun'+repr_id(self)+'('+            (repr(self.talk) if self.word==None                  else repr(self.word)+','+repr(self.och))+','+            self.post_repr()
     
     show_map=show_noun_map
 
@@ -352,33 +423,33 @@ class StNum(StDeclinable):
         if self.word==None:
             for i in self.talk:
                 if i[0]=='quantity':
-                    i[1].pad=val
+                    set_property(i,pad=val)
                 if i[0]=='dep' or i[0]=='maindep' :
                     if self.quantity=='1':
-                        i[1].pad=val
+                        set_property(i,pad=val)
                     elif self.quantity=='2-4':
-                        i[1].chis='mn'
+                        set_property(i,chis='mn')
                         if val=='ip':
-                            i[1].chis='ed'
-                            i[1].pad='rp'
+                            set_property(i,chis='ed')
+                            set_property(i,pad='rp')
                         elif val=='vp':
                             if i[1].odush :
-                                i[1].pad='rp'
+                                set_property(i,pad='rp')
                             else:
-                                i[1].chis='ed'
-                                i[1].pad='rp'
+                                set_property(i,chis='ed')
+                                set_property(i,pad='rp')
                         else:
-                            i[1].pad=val
+                            set_property(i,pad=val)
                     elif self.quantity=='>=5':
                         if val=='ip' or val=='vp':
-                            i[1].pad='rp'
+                            set_property(i,pad='rp')
                         else:
-                            i[1].pad=val
+                            set_property(i,pad=val)
                     else:
                         raise RuntimeError()
 
     def __repr__(self):
-        return 'StNum<'+str(id(self))+'>('+            (repr(self.talk) if self.word==None                  else repr(self.word))+','+            repr(self.quantity)+','+            self.post_repr()
+        return 'StNum'+repr_id(self)+'('+            (repr(self.talk) if self.word==None                  else repr(self.word))+','+            repr(self.quantity)+','+            self.post_repr()
     
     show_map=show_num_map
 
@@ -401,7 +472,7 @@ class StAdj(StDeclinable):
         StDeclinable.__init__(self,word,o,r,c,p)
 
     def __repr__(self):
-        return 'StAdj<'+str(id(self))+'>('+            (repr(self.talk) if self.word==None                  else repr(self.word))+','+            self.post_repr()
+        return 'StAdj'+repr_id(self)+'('+            (repr(self.talk) if self.word==None                  else repr(self.word))+','+            self.post_repr()
     
     show_map=show_adj_map
     

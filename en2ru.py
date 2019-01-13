@@ -44,13 +44,13 @@
 #             которая будет возвращать слово в соотв. форме (для сущ. в соотв. падеже)
 # ```
 
-# In[1]:
+# In[ ]:
 
 
 from classes import *
 
 
-# In[149]:
+# In[ ]:
 
 
 def default_warning(s): 
@@ -60,7 +60,7 @@ warning = default_warning
 
 # # Правила: RU-Словарь, +отображение
 
-# In[2]:
+# In[ ]:
 
 
 ruwords={} #какие-то однословные правила складываются сюда, а какие-то остаются в функциях
@@ -70,7 +70,7 @@ ruwords={} #какие-то однословные правила складыв
 
 # ##### Функции
 
-# In[3]:
+# In[ ]:
 
 
 def show_noun1(st,word,ip,rp,dp,vp,tp,pp):
@@ -83,13 +83,13 @@ def show_noun1(st,word,ip,rp,dp,vp,tp,pp):
     raise RuntimeError()
 
 
-# In[4]:
+# In[ ]:
 
 
 #show_noun_map['я']=lambda st: show_noun1(st,"","я","меня","мне","меня","мной","мне")
 
 
-# In[5]:
+# In[ ]:
 
 
 def add_runoun(name,och,odush,rod,chis,word,ip,rp,dp,vp,tp,pp):
@@ -103,7 +103,7 @@ def add_runoun2(name,rod,word,ip,rp,dp,vp,tp,pp,               mname,odush,mword
 
 # ##### М.р.
 
-# In[6]:
+# In[ ]:
 
 
 #                                     ип ,нет ,дать,вижу,творю,думаю
@@ -129,7 +129,7 @@ add_runoun2("мяч"    ,'m'  ,'мяч'    ,'' ,'а' ,'у' ,''  ,'ом' ,'е' ,
             "мячи"   ,False,'мяч'    ,'и','ей','ам','и' ,'ами','ах')
 
 
-# In[7]:
+# In[ ]:
 
 
 add_runoun2("ребёнок",'m'  ,'ребён'  ,'ок','ка','ку','ка','ком','ке',
@@ -141,7 +141,7 @@ add_runoun2("котёнок",'m'  ,'котён'  ,'ок','ка','ку','ка','�
 
 # ##### Ж.р.
 
-# In[8]:
+# In[ ]:
 
 
 #                                   ип ,нет ,дать ,вижу,творю ,думаю
@@ -168,7 +168,7 @@ add_runoun2("ложка" ,'g'  ,'ложк' ,'а' ,'и' ,'е'  ,'у' ,'ой'  ,'�
             "ложки" ,False,'лож'  ,'ки','ек','кам','ки','ками','ках')
 
 
-# In[9]:
+# In[ ]:
 
 
 add_runoun2("собака",'g'  ,'собак','а' ,'и' ,'е'  ,'у'  ,'ой' ,'е' ,
@@ -196,7 +196,7 @@ add_runoun2("звезда",'g'  ,'звезд','а','ы','е' ,'у' ,'ой' ,'е'
             "звёзды",False,'звёзд','ы','' ,'ам','ы' ,'ами','ах')
 
 
-# In[139]:
+# In[ ]:
 
 
 add_runoun2("свинья",'g'  ,'свинь','я' ,'и' ,'е'  ,'ю' ,'ёй'  ,'е'  ,
@@ -206,7 +206,7 @@ add_runoun2("информация",'g'  ,'информаци','я','и','и' ,'�
             "информации",False,'информаци','и','й','ям','еи','ями','ях')
 
 
-# In[11]:
+# In[ ]:
 
 
 add_runoun2("мышь"   ,'g'  ,'мыш'   ,'ь','и' ,'и' ,'ь' ,'ью' ,'и' ,
@@ -220,7 +220,7 @@ add_runoun2("кровать",'g'  ,'кроват','ь','и' ,'и' ,'ь' ,'ью' 
 
 # ##### С.р.
 
-# In[12]:
+# In[ ]:
 
 
 #                                    ип  ,нет ,дать ,вижу,творю ,думаю о
@@ -238,7 +238,7 @@ add_runoun2("вареньё",'s'  ,'варень','е' ,'я' ,'ю'  ,'е' ,'ем
 
 # ##### Мн.ч.
 
-# In[13]:
+# In[2]:
 
 
 #                                  ип ,нет ,дать,вижу,творю,думаю
@@ -247,7 +247,7 @@ add_runoun('часы (предмет)',None,False,'m','mn','час','ы','ов',
 
 # ## Pronoun
 
-# In[14]:
+# In[ ]:
 
 
 def show_pronoun1(st,ends,nends):
@@ -265,7 +265,7 @@ def show_pronoun1(st,ends,nends):
     raise RuntimeError()
 
 
-# In[15]:
+# In[ ]:
 
 
 ruwords["я (муж)"]=StProNoun("я","мы",1,True,'m','ed','ip')
@@ -282,7 +282,7 @@ add_rupronoun('он','он',"они",3,'m','ed',
 
 # ## Adj
 
-# In[16]:
+# In[ ]:
 
 
 def show_adj1(st,word,ends):
@@ -303,7 +303,7 @@ def show_adj1(st,word,ends):
     return word+rez
 
 
-# In[17]:
+# In[ ]:
 
 
 def add_ruadj(name,sh_word,ends):
@@ -311,7 +311,7 @@ def add_ruadj(name,sh_word,ends):
     show_adj_map[name]=lambda st: show_adj1(st,sh_word,ends)
 
 
-# In[18]:
+# In[ ]:
 
 
 adj_std_ends_i={# и
@@ -348,7 +348,7 @@ add_ruadj('тот' ,'т' ,{
 
 # ## Num
 
-# In[19]:
+# In[ ]:
 
 
 def show_num1(st,word,ends):
@@ -372,7 +372,7 @@ def add_runum(name,quantity,chis,start,ends):
     ruwords[name]=     StNum(name,quantity  ,False,'m',chis,'ip')
 
 
-# In[20]:
+# In[ ]:
 
 
 add_runum('один','1','ed','од' ,
@@ -404,7 +404,7 @@ add_runum('восемь','>=5','mn','вос' ,
 
 # ## Verb
 
-# In[21]:
+# In[ ]:
 
 
 def show_verb1(st,word,end_map):
@@ -431,7 +431,7 @@ def show_verb1(st,word,end_map):
     return word+end
 
 
-# In[22]:
+# In[ ]:
 
 
 show_verb_map['видеть']=    lambda st: show_verb1(st,'ви',
@@ -461,7 +461,7 @@ show_verb_map['дать']=    lambda st: show_verb1(st,'да',
         }   )
 
 
-# In[23]:
+# In[ ]:
 
 
 #(self,word,oasp=0,asp=None,form=None,chis=0,rod=0,pers=0)
@@ -474,7 +474,7 @@ def r_skazat():  return StVerb('сказать' ,'говорить'  ,'sov'  ,'p
 
 # # Правила: Составные - общие
 
-# In[24]:
+# In[ ]:
 
 
 def r_adj_noun(_a_,_n_): 
@@ -491,13 +491,13 @@ def r_adj_noun(_a_,_n_):
 
 # ## Adj
 
-# In[25]:
+# In[ ]:
 
 
 dict_adj={}
 
 
-# In[26]:
+# In[ ]:
 
 
 dict_adj['a'] = S('')
@@ -513,13 +513,13 @@ dict_adj['that']=ruwords["тот"]
 
 # ## Noun
 
-# In[27]:
+# In[ ]:
 
 
 dict_noun={}
 
 
-# In[28]:
+# In[ ]:
 
 
 #dict_noun['cat']=   ruwords["кошка"]
@@ -540,13 +540,7 @@ dict_noun['lessons']=ruwords["уроки"]
     
 
 
-# In[29]:
-
-
-ruwords["мыши"]
-
-
-# In[30]:
+# In[ ]:
 
 
 dict_noun['cap']=   ruwords["кепка"]
@@ -565,7 +559,7 @@ dict_noun['hens']=   ruwords["курицы"]
     
 
 
-# In[31]:
+# In[ ]:
 
 
 dict_noun['dog']=   ruwords['собака']
@@ -579,7 +573,7 @@ dict_noun['cups']=   ruwords['чашки']
     
 
 
-# In[32]:
+# In[ ]:
 
 
 #dict_noun['box']=   ruwords['коробка']
@@ -598,7 +592,7 @@ dict_noun['foxes']=   ruwords['лисы']
     
 
 
-# In[33]:
+# In[ ]:
 
 
 dict_noun['kitten']= ruwords['котёнок']
@@ -612,7 +606,7 @@ dict_noun['lamps']= ruwords['лампы']
     
 
 
-# In[34]:
+# In[ ]:
 
 
 dict_noun['squirrel']= ruwords['белка']
@@ -627,7 +621,7 @@ dict_noun['boys']= ruwords['мальчики']
 #dict_noun['boy']= ruwords['парни']
 
 
-# In[35]:
+# In[ ]:
 
 
 dict_noun['copy-book']= ruwords['тетрадь']
@@ -640,7 +634,7 @@ dict_noun['morning']= ruwords['утро']
 dict_noun['mornings']= ruwords['утра']
 
 
-# In[36]:
+# In[ ]:
 
 
 dict_noun['pistol']= ruwords['пистолет']
@@ -653,7 +647,7 @@ dict_noun['word']= ruwords['слово']
 dict_noun['words']= ruwords['слова']
 
 
-# In[140]:
+# In[ ]:
 
 
 dict_noun['child']= ruwords['ребёнок']
@@ -668,14 +662,14 @@ dict_noun['watches']= ruwords['часы (предмет)']
 
 # ## Pronoun
 
-# In[38]:
+# In[ ]:
 
 
 dict_pronoun_ip={}
 dict_pronoun_dp={}
 
 
-# In[39]:
+# In[ ]:
 
 
 dict_pronoun_ip['I']= ruwords["я (муж)"]
@@ -689,13 +683,13 @@ dict_pronoun_dp['him']= ruwords["он"]
 
 # ## Numeral
 
-# In[40]:
+# In[ ]:
 
 
 dict_numeral={}
 
 
-# In[41]:
+# In[ ]:
 
 
 dict_numeral['one']=   ruwords['один']
@@ -710,14 +704,14 @@ dict_numeral['eight']= ruwords['восемь']
 
 # ## Verb
 
-# In[42]:
+# In[ ]:
 
 
 dict_verb={}
 dict_verb_s={}
 
 
-# In[43]:
+# In[ ]:
 
 
 dict_verb  ['see']= r_videt()
@@ -735,36 +729,59 @@ dict_verb_s['says']= r_skazat()
 
 # # Паттерны и правила: Составные
 
-# In[94]:
+# In[ ]:
 
 
 DEBUGGING=False
 
 
-# In[96]:
+# In[ ]:
 
 
 def debug_pp(fun):
+    s_point=[]
+    cache={}
     def wrapper(s,p):
+        nonlocal s_point,cache
+        if not(s is s_point):
+            s_point=s
+            cache={}
         if DEBUGGING:
-            print('{'+'.'*p+fun.__name__)
-            
+            debug_s = '.'*p+'*'+'.'*(len(s)-p-1)+(' ' if p<len(s) else '')+                fun.__name__+'___'+str(p)
+        if p in cache:
+            if DEBUGGING: print('|'+debug_s)
+            return cache[p]
+        else:
+            if DEBUGGING: print('{'+debug_s)
+        
         rezs=fun(s,p)
         
         if DEBUGGING:
-            print('_'+'.'*p+str(len(rezs)),'in ',fun.__name__,'}',
-                  [(p,str(r)) for (p,r) in rezs],'\n')
-            for i in rezs:
-                if isinstance(i[1],StDeclinable):
-                    i[1].check_attrs('wrapper:'+fun.__name__)
+            print('}'+debug_s)
+            for p1,r1 in rezs:
+                print('-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+                     str(r1))
+            
+#            print('_'+'.'*p+str(len(rezs)),'in ',fun.__name__,'}',
+#                  [(p,str(r)) for (p,r) in rezs],'\n')
+#            for i in rezs:
+#                if isinstance(i[1],StDeclinable):
+#                    i[1].check_attrs('wrapper:'+fun.__name__)
+        
+        cache[p]=rezs
         return rezs
     return wrapper
     return fun
 
 
+# In[ ]:
+
+
+2 in {3}
+
+
 # ## Other
 
-# In[97]:
+# In[ ]:
 
 
 @debug_pp
@@ -772,7 +789,7 @@ def p_numeral(s,p):
     return D(dict_numeral)(s,p)
 
 
-# In[98]:
+# In[ ]:
 
 
 #2->
@@ -783,14 +800,17 @@ def p_adj(s,p):
 
 # ## Noun-like
 
-# In[99]:
+# In[ ]:
 
 
-def r_A_noun(a,n): 
-    return SAttrs.to_right(a,n)
+def r_A_noun(_a,_n): return StNoun([
+    I(maindep=_n,
+         attrs_from_left=_a)
+])
+#    return SAttrs.to_right(a,n)
 
 
-# In[100]:
+# In[ ]:
 
 
 def r_GOOD_MORNING(_g,_m):
@@ -800,7 +820,7 @@ def r_GOOD_MORNING(_g,_m):
     )
 
 
-# In[101]:
+# In[ ]:
 
 
 @debug_pp
@@ -812,7 +832,7 @@ def p_adj_noun3(s,p): return p_alt(s,p,
 )
 
 
-# In[102]:
+# In[ ]:
 
 
 @debug_pp
@@ -824,7 +844,7 @@ def p_noun3(s,p): return p_alt(s,p,
 )
 
 
-# In[103]:
+# In[ ]:
 
 
 def r_noun_numeral(n,num): return StNoun([
@@ -833,7 +853,7 @@ def r_noun_numeral(n,num): return StNoun([
 ])
 
 
-# In[104]:
+# In[ ]:
 
 
 @debug_pp
@@ -843,7 +863,7 @@ def p_noun2(s,p): return p_alt(s,p,
 )
 
 
-# In[150]:
+# In[ ]:
 
 
 def r_numeral_noun(num,n):
@@ -858,7 +878,7 @@ def r_numeral_noun(num,n):
     ],quantity=num.quantity)
 
 
-# In[106]:
+# In[ ]:
 
 
 @debug_pp
@@ -868,7 +888,7 @@ def p_noun1(s,p): return p_alt(s,p,
 )
 
 
-# In[107]:
+# In[ ]:
 
 
 def r_noun_and_noun(sn,a,n):
@@ -885,7 +905,7 @@ def r_noun_comma_noun(sn,c,n):
     ],c='mn', p='ip',o=False,r='m')
 
 
-# In[108]:
+# In[ ]:
 
 
 @debug_pp
@@ -902,21 +922,36 @@ def p_noun(s,p):
     )
 
 
-# In[109]:
+# In[3]:
 
 
-def r_noun_dp(_n_):
-    _n_.pad='dp'
-    return _n_
+def r_noun_dp(_n): return StNoun([
+    I(maindep=_n,
+         pad='dp')
+])
+#    _n_.pad='dp'
+#    return _n_
 
 
-# In[110]:
+# In[4]:
+
+
+def r_TO_noun_dp(_t,_n): return StNoun([
+    I(maindep=_n,
+         pad='dp',
+         attrs_from_left=_t)
+])
+#    _n_.pad='dp'
+#    return _n_
+
+
+# In[5]:
 
 
 @debug_pp
 def p_noun_dp(s,p): return p_alt(s,p,
     rule1( D(dict_pronoun_dp) ,r_noun_dp), 
-    seq([ W('to'), p_noun ],r_noun_dp,[1])
+    seq([ W('to'), p_noun ],r_TO_noun_dp)
 )
 
 
@@ -924,7 +959,7 @@ def p_noun_dp(s,p): return p_alt(s,p,
 
 # ### verb3:  Сделать кому
 
-# In[111]:
+# In[ ]:
 
 
 def r_verb_noun_dp_mn(_v_,_n_): 
@@ -936,7 +971,7 @@ def r_verb_noun_dp_mn(_v_,_n_):
     ])
 
 
-# In[112]:
+# In[ ]:
 
 
 def r_verb_noun_dp_ed(_v_,_n_): 
@@ -948,7 +983,7 @@ def r_verb_noun_dp_ed(_v_,_n_):
     ])
 
 
-# In[113]:
+# In[ ]:
 
 
 @debug_pp
@@ -964,7 +999,7 @@ def p_verb3(s,p): return p_alt(s,p,
 
 # ### verb2: сделать что
 
-# In[145]:
+# In[ ]:
 
 
 def r_SKAZHI_noun(_s,_p): return StVerb([
@@ -996,7 +1031,7 @@ def r_SKAZHI_c_q_text(_s,c,q1,_p,q2): return StVerb([
 ])
 
 
-# In[115]:
+# In[ ]:
 
 
 def r_verb_noun(v,n): return StVerb([
@@ -1006,7 +1041,7 @@ def r_verb_noun(v,n): return StVerb([
 ])
 
 
-# In[147]:
+# In[ ]:
 
 
 @debug_pp
@@ -1024,7 +1059,7 @@ def p_verb2(s,p): return p_alt(s,p,
 
 # ### verb1: кто (тоже) делает
 
-# In[117]:
+# In[ ]:
 
 
 def r_U_noun_EST_noun(_n1_,_h_,_n2_):
@@ -1053,7 +1088,7 @@ def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):
     ])
 
 
-# In[165]:
+# In[ ]:
 
 
 @debug_pp
@@ -1068,15 +1103,20 @@ def pe_HAVE_noun(s,p):
     )
 
 
-# In[119]:
+# In[ ]:
 
 
-def r_to_verb(t,v): 
-    v.form='neopr'
-    return SAttrs.to_right(t,v)
+def r_to_verb(_t,_v): return StVerb([
+    I(maindep=_v,
+         form='neopr',
+         chis=None, 
+         attrs_from_left=_t)
+])
+#    v.form='neopr'
+#    return SAttrs.to_right(t,v)
 
 
-# In[120]:
+# In[ ]:
 
 
 def r_noun_verb(n,v): return StVerb([
@@ -1089,7 +1129,7 @@ def r_noun_verb(n,v): return StVerb([
 ])
 
 
-# In[164]:
+# In[ ]:
 
 
 @debug_pp
@@ -1101,7 +1141,7 @@ def p_verb1_1(s,p): return p_alt(s,p,
 )
 
 
-# In[122]:
+# In[ ]:
 
 
 def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
@@ -1115,7 +1155,7 @@ def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
 ])
 
 
-# In[123]:
+# In[ ]:
 
 
 @debug_pp
@@ -1127,7 +1167,7 @@ def p_verb1(s,p): return p_alt(s,p,
 
 # ### verb: сделать одно и/но сделать сдругое
 
-# In[137]:
+# In[ ]:
 
 
 def r_verb_NO_verb(_v1_,_c_,_but_,_v2_):
@@ -1139,7 +1179,7 @@ def r_verb_NO_verb(_v1_,_c_,_but_,_v2_):
     ])
 
 
-# In[138]:
+# In[ ]:
 
 
 def r_verb_c_verb(_v1_,_c_,_v2_):
@@ -1150,7 +1190,7 @@ def r_verb_c_verb(_v1_,_c_,_v2_):
     ])
 
 
-# In[125]:
+# In[ ]:
 
 
 def r_verb_I_verb(_v1_,_i_,_v2_):
@@ -1161,7 +1201,7 @@ def r_verb_I_verb(_v1_,_i_,_v2_):
     ])
 
 
-# In[136]:
+# In[ ]:
 
 
 @debug_pp
@@ -1175,7 +1215,7 @@ def p_verb(s,p): return p_alt(s,p,
 
 # ## Фразы, предложения, текст
 
-# In[127]:
+# In[ ]:
 
 
 @debug_pp
@@ -1187,7 +1227,7 @@ def p_phrase(s,p): return p_alt(s,p,
 )
 
 
-# In[128]:
+# In[ ]:
 
 
 dict_proper={}# имена собственные
@@ -1201,20 +1241,18 @@ def p_sentence(s,p):
     restore_title=False
     if ch_title in s[p].attrs.changers and s[p] not in dict_proper:
         s[p].attrs.changers-={ch_title}
+        s[p].attrs.changers|={ch_anti_sentence}
         restore_title=True
     
-    def p_DOT_EXCL(s,p):
-        rezs=W('.')(s,p)
-        rezs+=W('!')(s,p)
-        return rezs
-    rezs=seq([p_phrase,p_DOT_EXCL],r_sentence)(s,p)
+    rezs=seq([p_phrase,alt(W('.'),W('!'))],r_sentence)(s,p)
     
     if restore_title:
         s[p].attrs.changers|={ch_title}
+        s[p].attrs.changers-={ch_anti_sentence}
     return rezs
 
 
-# In[129]:
+# In[ ]:
 
 
 def maxlen_filter(patt,s,p): #
@@ -1251,7 +1289,7 @@ def p_text(s,p):
         
 
 
-# In[151]:
+# In[ ]:
 
 
 def en2ru(s): # main
@@ -1266,7 +1304,7 @@ def en2ru(s): # main
     if p!=len(s):
         warning('NOT PARSED:')
         warning(SAttrs.join(s[p:]))
-    return str(r1)
+    return r1.tostr()
 
 def d_en2ru(s):
     global DEBUGGING
@@ -1277,7 +1315,7 @@ def d_en2ru(s):
     return r
 
 
-# In[131]:
+# In[ ]:
 
 
 def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
@@ -1294,7 +1332,7 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
         prompt=             '' if p=='ip' else            'нет ' if p=='rp' else            'дать ' if p=='dp' else            'вижу ' if p=='vp' else            'творю ' if p=='tp' else            'думаю о ' if p=='pp' else            throw(ValueError('bad pad: '+p))
         #rez=deepcopy(tmp)
         tmp.pad=p
-        m.append(prompt+str(tmp))#        print(prompt+str(tmp))
+        m.append(prompt+tmp.tostr())#        print(prompt+str(tmp))
     return m
 
 
@@ -1312,60 +1350,26 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
 #     15) посмотри
 # 
 # watch, двое, трое, пятеро
-# ...
-# I() - чтобы чтобы модификации свойств записывала в 3й элемент тупла
-# get_property(tuple)
-#     если 2 элемента - берет настоящее сойство
-#     если 3 элемента - берет свойство из 3го элемента
-# использовать её в init-ах для main и maindep
-# .pull_deferred():
-#     с каждым tupl-ом из talk
-#         если он Struct
-#             вызываем его.pull_deferred()
-#         применяем свойства из 3го элемента tupl-а
-#     подтягиваем .pre из talk[0]
-# .tistr()
-#     .pull_deferred
-#     .__str__
 # 
-# сделать кэширование результатов
-#     статистика использования паттернов/словарей/правил
+# ch_antisentence
+# ...
+# для больших текстов p_sentence будет делать срез со своей позции до конца
+#     - чтобы обновить кэши ф-ций
+# 
+# исключения парсить, если регулярным образом распарсилось
+#     каждая функция будет с аргументом парсить или нет исключения
 # 
 # атрибуты слов: (теги)
 # отображение открывающейся кавычки (SAttrs.join)
-# ...
-# нужен LR-парсер, причем недетерминированный - посмотреть, какие есть библиотеки
-#     возможно стоит придумать уровни для паттернов...
 # ```
 
-# In[80]:
-
-
-def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
-    s=[ i for i in tokenizer(s)]
-    # добавить дочитывание точки и остаточных пробелов
-    rezs=[res for pos,res in p_noun(s,0) if pos==len(s)]
-    if len(rezs)!=1:
-        raise TextError(rezs)
-    tmp=rezs[0]
-    
-    m=[]
-    for p in pads:
-        #print(str(tmp))
-        prompt=             '' if p=='ip' else            'нет ' if p=='rp' else            'дать ' if p=='dp' else            'вижу ' if p=='vp' else            'творю ' if p=='tp' else            'думаю о ' if p=='pp' else            throw(ValueError('bad pad: '+p))
-        #rez=deepcopy(tmp)
-        tmp.pad=p
-        m.append(prompt+str(tmp))#        print(prompt+str(tmp))
-    return m
-
-
-# In[163]:
+# In[ ]:
 
 
 #decline('two watches')
 
 
-# In[155]:
+# In[ ]:
 
 
 def timing(f,*args):
@@ -1376,26 +1380,38 @@ def timing(f,*args):
     return r
 
 
-# In[161]:
+# In[ ]:
 
 
 #timing(en2ru,'Say: "Seven, six, four, two, five, three, one."')
 
 
-# In[162]:
+# In[ ]:
 
 
 #timing(en2ru,'say: say seven')
 
 
-# In[82]:
+# In[ ]:
 
 
 en2ru('')
 
 
-# In[83]:
+# In[ ]:
 
 
 en2ru('I see jam and one cup')
+
+
+# In[ ]:
+
+
+en2ru('_Cat and cat')
+
+
+# In[ ]:
+
+
+en2ru('Say: "Seven, six, four, two, five, three, one."')
 
