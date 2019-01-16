@@ -1,4 +1,75 @@
-from parse_system import *
+'''классы древовидных структур из которых конструируются русские предложения
+
+механизм создания древовидной структуры проще показать на примере
+
+StAdj(рыжий) StNoun(кошка)
+правило ->
+StNoun(StAdj(рыжая) StNoun(кошка))
+
+S(у) StNoun(StAdj(рыжая) StNoun(кошка))
+правило ->
+StC(S(у) StNoun(StAdj(рыжей) StNoun(кошки)))
+
+Т.е. правило может менять параметры у аргументов
+и при изменении параметра объекта могут меняться параметры его дочерних объектов.
+ - так было до оптимизации.
+После оптимизации правила не могут изменять объекты.
+Вмето этого рядом с объектом создается словарь, в котором хранятся свойства и их значения, 
+которые переопределяют свойства самого объекта.
+Далее будем эти свойства называть внешними свойствами объекта.
+
+После того как текст разобран и древовидная структура создана
+можно вызвать метод .pull_deferred(), который применит свойства, 
+хранящиеся рядом с объектом к самому объекту, 
+и вызовет .pull_deferred() у дочерних объектов.
+
+После этого объект можно преобразовать в строку функцией str().
+
+	Если при изменении свойства объекта должны измениться свойства его дочерних объектов,
+		то эти действия записываются в сеттере этого свойства.
+		Они будут выполнены в момент вызова pull_deferred().
+	Если при изменении свойства объекта должны измениться другие свойства этого же объекта,
+		то эти действия записываются в статическом методе ext_props_setter().
+		Они будут выполнены сразу при изменении внешнего свойства, и отразатся на внешних свойствах.
+
+
+Объекты-листья содержат поле word, которое является индексом в show_<type>_map,
+в котором хранятся функции, которые получают эту структуру и 
+в зависимости от ее параметров выдают слово в соответствующей форме 
+(с соответствующим окончанием) в доме который построил Джек.
+
+Внутренние объекты содержат поле talk - массив туплов длины 3:
+talk[i][0] - ключевое слово, которое определяет, в каком подчинении находится дочерний объект
+	это одно из слов, перечисленных в obediences класса (dependencies наоборот)
+talk[i][1] - сам дочерний объект
+	его допустимый тип определяется obediences[key_word]
+talk[i][2] - словарь (о котором говорилось выше), в котором хранятся внешние свойства и их значения, 
+которые переопределяют свойства дочернего объекта.
+
+
+Помимо всего прочего, каждый объект содержит поле attrs со строковыми атрибутами.
+Во время pull_deferred() префикс нулевого объекта talk-а переезжает к объекту родителю.
+Это нужно для корретного преобразования в строку.
+
+
+Имеется следующая иерархия типов:
+Struct                            - Абстрактный базовый тип
+    StC                             - Структура-контейнер, без параметров и с независимыми дочерними объектами
+    StDeclinable                    - Абстрактный базовый тип со склонением
+        StNoun (show_noun_map)        - Существительные
+            StProNoun (show_noun_map)   - Личные местоимения
+        StAdj (show_adj_map)          - Прилагательные
+        StNum (show_num_map)          - Числительные
+    StVerb (show_verb_map)          - Глаголы
+    
+Имеются следующие функции для работы с внешнимим свойствами:
+I             - функция с красивым синтаксисом, которая создает tupl-ы для talk-ов
+get_property  - функция, возвращающая внешнее свойство объекта внутри tupl-а
+set_property  - функция, изменяющая внешнее свойство объекта внутри tupl-а
+pull_deferred - функция, изменяющая внешние свойство к объекту внутри tupl-а
+'''
+
+from parse_system import SAttrs, S
 
 # ## Классы отображения
 
@@ -6,12 +77,12 @@ from parse_system import *
 
 # In[27]:
 
-DEBUGGING_ID=True
+DEBUGGING_ID=False
 def repr_id(self):
 	global DEBUGGING_ID
 	return '<'+str(id(self))+'>' if DEBUGGING_ID else ''
 	
-DEBUGGING_ATTRS=True
+DEBUGGING_ATTRS=False
 def repr_attrs(self):
 	global DEBUGGING_ATTRS
 	return '_'+repr(self.attrs) if DEBUGGING_ATTRS else ''
@@ -22,38 +93,48 @@ def I(**args):
 #		raise ValueError()
 	i=iter(args.items())
 	p=next(i)
-	assert p[0] in {'maindep','dep','nodep','punct','nomer','quantity',
-				   'main','ip','dp','vp'} 
 	assert isinstance(p[1],Struct) or isinstance(p[1],S)
-#	for k,v in i:
-#		setattr(p[1],k,v)
 	args.pop(p[0])
-	return (p[0], p[1], args)#p
-	
-def get_property(**kwarg):
+	tup = (p[0], p[1], {})
+	for k,v in args.items():
+		set_property(tup,**{k:v})
+	return tup #p
+
+def get_property(**kwarg): #get_property(prop=tup)
 	assert len(kwarg)==1
 	prop, tup= next(iter(kwarg.items()))
-	if len(tup)==2:
-		return getattr(tup[1],prop)
-	elif len(tup)==3:
-		if prop in tup[2]:
-			return tup[2][prop]
-		else:
-			return getattr(tup[1],prop)
+	assert len(tup)==3, tup
+	if prop in tup[2]:
+		return tup[2][prop]
 	else:
-		raise RuntimeError('bad tuple')
-def set_property(tup,**kwarg):
+		return getattr(tup[1],prop)
+		
+def set_property(tup,**kwarg): #set_property(tup,prop=val)
 	assert len(kwarg)==1
 	prop, val= next(iter(kwarg.items()))
-	if len(tup)==2:
-		setattr(tup[1],prop,val)
-	elif len(tup)==3:
+	assert len(tup)==3, tup
+	if prop in {'attrs_from_left','attrs_from_right','add_changers'}:
 		tup[2][prop]=val
 	else:
-		raise RuntimeError('bad tuple')
+		assert hasattr(tup[1],prop)
+		if hasattr(tup[1],'ext_props_setter'):
+			tup[1].ext_props_setter(tup,**kwarg)
+		else: tup[2][prop]=val
+
+def pull_deferred(tup):
+	for prop,val in tup[2].items():
+		if prop=='attrs_from_left':
+			SAttrs._to_right(val,tup[1])
+		elif prop=='attrs_from_right':
+			SAttrs._to_left(tup[1],val)
+		elif prop=='add_changers':
+			tup[1].attrs.changers|=val
+		else: setattr(tup[1],prop,val)
+	tup[2].clear()
+	if isinstance(tup[1],Struct):
+		tup[1].pull_deferred()
 
 # In[28]:
-
 
 class Struct:
 	__slots__=['attrs','talk']
@@ -82,15 +163,7 @@ class Struct:
 	def pull_deferred(self):
 		if not hasattr(self,'talk'): return
 		for tup in self.talk:
-			for prop,val in tup[2].items():
-				if prop=='attrs_from_left':
-					SAttrs._to_right(val,tup[1])
-				elif prop=='attrs_from_right':
-					SAttrs._to_left(tup[1],val)
-				else: setattr(tup[1],prop,val)
-			tup[2].clear()
-			if isinstance(tup[1],Struct):
-				tup[1].pull_deferred()
+			pull_deferred(tup)
 		if self.attrs.pre=='':
 			self.attrs.pre=self.talk[0][1].attrs.pre
 			self.talk[0][1].attrs.pre=''
@@ -99,23 +172,45 @@ class Struct:
 	def tostr(self):
 		self.pull_deferred()
 		return self.__str__()
-
 		
+	def talk_checker(self):
+		for k,v,a in self.talk:
+			assert k in self.obediences, (k,self.obediences)
+			assert self.obediences[k](v), (type(self), k, type(v))
+		
+#def _assert(x,y=None):
+#	assert x, y
+def _types_assert(x,*types):
+	for i in types:
+		if isinstance(x,i):
+			return True
+	else:
+		return False
+		
+def types_assert(*types):
+	return lambda x:_types_assert(x,*types)
+def none_fun(x):
+	return True
+	
 # In[29]:
 
 
 class StC(Struct): # Container
-# nodep
-    def __init__(self,talk):
-        assert type(talk)==list
-        Struct.__init__(self)
-        self.talk=talk
-        
-    def __repr__(self):
-        return 'StContainer'+repr_id(self)+'('+            repr(self.talk) +')'+repr_attrs(self)
+	obediences = {
+		'nodep': none_fun,
+		'punct': types_assert(S)
+	}
+	def __init__(self,talk):
+		assert type(talk)==list, talk
+		Struct.__init__(self)
+		self.talk=talk
+		self.talk_checker()
+		
+	def __repr__(self):
+		return 'StContainer'+repr_id(self)+'('+            repr(self.talk) +')'+repr_attrs(self)
 
-    def __str__(self):
-        return self.attrs.change( self.attrs.join(i[1] for i in self.talk) )
+	def __str__(self):
+		return self.attrs.change( self.attrs.join(i[1] for i in self.talk) )
 
 
 # In[30]:
@@ -124,7 +219,21 @@ class StC(Struct): # Container
 show_verb_map={}
 
 class StVerb(Struct):
-# main maindep ip rp dp vp tp pp gde kogda skolko
+	obediences = {
+		'main': lambda x:_types_assert(x,StVerb),
+		'maindep': lambda x:_types_assert(x,StVerb),
+		'nodep': none_fun,
+		'punct': types_assert(S),
+		'ip': lambda x:_types_assert(x,StDeclinable),
+		'rp': lambda x:_types_assert(x,StDeclinable),
+		'dp': lambda x:_types_assert(x,StDeclinable),
+		'vp': lambda x:_types_assert(x,StDeclinable),
+		'tp': lambda x:_types_assert(x,StDeclinable),
+		'pp': lambda x:_types_assert(x,StDeclinable),
+#		'gde',
+#		'kogda',
+#		'skolko'
+	}
 	__slots__=[
 		'word', # None или слово - индекс для отображения
 		'oasp', # None или слово - с противоположной совершенностью
@@ -135,49 +244,81 @@ class StVerb(Struct):
 		'_chis',# 'ed'/'mn'
 		'_pers' # 1/2/3 - лицо
 	]
+		
+	@staticmethod
+	def asp_checker(asp):
+		assert asp in {'sov','nesov'} ,                                'wrong asp: '+repr(asp)
+		return asp
+
+	@staticmethod
+	def form_checker(form):
+		assert form in {'neopr','povel','nast'} ,                      'wrong form: '+repr(form)
+		return form
+
+	@staticmethod
+	def chis_checker(form,chis):
+		assert form=='neopr' and chis==None or \
+			   form!='neopr' and chis in{'ed','mn'},                   'wrong chis: '+repr(chis)
+		return chis
+
+	@staticmethod
+	def rod_checker(form,rod):
+		assert form in {'neopr','povel'}     and rod==None or \
+			   form not in {'neopr','povel'} and rod in {'m','g','s'}, 'wrong rod: '+repr(rod)
+		return rod
+
+	@staticmethod
+	def pers_checker(form,pers):
+		assert form in {'neopr','povel'}     and pers==None or \
+			   form not in {'neopr','povel'} and pers in {1,2,3},      'wrong pers: '+repr(pers)
+		return pers
+
 	def __init__(self,word,oasp=0,asp=None,form=None,chis=0,rod=0,pers=0):
 		if type(word)==str:
 			Struct.__init__(self)
 			self.word=word
-			assert oasp==None or type(oasp)==str ,                'oasp should be str or None'
+			assert oasp==None or type(oasp)==str , oasp
 			self.oasp=oasp
 		else:
 			Struct.__init__(self)
 			self.word=None
 			self.talk=word
+			self.talk_checker()
 
 			found=None
 			for i in word:
 				if i[0]=='main' or i[0]=='maindep':
-					if found!=None:
-						raise ValueError('we must have only one main or maindep')
+					assert found==None , 'we must have only one main or maindep'
 					found =i#[1]
-					if asp!=None or form!=None or chis!=0 or pers!=0:
-						raise ValueError('main or maindep may conflits with asp/form/chis/pers')
+					assert asp==None and form==None and chis==0 and pers==0 ,\
+						'main or maindep may conflits with asp/form/chis/pers'
 					asp=get_property(asp=found)
 					form=get_property(form=found)
 					rod=get_property(rod=found)
 					chis=get_property(chis=found)
 					pers=get_property(pers=found)
-		assert asp=='sov' or asp=='nesov' , \
-				'wrong asp: '+repr(asp)
-		assert form=='neopr' or form=='povel' or form=='nast' , \
-				'wrong form: '+repr(form)
-		assert form=='neopr' and chis==None or \
-			form!='neopr' and (chis=='ed' or chis=='mn'), \
-				'wrong chis: '+repr(chis)
-		assert (form=='neopr' or form=='povel') and rod==None or \
-			not(form=='neopr' or form=='povel') and (rod in {'m','g','s'}), \
-				'wrong rod: '+repr(rod)
-		assert (form=='neopr' or form=='povel') and pers==None or \
-			not(form=='neopr' or form=='povel') and (pers in {1,2,3}), \
-				'wrong pers: '+repr(pers)
-		self.asp=asp
-		self._form=form
-		self._rod=rod
-		self._chis=chis
-		self._pers=pers
+		self.asp  =self.asp_checker(asp)
+		self._form=self.form_checker(form)
+		self._rod =self.rod_checker(form,rod)
+		self._chis=self.chis_checker(form,chis)
+		self._pers=self.pers_checker(form,pers)
 
+	@staticmethod
+	def ext_props_setter(tup,**kwarg): #ext_prop_setter(tup,prop=val)
+		prop, val= next(iter(kwarg.items()))
+		tup[2][prop]=val
+		if prop=='form':
+			StVerb.form_checker(val)
+			if val=='neopr':
+				set_property(tup,chis=None)
+			elif val in {'neopr','povel'}:
+				set_property(tup,rod=None)
+				set_property(tup,pers=None)
+		elif prop=='rod':  StVerb.rod_checker(get_property(form=tup),val)
+		elif prop=='chis': StVerb.chis_checker(get_property(form=tup),val)
+		elif prop=='pers': StVerb.pers_checker(get_property(form=tup),val)
+		elif prop=='asp':  StVerb.asp_checker(val)
+		
 	form=property()
 	@form.getter
 	def form(self):
@@ -243,85 +384,83 @@ class StVerb(Struct):
 
 
 class StDeclinable(Struct):
-    __slots__=['word','odush','rod','chis','_pad']
-    
-    @staticmethod
-    def odush_checker(odush):
-        if type(odush)!=bool : raise TypeError('odush must be bool, not '+repr(odush))
-        return odush
-        
-    @staticmethod
-    def rod_checker(rod):
-        if rod!='m' and rod!='g' and rod!='s' : raise TypeError('rod must be m or g or s, not '+repr(rod))
-        return rod
+	__slots__=['word','odush','rod','chis','_pad']
 
-    @staticmethod
-    def chis_checker(chis):
-        if chis!='ed' and chis!='mn' : raise TypeError('chis must be ed or mn, not '+repr(chis))
-        return chis
+	@staticmethod
+	def odush_checker(odush):
+		assert type(odush)==bool , 'odush must be bool, not '+repr(odush)
+		return odush
+		
+	@staticmethod
+	def rod_checker(rod):
+		assert rod in {'m','g','s'}, 'rod must be m or g or s, not '+repr(rod)
+		return rod
 
-    @staticmethod
-    def pad_checker(pad):
-        if pad!='ip' and pad!='rp' and pad!='dp' and pad!='vp' and pad!='tp' and pad!='pp' : 
-            raise TypeError('pad must be ip, rp, dp, vp, tp or pp, not '+repr(pad))
-        return pad
+	@staticmethod
+	def chis_checker(chis):
+		assert chis in {'ed','mn'} , 'chis must be ed or mn, not '+repr(chis)
+		return chis
 
-    def __init__(self,word,o=None,r=None,c=None,p=None):
-        if type(word)==str:
-            #Struct.__init__(self,word.attrs)
-            # в словаре атрибуты отсутствуют
-            # при парсинге узел копируется со словаря и туда добавляются атрибуты
-            Struct.__init__(self)
-            # но тем не менее все должны иметь атрибуты 
-            # например для словосочетаний в словаре паттернов
-            self.word=word
-        elif type(word)==list:
-            Struct.__init__(self)
-            self.word=None
-            self.talk=word
-            #assert self.talk[0][1].attrs.pre==''
-            
-            found=None
-            for i in word:
-                if i[0]=='maindep':
-                    if found!=None:
-                        raise ValueError('we must have only one maindep')
-                    found =i#[1]
-                    if o!=None or r!=None or c!=None:
-                        raise ValueError('maindep may conflits with o/r/c')
-                    o=get_property(odush=found)
-                    r=get_property(rod=found)
-                    c=get_property(chis=found)
-                    if p==None: 
-                        p=get_property(pad=found)
-        self.odush=self.odush_checker(o)
-        self.rod  =self.  rod_checker(r)
-        self.chis =self. chis_checker(c)
-        self._pad =self.  pad_checker(p)
-        
-    pad=property()
-    @pad.getter
-    def pad(self):
-        return self._pad
-    @pad.setter
-    def pad(self,val):
-        self._pad=val
-        if self.word==None:
-            for i in self.talk:
-                if i[0]=='dep' or i[0]=='maindep' :
-                    set_property(i,pad=val)
-                
-    def post_repr(self):
-        return 'o='+repr(self.odush)+',r='+repr(self.rod)+            ',c='+repr(self.chis)+',p='+repr(self.pad)+')'+repr_attrs(self)
-    def __repr__(self):
-        raise NotImplementedError('virtual function')
+	@staticmethod
+	def pad_checker(pad):
+		assert pad in {'ip','rp','dp','vp','tp','pp'},\
+			'pad must be ip, rp, dp, vp, tp or pp, not '+repr(pad)
+		return pad
 
-    show_map=None
-    def __str__(self):
-        return self.attrs.change(
-            self.attrs.join(i[1] for i in self.talk)
-                if self.word==None else self.show_map[self.word](self)
-            )
+	def __init__(self,word,o=None,r=None,c=None,p=None):
+		if type(word)==str:
+			#Struct.__init__(self,word.attrs)
+			# в словаре атрибуты отсутствуют
+			# при парсинге узел копируется со словаря и туда добавляются атрибуты
+			Struct.__init__(self)
+			# но тем не менее все должны иметь атрибуты 
+			# например для словосочетаний в словаре паттернов
+			self.word=word
+		elif type(word)==list:
+			Struct.__init__(self)
+			self.word=None
+			self.talk=word
+			self.talk_checker()
+			
+			found=None
+			for i in word:
+				if i[0]=='maindep':
+					assert found==None, 'we must have only one maindep'
+					found =i#[1]
+					assert o==None and r==None and c==None, 'maindep may conflits with o/r/c'
+					o=get_property(odush=found)
+					r=get_property(rod=found)
+					c=get_property(chis=found)
+					if p==None: 
+						p=get_property(pad=found)
+		self.odush=self.odush_checker(o)
+		self.rod  =self.  rod_checker(r)
+		self.chis =self. chis_checker(c)
+		self._pad =self.  pad_checker(p)
+		
+	pad=property()
+	@pad.getter
+	def pad(self):
+		return self._pad
+	@pad.setter
+	def pad(self,val):
+		self._pad=val
+		if self.word==None:
+			for i in self.talk:
+				if i[0]=='dep' or i[0]=='maindep' :
+					set_property(i,pad=val)
+				
+	def post_repr(self):
+		return 'o='+repr(self.odush)+',r='+repr(self.rod)+            ',c='+repr(self.chis)+',p='+repr(self.pad)+')'+repr_attrs(self)
+	def __repr__(self):
+		raise NotImplementedError('virtual function')
+
+	show_map=None
+	def __str__(self):
+		return self.attrs.change(
+			self.attrs.join(i[1] for i in self.talk)
+				if self.word==None else self.show_map[self.word](self)
+			)
 
 
 # In[32]:
@@ -331,55 +470,67 @@ show_noun_map={}
 
 # Существительное
 class StNoun(StDeclinable):
-# dep, maindep, nodep, nomer, punct
-    __slots__=['_chis','och']
-    def __init__(self,word=None,och=0,o=None,r=None,c=None,p=None):
-        if type(word)==list:
-            if och!=0: raise ValueError('Noun-och must be in leaf')
-        else:
-            if type(och)!=str and och!=None: raise ValueError('och must be str')
-            self.och=och
-        StDeclinable.__init__(self,word,o,r,c,p)
-    
-    chis=property()
-    @chis.getter
-    def chis(self):
-        return self._chis
-    @chis.setter
-    def chis(self,val):
-        #print('set chis')#,repr(self))
-        if not hasattr(self,'_chis'):
-            self._chis=val
-        elif self._chis!=val:
-            #print('change chis')
-            self._chis=val
-            if self.word!=None:
-                if self.och==None :
-                    pass
-                elif type(self.och)==str:
-                    tmp=self.och
-                    self.och=self.word
-                    self.word=tmp
-                else:
-                    raise RuntimeError('internal error: StNoun.och = '+self.och)
-            else:
-                for i in self.talk:
-                    if i[0]=='dep' or i[0]=='maindep' :
-                        set_property(i,chis=val)
+	obediences = {
+		'dep'    : lambda x:_types_assert(x,StDeclinable),
+		'maindep': lambda x:_types_assert(x,StNoun),
+		'nodep'  : none_fun,
+		'nomer'  : lambda x:_types_assert(x,StNum),
+		'punct'  :           types_assert(S)
+	}
+	__slots__=['_chis','och']
+	def __init__(self,word=None,och=0,o=None,r=None,c=None,p=None):
+		if type(word)==list:
+			assert och==0 , 'Noun-och must be in leaf, och='+repr(och)
+		else:
+			assert type(och)==str or och==None , och
+			self.och=och
+		StDeclinable.__init__(self,word,o,r,c,p)
 
-    pers=3 #for pronoun
-    npad=property()
-    @npad.getter
-    def npad(self):
-        return ''
-    @npad.setter
-    def npad(self,val):
-        pass
-        
-    def __repr__(self):
-        return 'StNoun'+repr_id(self)+'('+            (repr(self.talk) if self.word==None                  else repr(self.word)+','+repr(self.och))+','+            self.post_repr()
-    
-    show_map=show_noun_map
+#	@staticmethod
+#	def ext_props_setter(tup,**kwarg): #ext_prop_setter(tup,prop=val)
+#	word и och являются постоянными параметрами и снаружи их менять нельзя
+#todo сделать для этого checker
+#   по этому ext_props_setter для chis не нужен
+		
+	chis=property()
+	@chis.getter
+	def chis(self):
+		return self._chis
+	@chis.setter
+	def chis(self,val):
+		#print('set chis')#,repr(self))
+		if not hasattr(self,'_chis'): # for constructor
+			self._chis=val
+		elif self._chis!=val:
+			#print('change chis')
+			self._chis=val
+			if self.word!=None:
+				if self.och==None :
+					pass
+				elif type(self.och)==str:
+					tmp=self.och
+					self.och=self.word
+					self.word=tmp
+				else:
+					raise RuntimeError('internal error: StNoun.och = '+self.och)
+			else:
+				for i in self.talk:
+					if i[0]=='dep' or i[0]=='maindep' :
+						set_property(i,chis=val)
+
+	pers=3 #for pronoun
+	npad=property()
+	@npad.getter
+	def npad(self):
+		return ''
+	@npad.setter
+	def npad(self,val):
+		pass
+		
+	def __repr__(self):
+		return 'StNoun'+repr_id(self)+'('+            (repr(self.talk) if self.word==None                  else repr(self.word)+','+repr(self.och))+','+            self.post_repr()
+
+	show_map=show_noun_map
 
 
 # In[33]:
@@ -389,11 +540,11 @@ class StNoun(StDeclinable):
 class StProNoun(StNoun):
     __slots__=['pers','npad']
     def __init__(self,word=None,och=0,pers=None,o=None,r=None,c=None,p=None,npad=''):
-        assert type(word)==str
+        assert type(word)==str, word
         StNoun.__init__(self,word,och,o,r,c,p)
-        assert pers in {1,2,3}
+        assert pers in {1,2,3}, pers
         self.pers=pers
-        assert npad in {'', 'n'} # его/него
+        assert npad in {'', 'n'} , npad # его/него
         self.npad=npad
 
 
@@ -404,54 +555,57 @@ show_num_map={}
 
 # Числительное
 class StNum(StDeclinable):
-# maindep, quantity
-    __slots__=['quantity']
-    def __init__(self,word=None,quantity=None,o=None,r=None,c=None,p=None):
-        if quantity!='1' and quantity!='2-4' and quantity!='>=5':
-            raise TypeError('quantity must be "1", "2-4" or ">=5"')
-        self.quantity=quantity
-        StDeclinable.__init__(self,word,o,r,c,p)
+	obediences = {
+		'maindep': types_assert(StNoun),
+		'quantity': lambda x:_types_assert(x,StNum)
+	}
+	__slots__=['quantity']
+	def __init__(self,word=None,quantity=None,o=None,r=None,c=None,p=None):
+		if quantity!='1' and quantity!='2-4' and quantity!='>=5':
+			raise TypeError('quantity must be "1", "2-4" or ">=5"')
+		self.quantity=quantity
+		StDeclinable.__init__(self,word,o,r,c,p)
 
-    pad=property()
-    @pad.getter
-    def pad(self):
-        return self._pad
-    @pad.setter
-    def pad(self,val): #...
-        #print('num.pad',val)
-        self._pad=val
-        if self.word==None:
-            for i in self.talk:
-                if i[0]=='quantity':
-                    set_property(i,pad=val)
-                if i[0]=='dep' or i[0]=='maindep' :
-                    if self.quantity=='1':
-                        set_property(i,pad=val)
-                    elif self.quantity=='2-4':
-                        set_property(i,chis='mn')
-                        if val=='ip':
-                            set_property(i,chis='ed')
-                            set_property(i,pad='rp')
-                        elif val=='vp':
-                            if i[1].odush :
-                                set_property(i,pad='rp')
-                            else:
-                                set_property(i,chis='ed')
-                                set_property(i,pad='rp')
-                        else:
-                            set_property(i,pad=val)
-                    elif self.quantity=='>=5':
-                        if val=='ip' or val=='vp':
-                            set_property(i,pad='rp')
-                        else:
-                            set_property(i,pad=val)
-                    else:
-                        raise RuntimeError()
+	pad=property()
+	@pad.getter
+	def pad(self):
+		return self._pad
+	@pad.setter
+	def pad(self,val): #...
+		#print('num.pad',val)
+		self._pad=val
+		if self.word==None:
+			for i in self.talk:
+				if i[0]=='quantity':
+					set_property(i,pad=val)
+				if i[0]=='dep' or i[0]=='maindep' :
+					if self.quantity=='1':
+						set_property(i,pad=val)
+					elif self.quantity=='2-4':
+						set_property(i,chis='mn')
+						if val=='ip':
+							set_property(i,chis='ed')
+							set_property(i,pad='rp')
+						elif val=='vp':
+							if i[1].odush :
+								set_property(i,pad='rp')
+							else:
+								set_property(i,chis='ed')
+								set_property(i,pad='rp')
+						else:
+							set_property(i,pad=val)
+					elif self.quantity=='>=5':
+						if val=='ip' or val=='vp':
+							set_property(i,pad='rp')
+						else:
+							set_property(i,pad=val)
+					else:
+						raise RuntimeError()
 
-    def __repr__(self):
-        return 'StNum'+repr_id(self)+'('+            (repr(self.talk) if self.word==None                  else repr(self.word))+','+            repr(self.quantity)+','+            self.post_repr()
-    
-    show_map=show_num_map
+	def __repr__(self):
+		return 'StNum'+repr_id(self)+'('+            (repr(self.talk) if self.word==None                  else repr(self.word))+','+            repr(self.quantity)+','+            self.post_repr()
+
+	show_map=show_num_map
 
 
 # In[35]:
@@ -461,11 +615,9 @@ show_adj_map={}
 
 # Прилагательное
 class StAdj(StDeclinable):
-#
     @staticmethod
     def pad_checker(pad):
-        if pad!='ip' and pad!='rp' and pad!='dp' and pad!='vp' and pad!='tp' and                 pad!='pp' and pad!='sh' : 
-            raise TypeError('pad must be ip, rp, dp, vp, tp, pp or sh')
+        assert pad in {'ip','rp','dp','vp','tp','pp','sh'} , pad
         return pad# пока особого смысла в этом нет
     
     def __init__(self,word=None,o=None,r=None,c=None,p=None):

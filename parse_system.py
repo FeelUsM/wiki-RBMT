@@ -1,11 +1,51 @@
+'''функции, связанные с парсингом, обработкой строк и их атрибутами
+
+Вначале текст разбивается на токены - слова в нижнем регистре (кроме 'I') и знаки пунктуации.
+Нестандартные пробелы (отличные от ' ') записываются атрибут pre.
+Во время преобразования массива элементов, обладающих строковыми атрибутами, 
+	они разделяются этими префиксами, если префиксы не пусты, иначе пробелами ' '
+Различные виды регистра слова записываются в changers.
+Теги и прочая информация о разметке записывается в tags. Пока это не реализовано.
+SAttrs            - Атрибуты строк - префикс pre, changers и tags
+S                 - стд. строка с полем attrs - атрибутами данной строки
+ch_title
+ch_sentence
+ch_anti_sentence
+ch_open           - доступные changers
+
+tokenizer - генератор, разбивающий строку на токены
+tokenize - вызывает tokenizer и возвращает массив токенов
+
+
+Есть соглашение: 
+	функции, принимающие (s,p) в качестве аргументов, имеют префикс p_
+	остальные парсинговые функции возвращают p_-функции.
+Поскольку грамматика может быть неоднозначной, результатов может быть больше одного.
+Каждая p_-функция возвращает массив пар (p,r), где
+	r - результат
+	p - позиция, где результат закончил парсится
+	
+Для LL(*) парсинга есть следующие функции:
+seq   - парсит последовательность и применяет правило
+rule1 - парсит последовательность длины 1 и применяет правило
+alt   - парсит альтернативы
+p_alt - парсит альтернативы
+ELSE  - используется в alt и p_alt
+W     - парсит заданное слово
+D     - парсит слово из заданного словаря
+#pexcept - 
+
+Следубщие типы используются для исключений:
+TestError
+ParseError
+TextError
+'''
+
+from copy import deepcopy
+import re
+
+
 # # Общее
-
-# In[1]:
-
-
-def throw(ex):
-    raise ex
-
 
 # In[2]:
 
@@ -21,10 +61,6 @@ class TestError(ValueError):
 # # Паттерны парсинга
 
 # In[3]:
-
-
-from copy import deepcopy,copy
-import re
 
 
 # In[4]:
@@ -117,13 +153,6 @@ class S(str): # строка с атрибутом
 
 
 def sp_seq(str,pos,patterns):
-#    for patt in patterns:
-#        tmp=patt(str,pos)
-#        if len(tmp)>1 : raise NotImplementedError()
-#        if len(tmp)==0 : return []
-#        (pos,tmp)=tmp[0]
-#        rezs.append(tmp)
-#    return [(pos,rezs)]
     if len(patterns)==1:
         return [(p,[r]) for (p,r) in patterns[0](str,pos)]
     first=patterns[0](str,pos)
@@ -291,28 +320,6 @@ def seq(patterns,handler):#,numbrs=None
 	#numbers = range(len(patterns)) if numbrs==None else numbrs
 	def p_seq(s,p):
 		return [(pos,handler(*rez)) for pos,rez in sp_seq(s,p,patterns)]
-		
-		assert False, 'unused'
-		# p_seq(s,p,[p0,p1,p2,p3],handle,[0,2,3]) ->
-		# for k:
-		#   (pos1,rez1) = sp_seq(s,p,[p0,p1,p2,p3]) [k]
-		#   rezs.append((pos1,handle(rezs[0],rezs[2],rezs[3],)))
-		rezs=[]
-		for (pos1,rez1) in sp_seq(s,p,patterns):
-			m=[False for i in range(len(patterns))]
-			for i in numbers: m[i]=True
-			for i in range(max(numbers)):
-				if not m[i]: SAttrs.to_right(rez1[i],rez1[i+1])
-			for i in range(len(patterns)-1,max(numbers),-1):
-				if not m[i]: SAttrs.to_left(rez1[i-1],rez1[i])
-			rez2=handler(*[rez1[i] for i in numbers])
-			#        for i in rez1:
-			#            if isinstance(i,StDeclinable):
-			#                i.check_attrs('p_seq')
-			#        if isinstance(rez2,StDeclinable):
-			#                rez2.check_attrs('p_seq:'+handler.__name__)
-			rezs.append((pos1,rez2))
-		return rezs
 	return p_seq
 
 ELSE=42 # some unusial constant
@@ -344,12 +351,3 @@ def rule1(patt,rule):
 			rezs.append((p1,rule(r)))
 		return rezs
 	return p_rule1
-
-def CW(ru,en=None,):
-    r=deepcopy(ru)
-    r.attrs=SAttrs() if en==None else en.attrs
-    return r
-	
-def add_changer(x,changer):
-	x.attrs.changers |= {changer}
-	return x

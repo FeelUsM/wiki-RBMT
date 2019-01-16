@@ -44,13 +44,29 @@
 #             которая будет возвращать слово в соотв. форме (для сущ. в соотв. падеже)
 # ```
 
-# In[ ]:
+# In[1]:
 
 
-from classes import *
+'''англо-русский переводчик, основанный на правилах, с простым добавлением паттернов и правил
+
+en2ru
+decline
+p_noun
+p_noun1
+r_noun_comma_noun
+'''
 
 
-# In[ ]:
+# In[2]:
+
+
+from parse_system import S, SAttrs, tokenizer,                         ch_title, ch_sentence, ch_anti_sentence, ch_open,                         rule1, seq, alt, p_alt, ELSE, W, D
+from classes import StC, StNum, StNoun, StVerb, I
+from ru_dictionary import ruwords, CW
+from en_dictionary import dict_adj, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb, dict_verb_s, r_adj_noun
+
+
+# In[3]:
 
 
 def default_warning(s): 
@@ -58,688 +74,27 @@ def default_warning(s):
 warning = default_warning
 
 
-# # Правила: RU-Словарь, +отображение
-
-# In[ ]:
-
-
-ruwords={} #какие-то однословные правила складываются сюда, а какие-то остаются в функциях
-
-
-# ## Noun
-
-# ##### Функции
-
-# In[ ]:
-
-
-def show_noun1(st,word,ip,rp,dp,vp,tp,pp):
-    if st.pad=='ip' : return word+ip
-    if st.pad=='rp' : return word+rp
-    if st.pad=='dp' : return word+dp
-    if st.pad=='vp' : return word+vp
-    if st.pad=='tp' : return word+tp
-    if st.pad=='pp' : return word+pp
-    raise RuntimeError()
-
-
-# In[ ]:
-
-
-#show_noun_map['я']=lambda st: show_noun1(st,"","я","меня","мне","меня","мной","мне")
-
-
-# In[ ]:
-
-
-def add_runoun(name,och,odush,rod,chis,word,ip,rp,dp,vp,tp,pp):
-    ruwords[name]=StNoun(name,och,odush,rod,chis,'ip')
-    show_noun_map[name]=lambda st: show_noun1(st,word,ip,rp,dp,vp,tp,pp)
-
-def add_runoun2(name,rod,word,ip,rp,dp,vp,tp,pp,               mname,odush,mword,mip,mrp,mdp,mvp,mtp,mpp):
-    add_runoun(name,mname,odush,rod,'ed',word,ip,rp,dp,vp,tp,pp)
-    add_runoun(mname,name,odush,rod,'mn',mword,mip,mrp,mdp,mvp,mtp,mpp)
-
-
-# ##### М.р.
-
-# In[ ]:
-
-
-#                                     ип ,нет ,дать,вижу,творю,думаю
-add_runoun2("кот"    ,'m'  ,'кот'    ,'' ,'а' ,'у' ,'а' ,'ом' ,'е' ,
-            "коты"   ,True ,'кот'    ,'ы','ов','ам','ов','ами','ах')
-
-add_runoun2("джем"     ,'m'  ,'джем'    ,'' ,'а' ,'у' ,'' ,'ом' ,'е' ,
-            "джемы"    ,False,'джем'    ,'ы','ов','ам','ы','ами','ах')
-add_runoun2("пистолет" ,'m'  ,'пистолет','' ,'а' ,'у' ,'' ,'ом' ,'е' ,
-            "пистолеты",False,'пистолет','ы','ов','ам','ы','ами','ах')
-
-add_runoun2("волк"   ,'m'  ,'волк'   ,'' ,'а' ,'у' ,'а' ,'ом' ,'е' ,
-            "волки"  ,True ,'волк'   ,'и','ов','ам','ов','ами','ах')
-add_runoun2("мальчик",'m'  ,'мальчик','' ,'а' ,'у' ,'а' ,'ом' ,'е' ,
-            "мальчики",True,'мальчик','и','ов','ам','ов','ами','ах')
-
-add_runoun2("ящик"   ,'m'  ,'ящик'   ,'' ,'а' ,'у' ,''  ,'ом' ,'е' ,
-            "ящики"  ,False,'ящик'   ,'и','ов','ам','и' ,'ами','ах')
-add_runoun2("урок"   ,'m'  ,'урок'   ,'' ,'а' ,'у' ,''  ,'ом' ,'е' ,
-            "уроки"  ,False,'урок'   ,'и','ов','ам','и' ,'ами','ах')
-
-add_runoun2("мяч"    ,'m'  ,'мяч'    ,'' ,'а' ,'у' ,''  ,'ом' ,'е' ,
-            "мячи"   ,False,'мяч'    ,'и','ей','ам','и' ,'ами','ах')
-
-
-# In[ ]:
-
-
-add_runoun2("ребёнок",'m'  ,'ребён'  ,'ок','ка','ку','ка','ком','ке',
-            "дети"   ,True ,'дет'    ,'и' ,'ей','ям','ей','ьми','ях')
-
-add_runoun2("котёнок",'m'  ,'котён'  ,'ок','ка','ку','ка','ком','ке',
-            "котята" ,True ,'котят'  ,'а' ,''  ,'ам',''  ,'ами','ах')
-
-
-# ##### Ж.р.
-
-# In[ ]:
-
-
-#                                   ип ,нет ,дать ,вижу,творю ,думаю
-add_runoun2("белка" ,'g'  ,'белк' ,'а' ,'и' ,'е'  ,'у' ,'ой'  ,'е'  ,
-            "белки" ,True ,'бел'  ,'ки','ок','кам','ок','ками','ках')
-
-add_runoun2("кепка"  ,'g'  ,'кепк'  ,'а' ,'и' ,'е'  ,'у' ,'ой'  ,'е'  ,
-            "кепки"  ,False,'кеп'   ,'ки','ок','кам','ки','ками','ках')
-add_runoun2("шапка"  ,'g'  ,'шапк'  ,'а' ,'и' ,'е'  ,'у' ,'ой'  ,'е'  ,
-            "шапки"  ,False,'шап'   ,'ки','ок','кам','ки','ками','ках')
-add_runoun2("коробка",'g'  ,'коробк','а' ,'и' ,'е'  ,'у' ,'ой'  ,'е'  ,
-            "коробки",False,'короб' ,'ки','ок','кам','ки','ками','ках')
-add_runoun2("палка"  ,'g'  ,'палк'  ,'а' ,'и' ,'е'  ,'у' ,'ой'  ,'е'  ,
-            "палки"  ,False,'пал'   ,'ки','ок','кам','ки','ками','ках')
-
-add_runoun2("кошка" ,'g'  ,'кошк' ,'а' ,'и' ,'е'  ,'у' ,'ой'  ,'е'  ,
-            "кошки" ,True ,'кош'  ,'ки','ек','кам','ек','ками','ках')
-
-add_runoun2("ручка" ,'g'  ,'ручк' ,'а' ,'и' ,'е'  ,'у'  ,'ой' ,'е'  ,
-            "ручки" ,False,'руч'  ,'ки','ек','кам','ки','ками','ках')
-add_runoun2("чашка" ,'g'  ,'чашк' ,'а' ,'и' ,'е'  ,'у' ,'ой'  ,'е'  ,
-            "чашки" ,False,'чаш'  ,'ки','ек','кам','ки','ками','ках')
-add_runoun2("ложка" ,'g'  ,'ложк' ,'а' ,'и' ,'е'  ,'у' ,'ой'  ,'е'  ,
-            "ложки" ,False,'лож'  ,'ки','ек','кам','ки','ками','ках')
-
-
-# In[ ]:
-
-
-add_runoun2("собака",'g'  ,'собак','а' ,'и' ,'е'  ,'у'  ,'ой' ,'е' ,
-            "собаки",True ,'собак','и' ,''  ,'ам' ,''   ,'ами','ах')
-
-add_runoun2("книга" ,'g'  ,'книг' ,'а' ,'и' ,'е'  ,'у'  ,'ой' ,'е' ,
-            "книги" ,False,'книг' ,'и' ,''  ,'ам' ,'и'  ,'ами','ах')
-
-add_runoun2("зебра" ,'g'  ,'зебр' ,'а','ы','е' ,'у' ,'ой' ,'е' ,
-            "зебры" ,True ,'зебр' ,'ы','' ,'ам',''  ,'ами','ах')
-add_runoun2("крыса" ,'g'  ,'крыс' ,'а','ы','е' ,'у' ,'ой' ,'е' ,
-            "крысы" ,True ,'крыс' ,'ы','' ,'ам',''  ,'ами','ах')
-add_runoun2("курица",'g'  ,'куриц','а','ы','е' ,'у' ,'ой' ,'е' ,
-            "курицы",True ,'куриц','ы','' ,'ам',''  ,'ами','ах')
-add_runoun2("лиса"  ,'g'  ,'лис'  ,'а','ы','е' ,'у' ,'ой' ,'е' ,
-            "лисы"  ,True ,'лис'  ,'ы','' ,'ам',''  ,'ами','ах')
-    
-add_runoun2("шляпа" ,'g'  ,'шляп' ,'а','ы','е' ,'у' ,'ой' ,'е' ,
-            "шляпы" ,False,'шляп' ,'ы','' ,'ам','ы' ,'ами','ах')
-add_runoun2("ваза"  ,'g'  ,'ваз'  ,'а','ы','е' ,'у' ,'ой' ,'е' ,
-            "вазы"  ,False,'ваз'  ,'ы','' ,'ам','ы' ,'ами','ах')
-add_runoun2("лампа" ,'g'  ,'ламп' ,'а','ы','е' ,'у' ,'ой' ,'е' ,
-            "лампы" ,False,'ламп' ,'ы','' ,'ам','ы' ,'ами','ах')
-add_runoun2("звезда",'g'  ,'звезд','а','ы','е' ,'у' ,'ой' ,'е' ,
-            "звёзды",False,'звёзд','ы','' ,'ам','ы' ,'ами','ах')
-
-
-# In[ ]:
-
-
-add_runoun2("свинья",'g'  ,'свинь','я' ,'и' ,'е'  ,'ю' ,'ёй'  ,'е'  ,
-            "свиньи",True ,'свин' ,'ьи','ей','ьям','ей','ьями','ьях')
-
-add_runoun2("информация",'g'  ,'информаци','я','и','и' ,'ю' ,'ей' ,'и' ,
-            "информации",False,'информаци','и','й','ям','еи','ями','ях')
-
-
-# In[ ]:
-
-
-add_runoun2("мышь"   ,'g'  ,'мыш'   ,'ь','и' ,'и' ,'ь' ,'ью' ,'и' ,
-            "мыши"   ,True ,'мыш'   ,'и','ей','ам','ей','ами','ах')
-
-add_runoun2("тетрадь",'g'  ,'тетрад','ь','и' ,'и' ,'ь' ,'ью' ,'и' ,
-            "тетради",False,'тетрад','и','ей','ям','и' ,'ями','ях')
-add_runoun2("кровать",'g'  ,'кроват','ь','и' ,'и' ,'ь' ,'ью' ,'и' ,
-            "кровати",False,'кроват','и','ей','ям','и' ,'ями','ях')
-
-
-# ##### С.р.
-
-# In[ ]:
-
-
-#                                    ип  ,нет ,дать ,вижу,творю ,думаю о
-add_runoun2("утро"  ,'s'  ,'утр'    ,'о' ,'а' ,'у'  ,'о' ,'ом'  ,'е'  ,
-            "утра"  ,False,'утр'    ,'а' ,''  ,'ам' ,'а' ,'ами' ,'ах' )
-add_runoun2("слово" ,'s'  ,'слов'   ,'о' ,'а' ,'у'  ,'о' ,'ом'  ,'е'  ,
-            "слова" ,False,'слов'   ,'а' ,''  ,'ам' ,'а' ,'ами' ,'ах' )
-
-add_runoun2("ружьё"  ,'s'  ,'ружь'  ,'ё' ,'я' ,'ю'  ,'ё' ,'ём'  ,'е'  ,
-            "ружья"  ,False,'руж'   ,'ья','ей','ьям','ьи','ьями','ьях')
-
-add_runoun2("вареньё",'s'  ,'варень','е' ,'я' ,'ю'  ,'е' ,'ем' ,'е' ,
-            "варенья",False,'варен' ,'ья','ий','ьям','ья','ьями','ьях')
-
-
-# ##### Мн.ч.
-
-# In[2]:
-
-
-#                                  ип ,нет ,дать,вижу,творю,думаю
-add_runoun('часы (предмет)',None,False,'m','mn','час','ы','ов','ам','ы','ами','ах')
-
-
-# ## Pronoun
-
-# In[ ]:
-
-
-def show_pronoun1(st,ends,nends):
-    if st.npad=='':
-        ip,rp,dp,vp,tp,pp = ends
-    elif st.npad=='n':
-        ip,rp,dp,vp,tp,pp = nends
-    else: raise RuntimeError()
-    if st.pad=='ip' : return ip
-    if st.pad=='rp' : return rp
-    if st.pad=='dp' : return dp
-    if st.pad=='vp' : return vp
-    if st.pad=='tp' : return tp
-    if st.pad=='pp' : return pp
-    raise RuntimeError()
-
-
-# In[ ]:
-
-
-ruwords["я (муж)"]=StProNoun("я","мы",1,True,'m','ed','ip')
-ruwords["я (жен)"]=StProNoun("я","мы",1,True,'g','ed','ip')
-show_noun_map["я"]=lambda st: show_noun1(st,'',"я","меня","мне","меня","мной","мне")
-
-def add_rupronoun(name,sh_name,och,pers,r,c,ends,nends):
-    ruwords[name]=StProNoun(sh_name,och,pers,True,r,c,'ip')
-    show_noun_map[sh_name]=lambda st: show_pronoun1(st,ends,nends)
-add_rupronoun('он','он',"они",3,'m','ed',
-              ("он","его" ,"ему" ,"его" ,"им" ,"нём"),
-              ("он","него","нему","него","ним","нём"))
-
-
-# ## Adj
-
-# In[ ]:
-
-
-def show_adj1(st,word,ends):
-    if st.chis=='mn' :
-        (ip,rp,dp,vp,tp,pp,sh)=ends['mn']
-    else:
-        (ip,rp,dp,vp,tp,pp,sh)=ends[st.rod]
-        
-    if   st.pad=='ip' : rez=ip
-    elif st.pad=='rp' : rez=rp
-    elif st.pad=='dp' : rez=dp
-    elif st.pad=='vp' : rez=vp[0] if st.odush else vp[1]
-    elif st.pad=='tp' : rez=tp
-    elif st.pad=='pp' : rez=pp
-    elif st.pad=='sh' : rez=sh
-    else: raise RuntimeError()
-        
-    return word+rez
-
-
-# In[ ]:
-
-
-def add_ruadj(name,sh_word,ends):
-    ruwords[name]=StAdj(name,True,'m','ed','ip')
-    show_adj_map[name]=lambda st: show_adj1(st,sh_word,ends)
-
-
-# In[ ]:
-
-
-adj_std_ends_i={# и
-    'm' :('ий','его','ему',('его','ий'),'им' ,'ем','' ),
-    's' :('ее','его','ему',('ее', 'ее'),'им' ,'ем','е'),
-    'g' :('ая','ей' ,'ей' ,('ую', 'ую'),'ей' ,'ей','а'),
-    'mn':('ие','их' ,'им' ,('их', 'ие'),'ими','их','и'),
-}
-adj_std_ends_y={# ы
-    'm' :('ый','ого','ому',('ого','ый'),'ым' ,'ом','' ),
-    's' :('ое','ого','ому',('ое', 'ое'),'ым' ,'ом','о'),
-    'g' :('ая','ой' ,'ой' ,('ую', 'ую'),'ой' ,'ой','а'),
-    'mn':('ые','ых' ,'ым' ,('ых', 'ые'),'ыми','ых','ы'),
-}
-
-add_ruadj('летучий','летуч' ,adj_std_ends_i)
-add_ruadj('хороший','хорош' ,adj_std_ends_i)
-
-add_ruadj('добрый' ,'добр' ,adj_std_ends_y)
-
-add_ruadj('этот' ,'эт' ,{
-    'm' :('от','ого','ому',('ого','от'),'им' ,'ом',None),
-    's' :('о' ,'ого','ому',('о' , 'о' ),'им' ,'ом',None),
-    'g' :('а' ,'ой' ,'ой' ,('у' , 'у' ),'ой' ,'ой',None),
-    'mn':('и' ,'их' ,'им' ,('их', 'и' ),'ими','их',None),
-})
-add_ruadj('тот' ,'т' ,{
-    'm' :('от','ого','ому',('ого','от'),'ем' ,'ом',None),
-    's' :('о' ,'ого','ому',('о' , 'о' ),'ем' ,'ом',None),
-    'g' :('а' ,'ой' ,'ой' ,('у' , 'у' ),'ой' ,'ой',None),
-    'mn':('е' ,'ех' ,'ем' ,('ех', 'е' ),'еми','ех',None),
-})
-
-
-# ## Num
-
-# In[ ]:
-
-
-def show_num1(st,word,ends):
-    if st.chis=='mn' :
-        (ip,rp,dp,vp,tp,pp)=ends['mn']
-    else:
-        (ip,rp,dp,vp,tp,pp)=ends[st.rod]
-        
-    if   st.pad=='ip' : rez=ip
-    elif st.pad=='rp' : rez=rp
-    elif st.pad=='dp' : rez=dp
-    elif st.pad=='vp' : rez=vp[0] if st.odush else vp[1]
-    elif st.pad=='tp' : rez=tp
-    elif st.pad=='pp' : rez=pp
-    else: raise RuntimeError()
-        
-    return word+rez
-
-def add_runum(name,quantity,chis,start,ends):
-    show_num_map[name]=lambda st: show_num1(st,start ,ends)
-    ruwords[name]=     StNum(name,quantity  ,False,'m',chis,'ip')
-
-
-# In[ ]:
-
-
-add_runum('один','1','ed','од' ,
-        {
-            'm' :('ин','ного','ному',('ного','ин'),'ним' ,'ном'),
-            's' :('но','ного','ному',('но'  ,'но'),'ним' ,'ном'),
-            'g' :('на','ной' ,'ной' ,('ну'  ,'ну'),'ной' ,'ной'),
-            'mn':('ни','них' ,'ним' ,('них', 'ни'),'ними','них'),
-        }
-    )
-
-show_num_map['два']=    (lambda st:         ("две" if st.rod=='g' else "два")                         if st.pad=='ip' else         "двух"                                                    if st.pad=='rp' else         "двум"                                                    if st.pad=='dp' else         ("двух" if st.odush else "две" if st.rod=='g' else "два") if st.pad=='vp' else         "двумя"                                                   if st.pad=='tp' else         "двух"                                                    if st.pad=='pp' else         throw(RuntimeError('unknown pad: '+st.pad))
-    )
-ruwords['два']=    StNum('два'   ,'2-4',False,'m','mn','ip')
-
-add_runum('три','2-4','mn','тр' ,
-        {   'mn':('и','ёх' ,'ём' ,('ёх', 'и'),'емя','ёх'), }    )
-add_runum('четыре','2-4','mn','четыр' ,
-        {   'mn':('е','ёх' ,'ём' ,('ёх', 'е'),'ьмя','ёх'), }    )
-add_runum('пять','>=5','mn','пят' ,
-        {   'mn':('ь','и' ,'и' ,('ь', 'ь'),'ью','и'), }    )
-add_runum('шесть','>=5','mn','шест' ,
-        {   'mn':('ь','и' ,'и' ,('ь', 'ь'),'ью','и'), }    )
-add_runum('семь','>=5','mn','сем' ,
-        {   'mn':('ь','и' ,'и' ,('ь', 'ь'),'ью','и'), }    )
-add_runum('восемь','>=5','mn','вос' ,
-        {   'mn':('емь','ьми' ,'ьми' ,('емь', 'емь'),'емью','ьми'), }    )
-
-
-# ## Verb
-
-# In[ ]:
-
-
-def show_verb1(st,word,end_map):
-    if st.form=='neopr':
-        end = end_map[st.form]
-    elif  st.form=='povel':
-        end = end_map[st.form][0 if st.chis=='ed' else 1]
-    else:
-        (i,you,he,shi,it,we,yous,they)=end_map[st.form]
-        if   (st.pers,st.chis)==(1,'ed'):
-            end = i
-        elif (st.pers,st.chis)==(2,'ed'):
-            end = you
-        elif (st.pers,st.chis)==(3,'ed'):
-            if   st.rod=='m' : end=he
-            elif st.rod=='g' : end=she
-            elif st.rod=='s' : end=it
-        elif (st.pers,st.chis)==(1,'mn'):
-            end = we
-        elif (st.pers,st.chis)==(2,'mn'):
-            end = yous
-        elif (st.pers,st.chis)==(3,'mn'):
-            end = they
-    return word+end
-
-
-# In[ ]:
-
-
-show_verb_map['видеть']=    lambda st: show_verb1(st,'ви',
-        {    'neopr':"деть",
-             'povel':("дь","дьте"),
-             'nast': ("жу","дишь","дит","дит","дит","дим","дите","дят")
-        }   )
-show_verb_map['иметь']=    lambda st: show_verb1(st,'име',
-        {    'neopr':"ть",
-             'povel':("й","йте"),
-             'nast': ("ю","ешь","ет","ет","ет","ем","ете","ют")
-        }   )
-show_verb_map['показать']=    lambda st: show_verb1(st,'пока',
-        {    'neopr':"зать",
-             'povel':("жи","жите"),
-             'nast': ("жу","жешь","жет","жет","жет","жем","жете","жут")
-        }   )
-show_verb_map['сказать']=    lambda st: show_verb1(st,'ска',
-        {    'neopr':"зать",
-             'povel':("жи","жите"),
-             'nast': ("жу","жешь","жет","жет","жет","жем","жете","жут")
-        }   )
-show_verb_map['дать']=    lambda st: show_verb1(st,'да',
-        {    'neopr':"ть",
-             'povel':("й","йте"),
-             'nast': ("м","шь","ст","ст","ст","дим","дите","дут")
-        }   )
-
-
-# In[ ]:
-
-
-#(self,word,oasp=0,asp=None,form=None,chis=0,rod=0,pers=0)
-def r_videt():   return StVerb('видеть'  ,"увидеть"   ,'nesov','povel','mn',None,None)
-def r_imet():    return StVerb('иметь'   ,"заиметь"   ,'nesov','povel','mn',None,None)
-def r_dat():     return StVerb('дать'    ,'давать'    ,'sov'  ,'povel','mn',None,None)
-def r_pokazat(): return StVerb('показать','показывать','sov'  ,'povel','mn',None,None)
-def r_skazat():  return StVerb('сказать' ,'говорить'  ,'sov'  ,'povel','mn',None,None)
-
-
-# # Правила: Составные - общие
-
-# In[ ]:
-
-
-def r_adj_noun(_a_,_n_): 
-    return StNoun([
-        I(dep=_a_,
-            rod=_n_.rod,
-            chis=_n_.chis,
-            pad=_n_.pad),
-        I(maindep=_n_)
-    ])
-
-
-# # Паттерны: EN-Словарь
-
-# ## Adj
-
-# In[ ]:
-
-
-dict_adj={}
-
-
-# In[ ]:
-
-
-dict_adj['a'] = S('')
-#dict_adj['a'] : r_nekotoryj(),
-dict_adj['an']= S('')
-#dict_adj['an'] : r_nekotoryj(),
-
-dict_adj['good']=ruwords["хороший"]
-
-dict_adj['this']=ruwords["этот"]
-dict_adj['that']=ruwords["тот"]
-
-
-# ## Noun
-
-# In[ ]:
-
-
-dict_noun={}
-
-
-# In[ ]:
-
-
-#dict_noun['cat']=   ruwords["кошка"]
-dict_noun['cat']=   ruwords["кот"]
-#dict_noun['cats']=   ruwords["кошки"]
-dict_noun['cats']=   ruwords["коты"]
-    
-#dict_noun['rat']=   ruwords["мышь"]
-dict_noun['rat']=   ruwords['крыса']
-#dict_noun['rats']=   ruwords["мыши"]
-dict_noun['rats']=   ruwords['крысы']
-    
-dict_noun['bat']=   r_adj_noun(deepcopy(ruwords['летучий']),deepcopy(ruwords["мышь"]))
-dict_noun['bats']=   r_adj_noun(deepcopy(ruwords['летучий']),deepcopy(ruwords["мыши"]))
-    
-dict_noun['lesson']=ruwords["урок"]
-dict_noun['lessons']=ruwords["уроки"]
-    
-
-
-# In[ ]:
-
-
-dict_noun['cap']=   ruwords["кепка"]
-#dict_noun['cap']=  ruwords["шапка"]
-dict_noun['caps']=   ruwords["кепки"]
-#dict_noun['caps']=  ruwords["шапки"]
-    
-dict_noun['pen']=   ruwords["ручка"]
-dict_noun['pens']=   ruwords["ручки"]
-    
-dict_noun['hat']=   ruwords["шляпа"]
-dict_noun['hats']=   ruwords["шляпы"]
-    
-dict_noun['hen']=   ruwords["курица"]
-dict_noun['hens']=   ruwords["курицы"]
-    
-
-
-# In[ ]:
-
-
-dict_noun['dog']=   ruwords['собака']
-dict_noun['dogs']=   ruwords['собаки']
-dict_noun['pig']=   ruwords['свинья']
-dict_noun['pigs']=   ruwords['свиньи']
-dict_noun['gun']=   ruwords['ружьё']
-dict_noun['guns']=   ruwords['ружья']
-dict_noun['cup']=   ruwords['чашка']
-dict_noun['cups']=   ruwords['чашки']
-    
-
-
-# In[ ]:
-
-
-#dict_noun['box']=   ruwords['коробка']
-#dict_noun['boxes']=   ruwords['коробки']
-dict_noun['box']=   ruwords['ящик']
-dict_noun['boxes']=   ruwords['ящики']
-
-dict_noun['jam']=   ruwords['джем']
-#dict_noun['jam']=   ruwords['варенье']
-
-dict_noun['bed']=   ruwords['кровать']
-dict_noun['beds']=   ruwords['кровати']
-
-dict_noun['fox']=   ruwords['лиса']
-dict_noun['foxes']=   ruwords['лисы']
-    
-
-
-# In[ ]:
-
-
-dict_noun['kitten']= ruwords['котёнок']
-dict_noun['kittens']= ruwords['котята']
-dict_noun['vase']= ruwords['ваза']
-dict_noun['vases']= ruwords['вазы']
-dict_noun['star']= ruwords['звезда']
-dict_noun['stars']= ruwords['звёзды']
-dict_noun['lamp']= ruwords['лампа']
-dict_noun['lamps']= ruwords['лампы']
-    
-
-
-# In[ ]:
-
-
-dict_noun['squirrel']= ruwords['белка']
-dict_noun['squirrels']= ruwords['белки']
-dict_noun['wolf']= ruwords['волк']
-dict_noun['wolfs']= ruwords['волки']
-dict_noun['zebra']= ruwords['зебра']
-dict_noun['zebras']= ruwords['зебры']
-dict_noun['boy']= ruwords['мальчик']
-dict_noun['boys']= ruwords['мальчики']
-#dict_noun['boy']= ruwords['парень']
-#dict_noun['boy']= ruwords['парни']
-
-
-# In[ ]:
-
-
-dict_noun['copy-book']= ruwords['тетрадь']
-dict_noun['copy-books']= ruwords['тетради']
-dict_noun['book']= ruwords['книга']
-dict_noun['books']= ruwords['книги']
-dict_noun['spoon']= ruwords['ложка']
-dict_noun['spoons']= ruwords['ложки']
-dict_noun['morning']= ruwords['утро']
-dict_noun['mornings']= ruwords['утра']
-
-
-# In[ ]:
-
-
-dict_noun['pistol']= ruwords['пистолет']
-dict_noun['pistols']= ruwords['пистолеты']
-dict_noun['ball']= ruwords['мяч']
-dict_noun['balls']= ruwords['мячи']
-dict_noun['stick']= ruwords['палка']
-dict_noun['sticks']= ruwords['палки']
-dict_noun['word']= ruwords['слово']
-dict_noun['words']= ruwords['слова']
-
-
-# In[ ]:
-
-
-dict_noun['child']= ruwords['ребёнок']
-dict_noun['children']= ruwords['дети']
-
-dict_noun['information']= ruwords['информация']
-dict_noun['informations']=ruwords['информации']
-
-dict_noun['watch']= ruwords['часы (предмет)']
-dict_noun['watches']= ruwords['часы (предмет)']
-
-
-# ## Pronoun
-
-# In[ ]:
-
-
-dict_pronoun_ip={}
-dict_pronoun_dp={}
-
-
-# In[ ]:
-
-
-dict_pronoun_ip['I']= ruwords["я (муж)"]
-#dict_pronoun_ip['I']= ruwords["я (жен)"]
-dict_pronoun_dp['me']= ruwords["я (муж)"]
-#dict_pronoun_dp['I']= ruwords["я (жен)"]
-
-dict_pronoun_ip['he']= ruwords["он"]
-dict_pronoun_dp['him']= ruwords["он"]
-
-
-# ## Numeral
-
-# In[ ]:
-
-
-dict_numeral={}
-
-
-# In[ ]:
-
-
-dict_numeral['one']=   ruwords['один']
-dict_numeral['two']=   ruwords['два']
-dict_numeral['three']= ruwords['три']
-dict_numeral['four']=  ruwords['четыре']
-dict_numeral['five']=  ruwords['пять']
-dict_numeral['six']=   ruwords['шесть']
-dict_numeral['seven']= ruwords['семь']
-dict_numeral['eight']= ruwords['восемь']
-
-
-# ## Verb
-
-# In[ ]:
-
-
-dict_verb={}
-dict_verb_s={}
-
-
-# In[ ]:
-
-
-dict_verb  ['see']= r_videt()
-dict_verb_s['sees']= r_videt()
-dict_verb  ['have']= r_imet()
-dict_verb_s['has']= r_imet()
-
-dict_verb  ['give']= r_dat()
-dict_verb_s['gives']= r_dat()
-dict_verb  ['show']= r_pokazat()
-dict_verb_s['shows']= r_pokazat()
-dict_verb  ['say']= r_skazat()
-dict_verb_s['says']= r_skazat()
-
-
 # # Паттерны и правила: Составные
 
-# In[ ]:
+# .
+# ## паттерны
+# 
+# ## парвила
+# 
+# ## классы
+# 
+
+# In[4]:
 
 
 DEBUGGING=False
 
 
-# In[ ]:
+# In[5]:
 
 
 def debug_pp(fun):
-    s_point=[]
+    s_point=[] # когда изменяется s - означает, что нужно сбросить кэш
     cache={}
     def wrapper(s,p):
         nonlocal s_point,cache
@@ -750,11 +105,15 @@ def debug_pp(fun):
             debug_s = '.'*p+'*'+'.'*(len(s)-p-1)+(' ' if p<len(s) else '')+                fun.__name__+'___'+str(p)
         if p in cache:
             if DEBUGGING: print('|'+debug_s)
+            if cache[p]==None:
+                raise ParseError('зацикливание '+fun.__name__+'(s,'+p+')')
             return cache[p]
         else:
             if DEBUGGING: print('{'+debug_s)
         
+        cache[p]=None
         rezs=fun(s,p)
+        cache[p]=rezs
         
         if DEBUGGING:
             print('}'+debug_s)
@@ -767,21 +126,14 @@ def debug_pp(fun):
 #                if isinstance(i[1],StDeclinable):
 #                    i[1].check_attrs('wrapper:'+fun.__name__)
         
-        cache[p]=rezs
         return rezs
     return wrapper
     return fun
 
 
-# In[ ]:
-
-
-2 in {3}
-
-
 # ## Other
 
-# In[ ]:
+# In[6]:
 
 
 @debug_pp
@@ -789,7 +141,7 @@ def p_numeral(s,p):
     return D(dict_numeral)(s,p)
 
 
-# In[ ]:
+# In[7]:
 
 
 #2->
@@ -800,27 +152,24 @@ def p_adj(s,p):
 
 # ## Noun-like
 
-# In[ ]:
+# In[8]:
 
 
 def r_A_noun(_a,_n): return StNoun([
-    I(maindep=_n,
-         attrs_from_left=_a)
+    I(maindep=_n,         attrs_from_left=_a)
 ])
-#    return SAttrs.to_right(a,n)
 
 
-# In[ ]:
+# In[9]:
 
 
-def r_GOOD_MORNING(_g,_m):
-    return r_adj_noun(
-        CW(ruwords['добрый'],_g),
-        CW(ruwords['утро'],_m)
-    )
+def r_GOOD_MORNING(_g,_m):  return r_adj_noun(
+    CW('добрый',_g),
+    CW('утро',_m)
+)
 
 
-# In[ ]:
+# In[10]:
 
 
 @debug_pp
@@ -832,7 +181,7 @@ def p_adj_noun3(s,p): return p_alt(s,p,
 )
 
 
-# In[ ]:
+# In[11]:
 
 
 @debug_pp
@@ -844,7 +193,7 @@ def p_noun3(s,p): return p_alt(s,p,
 )
 
 
-# In[ ]:
+# In[12]:
 
 
 def r_noun_numeral(n,num): return StNoun([
@@ -853,7 +202,7 @@ def r_noun_numeral(n,num): return StNoun([
 ])
 
 
-# In[ ]:
+# In[13]:
 
 
 @debug_pp
@@ -863,22 +212,19 @@ def p_noun2(s,p): return p_alt(s,p,
 )
 
 
-# In[ ]:
+# In[14]:
 
 
 def r_numeral_noun(num,n):
     if num.chis!=n.chis :
         warning('не совпадают числа числ. и сущ.:'+str(num)+str(n))
     return StNum([
-        I(quantity=num,
-            chis=n.chis,
-            rod=n.rod,
-            odush=n.odush),
+        I(quantity=num,            chis=n.chis, rod=n.rod, odush=n.odush ),
         I(maindep=n)
     ],quantity=num.quantity)
 
 
-# In[ ]:
+# In[15]:
 
 
 @debug_pp
@@ -888,64 +234,52 @@ def p_noun1(s,p): return p_alt(s,p,
 )
 
 
-# In[ ]:
+# In[16]:
 
 
-def r_noun_and_noun(sn,a,n):
-    return StNoun([
-        I(dep=sn),
-        I(nodep=S('и',a.attrs)),
-        I(dep=n)
-    ],c='mn', p='ip',o=False,r='m')
-def r_noun_comma_noun(sn,c,n):
-    return StNoun([
-        I(dep=sn),
-        I(punct=S(',',c.attrs)),
-        I(dep=n)
-    ],c='mn', p='ip',o=False,r='m')
+def r_noun_and_noun(sn,a,n):    return StNoun([
+    I(dep=sn),
+    I(nodep=S('и',a.attrs)),
+    I(dep=n)
+],c='mn', p='ip',o=False,r='m')
+def r_noun_comma_noun(sn,c,n):    return StNoun([
+    I(dep=sn),
+    I(punct=S(',',c.attrs)),
+    I(dep=n)
+],c='mn', p='ip',o=False,r='m')
 
 
-# In[ ]:
+# In[17]:
 
 
 @debug_pp
 def p_noun(s,p):
-    @debug_pp
-    def p_noun1_and_noun(s,p):
-        rezs=  seq([ p_noun1, W('and'), p_noun ],r_noun_and_noun  )(s,p)
-        rezs+= seq([ p_noun1, W(',')  , p_noun ],r_noun_comma_noun)(s,p)
-        return rezs
     return p_alt(s,p,
-        p_noun1_and_noun, #ELSE, # переход к следующему уровню
+        seq([ p_noun1, W('and'), p_noun ],r_noun_and_noun  ),
+        seq([ p_noun1, W(',')  , p_noun ],r_noun_comma_noun),
+                 #ELSE, # переход к следующему уровню
                  # идет конфликт с and-ом из глаголов
         p_noun1
     )
 
 
-# In[3]:
+# In[18]:
 
 
 def r_noun_dp(_n): return StNoun([
-    I(maindep=_n,
-         pad='dp')
+    I(maindep=_n,         pad='dp')
 ])
-#    _n_.pad='dp'
-#    return _n_
 
 
-# In[4]:
+# In[19]:
 
 
 def r_TO_noun_dp(_t,_n): return StNoun([
-    I(maindep=_n,
-         pad='dp',
-         attrs_from_left=_t)
+    I(maindep=_n,         pad='dp', attrs_from_left=_t)
 ])
-#    _n_.pad='dp'
-#    return _n_
 
 
-# In[5]:
+# In[20]:
 
 
 @debug_pp
@@ -959,31 +293,25 @@ def p_noun_dp(s,p): return p_alt(s,p,
 
 # ### verb3:  Сделать кому
 
-# In[ ]:
+# In[21]:
 
 
-def r_verb_noun_dp_mn(_v_,_n_): 
-    return StVerb([
-        I(maindep=_v_,
-            chis='mn'),
-        I(dp=_n_,
-            pad='dp')
-    ])
+def r_verb_noun_dp_mn(_v_,_n_):    return StVerb([
+    I(maindep=_v_,  chis='mn'),
+    I(dp=_n_,       pad='dp')
+])
 
 
-# In[ ]:
+# In[22]:
 
 
-def r_verb_noun_dp_ed(_v_,_n_): 
-    return StVerb([
-        I(maindep=_v_,
-            chis='ed'),
-        I(dp=_n_,
-            pad='dp')
-    ])
+def r_verb_noun_dp_ed(_v_,_n_):     return StVerb([
+    I(maindep=_v_,  chis='ed'),
+    I(dp=_n_,       pad='dp')
+])
 
 
-# In[ ]:
+# In[23]:
 
 
 @debug_pp
@@ -999,59 +327,58 @@ def p_verb3(s,p): return p_alt(s,p,
 
 # ### verb2: сделать что
 
-# In[ ]:
+# In[24]:
 
 
 def r_SKAZHI_noun(_s,_p): return StVerb([
-    I(maindep=CW(r_skazat(),_s)),
-    I(vp=_p,
-         pad='vp')
+    I(maindep=CW('сказать',_s)),
+    I(vp=_p,   pad='vp')
 ])
 def r_SKAZHI_phrase(_s,_p): return StVerb([
-    I(maindep=CW(r_skazat(),_s)),
+    I(maindep=CW('сказать',_s)),
     I(nodep=_p)
 ])
 def r_SKAZHI_c_phrase(_s,c,_p): return StVerb([
-    I(maindep=CW(r_skazat(),_s)),#ruwords['сказать']
+    I(maindep=CW('сказать',_s)),#ruwords['сказать']
     I(punct=c),
     I(nodep=_p)
 ])
 def r_SKAZHI_q_text(_s,q1,_p,q2): return StVerb([
-    I(maindep=CW(r_skazat(),_s)),
-    I(punct=add_changer(q1,ch_open)),
+    I(maindep=CW('сказать',_s)),
+    I(punct=q1, add_changers={ch_open}),
     I(nodep=_p),
     I(punct=q2),
 ])
 def r_SKAZHI_c_q_text(_s,c,q1,_p,q2): return StVerb([
-    I(maindep=CW(r_skazat(),_s)),
+    I(maindep=CW('сказать',_s)),
     I(punct=c),
-    I(punct=add_changer(q1,ch_open)),
+    I(punct=q1, add_changers={ch_open}),
     I(nodep=_p),
     I(punct=q2),
 ])
 
 
-# In[ ]:
+# In[25]:
 
 
 def r_verb_noun(v,n): return StVerb([
     I(maindep=v),
-    I(vp=n,
-        pad='vp')
+    I(vp=n,   pad='vp')
 ])
 
 
-# In[ ]:
+# In[26]:
 
 
 @debug_pp
 def p_verb2(s,p): return p_alt(s,p,
-    seq([ alt(W('say'),W('says')),                 p_phrase      ], r_SKAZHI_noun), ELSE, # исключение исключения
+    seq([ alt(W('say'),W('says')),                 p_phrase      ], r_SKAZHI_noun), 
+       ELSE, # исключение исключения
     seq([ alt(W('say'),W('says')),                 p_phrase      ], r_SKAZHI_phrase),
     seq([ alt(W('say'),W('says')), W(':'),         p_phrase      ], r_SKAZHI_c_phrase),
     seq([ alt(W('say'),W('says')),         W('"'), p_text, W('"')], r_SKAZHI_q_text),
     seq([ alt(W('say'),W('says')), W(':'), W('"'), p_text, W('"')], r_SKAZHI_c_q_text), 
-        ELSE, # исключение
+       ELSE, # исключение
     seq([ p_verb3, p_noun ],r_verb_noun),    ELSE, # переход к следующему уровню
     p_verb3
 )
@@ -1059,36 +386,29 @@ def p_verb2(s,p): return p_alt(s,p,
 
 # ### verb1: кто (тоже) делает
 
-# In[ ]:
+# In[27]:
 
 
-def r_U_noun_EST_noun(_n1_,_h_,_n2_):
-    return StC([
-        I(nodep=StC([
-            I(nodep=S('у')),
-            I(nodep=_n1_,
-                pad='rp',
-                npad='n' )# у Него
-        ])),
-        I(nodep=S('есть',_h_.attrs)),
-        I(nodep=_n2_)
-    ])
+def r_U_noun_EST_noun(_n1_,_h_,_n2_):    return StC([
+    I(nodep=StC([
+        I(nodep=S('у')),
+        I(nodep=_n1_,   pad='rp', npad='n' )# у Него
+    ])),
+    I(nodep=S('есть',_h_.attrs)),
+    I(nodep=_n2_)
+])
 
-def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):
-    return StC([
-        I(nodep=StC([
-            I(nodep=S('у')),
-            I(nodep=_n1_,
-                pad='rp',
-                npad='n' )# у Него
-        ])),
-        I(nodep=S('нет',_h_.attrs)),
-        I(nodep=_n2_,
-            pad='rp')
-    ])
+def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
+    I(nodep=StC([
+        I(nodep=S('у')),
+        I(nodep=_n1_,   pad='rp', npad='n' )# у Него
+    ])),
+    I(nodep=S('нет',_h_.attrs)),
+    I(nodep=_n2_,        pad='rp')
+])
 
 
-# In[ ]:
+# In[28]:
 
 
 @debug_pp
@@ -1103,33 +423,24 @@ def pe_HAVE_noun(s,p):
     )
 
 
-# In[ ]:
+# In[29]:
 
 
 def r_to_verb(_t,_v): return StVerb([
-    I(maindep=_v,
-         form='neopr',
-         chis=None, 
-         attrs_from_left=_t)
+    I(maindep=_v,         form='neopr', attrs_from_left=_t)
 ])
-#    v.form='neopr'
-#    return SAttrs.to_right(t,v)
 
 
-# In[ ]:
+# In[30]:
 
 
 def r_noun_verb(n,v): return StVerb([
     I(ip=n),
-    I(main=v,
-        form='nast',
-        pers=n.pers,
-        chis=n.chis,
-        rod=n.rod)
+    I(main=v,   form='nast', pers=n.pers, chis=n.chis, rod=n.rod)
 ])
 
 
-# In[ ]:
+# In[31]:
 
 
 @debug_pp
@@ -1141,21 +452,17 @@ def p_verb1_1(s,p): return p_alt(s,p,
 )
 
 
-# In[ ]:
+# In[32]:
 
 
 def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
     I(ip=_n),
     I(nodep=S('тоже',_t.attrs)),
-    I(main=_v,
-        form='nast',
-        pers=_n.pers,
-        chis=_n.chis,
-        rod=_n.rod)
+    I(main=_v,   form='nast', pers=_n.pers, chis=_n.chis, rod=_n.rod)
 ])
 
 
-# In[ ]:
+# In[33]:
 
 
 @debug_pp
@@ -1167,41 +474,38 @@ def p_verb1(s,p): return p_alt(s,p,
 
 # ### verb: сделать одно и/но сделать сдругое
 
-# In[ ]:
+# In[34]:
 
 
-def r_verb_NO_verb(_v1_,_c_,_but_,_v2_):
-    return StC([
-        I(nodep=_v1_),
-        I(nodep=_c_),
-        I(nodep=S('но',_c_.attrs)),
-        I(nodep=_v2_)
-    ])
+def r_verb_NO_verb(_v1_,_c_,_but_,_v2_):    return StC([
+    I(nodep=_v1_),
+    I(nodep=_c_),
+    I(nodep=S('но',_c_.attrs)),
+    I(nodep=_v2_)
+])
 
 
-# In[ ]:
+# In[35]:
 
 
-def r_verb_c_verb(_v1_,_c_,_v2_):
-    return StC([
-        I(nodep=_v1_),
-        I(nodep=_c_),
-        I(nodep=_v2_)
-    ])
+def r_verb_c_verb(_v1_,_c_,_v2_):    return StC([
+    I(nodep=_v1_),
+    I(nodep=_c_),
+    I(nodep=_v2_)
+])
 
 
-# In[ ]:
+# In[36]:
 
 
-def r_verb_I_verb(_v1_,_i_,_v2_):
-    return StC([
-        I(nodep=_v1_),
-        I(nodep=S('и',_i_.attrs)),
-        I(nodep=_v2_)
-    ])
+def r_verb_I_verb(_v1_,_i_,_v2_):    return StC([
+    I(nodep=_v1_),
+    I(nodep=S('и',_i_.attrs)),
+    I(nodep=_v2_)
+])
 
 
-# In[ ]:
+# In[37]:
 
 
 @debug_pp
@@ -1215,7 +519,7 @@ def p_verb(s,p): return p_alt(s,p,
 
 # ## Фразы, предложения, текст
 
-# In[ ]:
+# In[38]:
 
 
 @debug_pp
@@ -1227,7 +531,7 @@ def p_phrase(s,p): return p_alt(s,p,
 )
 
 
-# In[ ]:
+# In[39]:
 
 
 dict_proper={}# имена собственные
@@ -1252,7 +556,7 @@ def p_sentence(s,p):
     return rezs
 
 
-# In[ ]:
+# In[40]:
 
 
 def maxlen_filter(patt,s,p): #
@@ -1289,33 +593,42 @@ def p_text(s,p):
         
 
 
-# In[ ]:
+# In[41]:
 
 
-def en2ru(s): # main
+def _en2ru(s): # main
     s=[ i for i in tokenizer(s)]
     if len(s)==0:
         warning('no tokens')
         return ''
     rezs= p_text(s,0)
     if len(rezs)==0:
-        raise ParseError('no results')
+        warning('NO RESULTS AT ALL')
+        return ''
     p,r1 = rezs[0]
     if p!=len(s):
         warning('NOT PARSED:')
-        warning(SAttrs.join(s[p:]))
+        warning(SAttrs().join(s[p:]))
     return r1.tostr()
+
+def en2ru(s):
+    global DEBUGGING
+    DEBUGGING=False
+    return _en2ru(s)
 
 def d_en2ru(s):
     global DEBUGGING
     l_d = DEBUGGING
     DEBUGGING=True
-    r=en2ru(s)
+    r=_en2ru(s)
     DEBUGGING=l_d
     return r
 
+def pr_en2ru(s):
+    print("'''"+en2ru(s)+"'''")
 
-# In[ ]:
+
+# In[42]:
 
 
 def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
@@ -1349,10 +662,14 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
 #         КОНТЕКСТ
 #     15) посмотри
 # 
-# watch, двое, трое, пятеро
 # 
-# ch_antisentence
+# 
+# контекст пока игнорим
+# 
+# watch, двое, трое, пятеро
 # ...
+# открывающиеся кавычки
+# 
 # для больших текстов p_sentence будет делать срез со своей позции до конца
 #     - чтобы обновить кэши ф-ций
 # 
@@ -1363,55 +680,330 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
 # отображение открывающейся кавычки (SAttrs.join)
 # ```
 
-# In[ ]:
+# In[43]:
 
 
 #decline('two watches')
 
 
-# In[ ]:
-
-
-def timing(f,*args):
-    import time
-    start_time = time.time()
-    r=f(*args)
-    print("--- %.3f seconds ---" % (time.time() - start_time))
-    return r
-
-
-# In[ ]:
-
-
-#timing(en2ru,'Say: "Seven, six, four, two, five, three, one."')
-
-
-# In[ ]:
-
-
-#timing(en2ru,'say: say seven')
-
-
-# In[ ]:
+# In[44]:
 
 
 en2ru('')
 
 
-# In[ ]:
+# In[45]:
 
 
-en2ru('I see jam and one cup')
+en2ru('I see jam and one cup.')
 
 
-# In[ ]:
+# ## Lesson 9
+
+# In[46]:
 
 
-en2ru('_Cat and cat')
+pr_en2ru('''This girl has a fish.
+This fish is on the dish.''')
 
 
-# In[ ]:
+# In[47]:
 
 
-en2ru('Say: "Seven, six, four, two, five, three, one."')
+dict_noun['dolls']=ruwords['мячи']
+
+
+# In[48]:
+
+
+pr_en2ru('''This girl has three dolls.
+This boy has two balls.
+That girl has five books.
+That boy has four pens.''')
+
+
+# In[49]:
+
+
+#dict_adj['the']=S('')
+
+
+# In[50]:
+
+
+DEBUGGING=False
+
+
+# In[51]:
+
+
+en2ru('''The girl has one dish.
+She has two spoons.-
+The boy has three sticks.
+He has five stars.''')
+
+
+# In[52]:
+
+
+en2ru('''This frog is on the log.
+That frog is in the lake.
+The snake is in the box.''')
+
+
+# In[53]:
+
+
+en2ru('''The spoon is in the
+cup.
+The squirrel is on the
+log.
+The doll is on the
+bed.''')
+
+
+# In[54]:
+
+
+en2ru('''I like cakes.
+I have two cakes.
+He has two stars.
+She has three dolls.''')
+
+
+# In[55]:
+
+
+en2ru('''The doll is on the bed.
+The snake is in the lake.
+The hen is on the log.
+The bat is in the hat.''')
+
+
+# In[56]:
+
+
+en2ru('''This girl has five
+kittens and two cats.''')
+
+
+# In[57]:
+
+
+en2ru('''She has three hens.
+I have four books and
+nine copy-books.
+This boy has eight
+stars.
+He has six sticks, but
+he has no gun.
+I like fish.
+One snake is in the
+lake.
+One frog is on the
+log.
+Jam is in the vase.''')
+
+
+# ## Lesson 10
+
+# In[58]:
+
+
+en2ru('''Has she a doll?
+Yes, she has.
+Have you a rabbit?
+No, I have not.''')
+
+
+# In[59]:
+
+
+en2ru('''Count from one to ten! One, two, three,
+four, five, six, seven, eight, nine, ten.''')
+
+
+# In[60]:
+
+
+en2ru('''Count the rabbits!
+One, two.
+Count the chickens!
+One, two, three.
+This girl has three
+rabbits.
+She has five chickens.''')
+
+
+# In[61]:
+
+
+en2ru('''Has this girl a kitten? Yes, she has.
+Has this girl a vase? Yes, she has.
+Has she	a	dog?	Yes,	she	has.
+Has she	a	hat?	Yes,	she	has.
+Has she	a	snake?	No,	she	has	not.
+Has she	a	frog?	No,	she	has	not.
+Has she	a	bat?	No,	she	has	not.''')
+
+
+# In[62]:
+
+
+en2ru('''That boy has two squirrels.
+He has one fox too.
+He has nine rabbits.
+He has four bats.''')
+
+
+# In[63]:
+
+
+en2ru('''Has that boy a wolf?
+Has he a gun?
+Has he a pistol?
+Has he a stick?
+Has he a ball?
+No, he has not.
+No, he has not.
+No, he has not.
+Yes, he has.
+Yes, he has.''')
+
+
+# In[64]:
+
+
+en2ru('''You have one hen and eight chickens.
+You have nine rabbits too.''')
+
+
+# In[65]:
+
+
+en2ru('''Have you a hat? Yes, I have.
+Have you a stick? No, I have not.
+Catch that rabbit!''')
+
+
+# In[66]:
+
+
+en2ru('''Have you a ball?
+Yes, I have.
+Show me the ball!
+Cat, cat, catch a bat!
+Count the chickens!
+Catch that boy!
+Show me this rabbit!
+Count from ten to one!
+Have you a doll?
+No, I have not.
+Say ten words!''')
+
+
+# ## Lesson 11
+
+# In[67]:
+
+
+en2ru('''How many balls have you?''')
+
+
+# In[68]:
+
+
+en2ru('''Have you a cat? Yes,
+we have.
+How many kittens has
+the cat?
+It has one kitten.
+How many ducks have
+you?
+We have two ducks and
+ten ducklings.''')
+
+
+# In[69]:
+
+
+en2ru('''How many hens have you? I have eight
+hens.
+How many cows have you?
+We have one cow.''')
+
+
+# In[70]:
+
+
+en2ru('''How many dogs
+have you?
+I have two dogs.
+How many books
+has this boy?
+He has eleven.''')
+
+
+# In[71]:
+
+
+en2ru('''How many copy-books has that girl?
+She has four.
+How many pens has she?
+She has ten pens.
+How many kittens have you?
+I have three kittens.''')
+
+
+# In[72]:
+
+
+en2ru('''How many chickens has the hen?
+It has eleven.
+How many ducklings has the duck?
+It has eight.
+How many kittens has the cat?
+It has three.
+How many dolls has the girl?
+She has two.
+How many sticks has the boy?
+He has five.
+How many hats have I?
+You have one.''')
+
+
+# In[73]:
+
+
+en2ru('''It has four legs, a long tail and it can give milk.''')
+
+
+# In[74]:
+
+
+en2ru('''''')
+
+
+# In[75]:
+
+
+en2ru('''''')
+
+
+# In[76]:
+
+
+en2ru('''''')
+
+
+# In[77]:
+
+
+en2ru('''''')
+
+
+# In[78]:
+
+
+en2ru('''''')
 
