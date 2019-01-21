@@ -51,11 +51,11 @@ import re
 
 
 class TextError(ValueError):
-    pass
+	pass
 class ParseError(ValueError):
-    pass
+	pass
 class TestError(ValueError):
-    pass
+	pass
 
 
 # # Паттерны парсинга
@@ -153,18 +153,18 @@ class S(str): # строка с атрибутом
 
 
 def sp_seq(str,pos,patterns):
-    if len(patterns)==1:
-        return [(p,[r]) for (p,r) in patterns[0](str,pos)]
-    first=patterns[0](str,pos)
-    first.sort(key=lambda i:i[0]) # в дальнейшем отключить повторное вычисление 
-    # продолжения для одинаковых позиций
-    rezs=[]
-    for r in first:
-        tmp=sp_seq(str,r[0],patterns[1:])
-        for rr in tmp:
-            rr[1].insert(0,r[1])
-        rezs+=tmp
-    return rezs
+	if len(patterns)==1:
+		return [(p,[r]) for (p,r) in patterns[0](str,pos)]
+	first=patterns[0](str,pos)
+	first.sort(key=lambda i:i[0]) # в дальнейшем отключить повторное вычисление 
+	# продолжения для одинаковых позиций
+	rezs=[]
+	for r in first:
+		tmp=sp_seq(str,r[0],patterns[1:])
+		for rr in tmp:
+			rr[1].insert(0,r[1])
+		rezs+=tmp
+	return rezs
 
 
 # In[8]:
@@ -172,22 +172,22 @@ def sp_seq(str,pos,patterns):
 
 # 'word'
 def sp_const_word(str,pos,word):
-    return [(pos+len(word),word)] if str[pos:pos+len(word)]==word else []
+	return [(pos+len(word),word)] if str[pos:pos+len(word)]==word else []
 
 
 # In[9]:
 
 
 def ch_title(s):
-    return s.title()
+	return s.title()
 def ch_upper(s):
-    return s.upper()
+	return s.upper()
 def ch_sentence(s):
-    if len(s)==0: return ''
-    return s[0].upper()+s[1:]
+	if len(s)==0: return ''
+	return s[0].upper()+s[1:]
 CH_ANTI_SENTENCE=ch_title
 def ch_anti_sentence(s):
-    return CH_ANTI_SENTENCE(s)
+	return CH_ANTI_SENTENCE(s)
 def ch_none(s):
 	return s
 def ch_open(s): # для открывающихся кавычек
@@ -224,21 +224,21 @@ def sp_word(str,pos):
 
 
 def sp_punct(str,pos):
-    pos1=pos
-    if pos1<len(str) and str[pos1] in PUNCT_CHARS : # по одному символу, ... - добавим потом
-        pos1+=1
-    return [] if pos1==pos else [(pos1,S(str[pos:pos1]))]
+	pos1=pos
+	if pos1<len(str) and str[pos1] in PUNCT_CHARS : # по одному символу, ... - добавим потом
+		pos1+=1
+	return [] if pos1==pos else [(pos1,S(str[pos:pos1]))]
 
 
 # In[11]:
 
 
 def sp_open_tag(s,p):
-    return []
+	return []
 def sp_close_tag(s,p):
-    return []
+	return []
 def sp_openclose_tag(s,p):
-    return sp_const_word(s,p,'<br>')
+	return sp_const_word(s,p,'<br>')
 
 
 # In[12]:
@@ -246,47 +246,47 @@ def sp_openclose_tag(s,p):
 
 # ([ _\r\n\v\t]|sp_openclose_tag)+
 def sp_spcs(str,pos):
-    pre=''
-    pos1=pos
-    while pos1<len(str):
-        if str[pos1] in ' _\t\n\r\v':
-            pre+=str[pos1]
-            pos1+=1
-            continue
-        tmp = sp_openclose_tag(str,pos1)
-        if len(tmp)!=0:
-            pre+=tmp[0][1]
-            pos1=tmp[0][0]
-            continue
-        break
-    return [] if pos1==pos else [(pos1,pre)]    
+	pre=''
+	pos1=pos
+	while pos1<len(str):
+		if str[pos1] in ' _\t\n\r\v':
+			pre+=str[pos1]
+			pos1+=1
+			continue
+		tmp = sp_openclose_tag(str,pos1)
+		if len(tmp)!=0:
+			pre+=tmp[0][1]
+			pos1=tmp[0][0]
+			continue
+		break
+	return [] if pos1==pos else [(pos1,pre)]    
 
 
 # In[13]:
 
 
 def tokenizer(s):
-    pos=0
-    pre=''
-    while pos<len(s):
-        tmp=sp_spcs(s,pos)
-        if len(tmp)>0:
-            (pos,pre)=tmp[0]
-            if pre==' ': pre=''
-            continue
-        tmp=sp_word(s,pos)
-        if len(tmp)>0:
-            (pos,foryield) = tmp[0]
-            foryield.attrs.pre=pre; pre=''
-            yield foryield
-            continue
-        tmp=sp_punct(s,pos)
-        if len(tmp)>0:
-            (pos,foryield) = tmp[0]
-            foryield.attrs.pre=pre; pre=''
-            yield foryield
-            continue
-        raise TextError("can't tokenize: "+                        repr(s[max(0,pos-10):pos])+' - '+repr(s[pos:min(len(s),pos+10)]))
+	pos=0
+	pre=''
+	while pos<len(s):
+		tmp=sp_spcs(s,pos)
+		if len(tmp)>0:
+			(pos,pre)=tmp[0]
+			if pre==' ': pre=''
+			continue
+		tmp=sp_word(s,pos)
+		if len(tmp)>0:
+			(pos,foryield) = tmp[0]
+			foryield.attrs.pre=pre; pre=''
+			yield foryield
+			continue
+		tmp=sp_punct(s,pos)
+		if len(tmp)>0:
+			(pos,foryield) = tmp[0]
+			foryield.attrs.pre=pre; pre=''
+			yield foryield
+			continue
+		raise TextError("can't tokenize: "+                        repr(s[max(0,pos-10):pos])+' - '+repr(s[pos:min(len(s),pos+10)]))
 
 
 # In[14]:
@@ -302,39 +302,71 @@ def tokenize(s) : return [i for i in tokenizer(s)]
 
 #в эти копии потом добваляется .attrs
 def W(w):
-    assert type(w)==str
-    return lambda s,p:         [(p+1,deepcopy(s[p]))] if p<len(s) and s[p]==w else []
+	'''если найдено заданное слово, то возвращает его'''
+	assert type(w)==str
+	return lambda s,p:         [(p+1,deepcopy(s[p]))] if p<len(s) and s[p]==w else []
 
 def D(d):
-    assert type(d)==dict
-    def p_from_dict(s,p):
-        if p<len(s) and s[p] in d:
-            tmp=deepcopy(d[s[p]])
-            tmp.attrs=deepcopy(s[p].attrs)
-            return [(p+1,tmp)]
-        else:
-            return []
-    return p_from_dict
-
-def seq(patterns,handler):#,numbrs=None
-	#numbers = range(len(patterns)) if numbrs==None else numbrs
-	def p_seq(s,p):
-		return [(pos,handler(*rez)) for pos,rez in sp_seq(s,p,patterns)]
-	return p_seq
+	'''если найденное слово находится в заданном словаре - возвращает то, что ему сопоставлено'''
+	assert type(d)==dict
+	def p_from_dict(s,p):
+		if p<len(s) and s[p] in d:
+			if type(d[s[p]])==list:
+				# номер дефолтного варианта находится на 0й позиции. 0===1
+				r = d[s[p]][d[s[p]][0]] if d[s[p]][0]>=1 else d[s[p]][1]
+			else: r = d[s[p]]
+			tmp=deepcopy(r)
+			tmp.attrs=deepcopy(s[p].attrs)
+			return [(p+1,tmp)]
+		else:
+			return []
+	return p_from_dict
 
 ELSE=42 # some unusial constant
-def alt(*args):
-    def p_alt(s,p):
-        rezs=[]
-        for patt in args:
-            if patt==ELSE:
-                if len(rezs)>0 : return rezs
-            else:
-                rezs+=patt(s,p)
-        return rezs
-    return p_alt
-
 def p_alt(s,p,*args):
+	'''альтернативы и исключения
+	
+		идем по аргументам до 1го ELSE
+		если ELSE нет - парсим все аргументы и всё
+		парсим все аргументы после ELSE
+			assert ELSE больше не встречается
+		если результатов нет (регулярных), то всё
+		парсим все аргументы с начала до ELSE
+		если результатов (исключений) нет, возвращаем регулярные, всё
+		если есть хоть один результат со значением 0
+			удаляем все результаты со значением 0
+			добавляем регулярные результаты
+		всё
+	'''
+	for i in range(len(args)):
+		if args[i]==ELSE:
+			break
+	else:
+		rezs=[]
+		for patt in args:
+			rezs+=patt(s,p)
+		return rezs
+	i+=1
+	r_rezs=[]
+	while i<len(args):
+		assert args[i]!=ELSE
+		r_rezs+=args[i](s,p)
+		i+=1
+	if len(r_rezs)==0: return []
+	i=0
+	e_rezs=[]
+	while args[i]!=ELSE:
+		e_rezs+=args[i](s,p)
+		i+=1
+	if len(e_rezs)==0: return r_rezs
+	has0=False
+	for p,r in e_rezs:
+		if r==0:
+			return [(p,r) for p,r in e_rezs if r!=0]+r_rezs
+	else:
+		return e_rezs
+	return
+#	
 	rezs=[]
 	for patt in args:
 		if patt==ELSE:
@@ -343,11 +375,15 @@ def p_alt(s,p,*args):
 			rezs+=patt(s,p)
 	return rezs
 
-def rule1(patt,rule):
-	def p_rule1(s,p):
-		rezs_in=patt(s,p)
-		rezs=[]
-		for p1,r in rezs_in:
-			rezs.append((p1,rule(r)))
-		return rezs
-	return p_rule1
+def alt(*args):
+	return lambda s,p: p_alt(s,p,*args)
+
+def seq(patterns,handler):#,numbrs=None
+	#numbers = range(len(patterns)) if numbrs==None else numbrs
+	def null_handler(*args):
+		return 0
+	if type(handler)==list:
+		hanler = null_handler if handler[0]==0 else handler[handler[0]]
+	def p_seq(s,p):
+		return [(pos,handler(*rez)) for pos,rez in sp_seq(s,p,patterns)]
+	return p_seq
