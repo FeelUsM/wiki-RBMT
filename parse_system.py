@@ -126,16 +126,20 @@ class SAttrs:
 		l.attrs.tags|=r.attrs.tags
 		return l
 
+class ParseInfo:
+	enabled = False
+	__slots__=['p_start','p_end','rule_group','pattern']
 
 # In[6]:
 
 
 class S(str): # строка с атрибутом
-	__slots__='attrs'
+	__slots__=['attrs','parse_info']
 	def __new__(cls,s,attrs=None):
 		return str.__new__(cls,s)
 	def __init__(self,s,attrs=None):
 		self.attrs = attrs if attrs!=None else SAttrs()
+		self.parse_info = ParseInfo()
 		
 	def __repr__(self):
 		return 'S('+str.__repr__(self)+','+repr(self.attrs)+')'
@@ -317,6 +321,11 @@ def D(d):
 			else: r = d[s[p]]
 			tmp=deepcopy(r)
 			tmp.attrs=deepcopy(s[p].attrs)
+			if ParseInfo.enabled:
+				tmp.parse_info.pattern = [d['__name__']]
+				tmp.parse_info.p_start = p
+				tmp.parse_info.p_end = p+1
+				tmp.parse_info.rule_group = d[s[p]]
 			return [(p+1,tmp)]
 		else:
 			return []
@@ -378,12 +387,21 @@ def p_alt(s,p,*args):
 def alt(*args):
 	return lambda s,p: p_alt(s,p,*args)
 
-def seq(patterns,handler):#,numbrs=None
+def seq(patterns,rule_group):#,numbrs=None
 	#numbers = range(len(patterns)) if numbrs==None else numbrs
 	def null_handler(*args):
+		'''возвращает 0, а alt когда видит на месте результата 0 заменяет его на регулярные результаты
+		'''
 		return 0
-	if type(handler)==list:
-		hanler = null_handler if handler[0]==0 else handler[handler[0]]
+	if type(rule_group)==list:
+		rule = null_handler if rule_group[0]==0 else rule_group[rule_group[0]]
+	else:
+		rule = rule_group
+	def rule_froup_adder(r):
+		r.parse_info.rule_group = rule_group
+		return r
+	def p_seq_info(s,p):
+		return [(pos,rule_froup_adder(rule(*rez))) for pos,rez in sp_seq(s,p,patterns)]
 	def p_seq(s,p):
-		return [(pos,handler(*rez)) for pos,rez in sp_seq(s,p,patterns)]
-	return p_seq
+		return [(pos,                 rule(*rez) ) for pos,rez in sp_seq(s,p,patterns)]
+	return p_seq_info if ParseInfo.enabled else p_seq

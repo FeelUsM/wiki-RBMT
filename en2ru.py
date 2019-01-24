@@ -102,7 +102,7 @@ r_noun_comma_noun
 # In[2]:
 
 
-from parse_system import S, SAttrs, tokenizer,                         ch_title, ch_sentence, ch_anti_sentence, ch_open,                         seq, alt, p_alt, ELSE, W, D
+from parse_system import S, SAttrs, ParseInfo, tokenizer,                         ch_title, ch_sentence, ch_anti_sentence, ch_open,                         seq, alt, p_alt, ELSE, W, D
 from classes import StC, StNum, StNoun, StVerb, I
 from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2
 from en_dictionary import dict_adj, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb, dict_verb_s, r_adj_noun
@@ -118,13 +118,9 @@ warning = default_warning
 
 # # Паттерны и правила: Составные
 
-# .
-# ## паттерны
+# -Когда в правилах использовать S а когда один из классов Struct ?
 # 
-# ## парвила
-# 
-# ## классы
-# 
+# -S используется для неизменяемых узлов-листьев. Во всех остальных случаях используется один из классов Struct
 
 # In[4]:
 
@@ -154,8 +150,16 @@ def debug_pp(fun):
             if DEBUGGING: print('{'+debug_s)
         
         cache[p]=None
-        rezs=fun(s,p)
+        rezs=fun(s,p)   # CALL FUN
         cache[p]=rezs
+        
+        if ParseInfo.enabled:
+            def pattern_adder(p1,r1):
+                r1.parse_info.p_start = p
+                r1.parse_info.p_end = p1
+                r1.parse_info.pattern = fun
+                return r1
+            rezs = [(p1,pattern_adder(p1,r1)) for p1,r1 in rezs]
         
         if DEBUGGING:
             print('}'+debug_s)
@@ -175,7 +179,7 @@ def debug_pp(fun):
 
 # ## Исключения
 
-# In[8]:
+# In[6]:
 
 
 def r_A_noun(_a,_n): return StNoun([
@@ -183,7 +187,7 @@ def r_A_noun(_a,_n): return StNoun([
 ])
 
 
-# In[9]:
+# In[7]:
 
 
 def r_GOOD_MORNING(_g,_m):  return r_adj_noun(
@@ -192,7 +196,7 @@ def r_GOOD_MORNING(_g,_m):  return r_adj_noun(
 )
 
 
-# In[24]:
+# In[8]:
 
 
 def r_SKAZHI_noun(_s,_p): return StVerb([
@@ -223,7 +227,7 @@ def r_SKAZHI_c_q_text(_s,c,q1,_p,q2): return StVerb([
 ])
 
 
-# In[27]:
+# In[9]:
 
 
 def r_U_noun_EST_noun(_n1_,_h_,_n2_):    return StC([
@@ -245,7 +249,7 @@ def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
 ])
 
 
-# In[66]:
+# In[10]:
 
 
 @debug_pp
@@ -262,7 +266,7 @@ def pe_HAVE_noun(s,p):
 
 # ## Other
 
-# In[6]:
+# In[11]:
 
 
 @debug_pp
@@ -270,7 +274,7 @@ def p_numeral(s,p):
     return D(dict_numeral)(s,p)
 
 
-# In[7]:
+# In[12]:
 
 
 #2->
@@ -281,7 +285,7 @@ def p_adj(s,p):
 
 # ## Noun-like
 
-# In[10]:
+# In[13]:
 
 
 @debug_pp
@@ -294,7 +298,7 @@ ELSE,
 )
 
 
-# In[11]:
+# In[14]:
 
 
 @debug_pp
@@ -306,7 +310,7 @@ def p_noun3(s,p): return p_alt(s,p,
 )
 
 
-# In[12]:
+# In[15]:
 
 
 def r_noun_numeral(n,num): return StNoun([
@@ -315,7 +319,7 @@ def r_noun_numeral(n,num): return StNoun([
 ])
 
 
-# In[13]:
+# In[16]:
 
 
 @debug_pp
@@ -325,7 +329,7 @@ def p_noun2(s,p): return p_alt(s,p,
 )
 
 
-# In[14]:
+# In[17]:
 
 
 def r_numeral_noun(num,n):
@@ -337,7 +341,7 @@ def r_numeral_noun(num,n):
     ],quantity=num.quantity)
 
 
-# In[15]:
+# In[18]:
 
 
 @debug_pp
@@ -347,7 +351,7 @@ def p_noun1(s,p): return p_alt(s,p,
 )
 
 
-# In[16]:
+# In[19]:
 
 
 def r_noun_and_noun(sn,a,n):    return StNoun([
@@ -362,7 +366,7 @@ def r_noun_comma_noun(sn,c,n):    return StNoun([
 ],c='mn', p='ip',o=False,r='m')
 
 
-# In[17]:
+# In[20]:
 
 
 @debug_pp
@@ -376,7 +380,7 @@ def p_noun(s,p):
     )
 
 
-# In[18]:
+# In[21]:
 
 
 def r_noun_dp(_n): return StNoun([
@@ -384,7 +388,7 @@ def r_noun_dp(_n): return StNoun([
 ])
 
 
-# In[19]:
+# In[22]:
 
 
 def r_TO_noun_dp(_t,_n): return StNoun([
@@ -392,7 +396,7 @@ def r_TO_noun_dp(_t,_n): return StNoun([
 ])
 
 
-# In[20]:
+# In[23]:
 
 
 @debug_pp
@@ -406,7 +410,7 @@ def p_noun_dp(s,p): return p_alt(s,p,
 
 # ### verb3:  Сделать кому
 
-# In[63]:
+# In[24]:
 
 
 def r_verb_noun_dp_mn(_v,_n):    return StVerb([
@@ -420,7 +424,7 @@ def r_NE_verb_noun_dp_mn(_v,no,_n):    return StVerb([
 ])
 
 
-# In[64]:
+# In[25]:
 
 
 def r_verb_noun_dp_ed(_v_,_n_):     return StVerb([
@@ -434,7 +438,7 @@ def r_NE_verb_noun_dp_ed(_v,no,_n):    return StVerb([
 ])
 
 
-# In[60]:
+# In[26]:
 
 
 @debug_pp
@@ -449,7 +453,7 @@ def p_verb3(s,p): return p_alt(s,p,
 
 # ### verb2: сделать что
 
-# In[58]:
+# In[27]:
 
 
 def r_verb_noun(v,n): return StVerb([
@@ -463,7 +467,7 @@ def r_NE_verb_noun(v,no,n): return StVerb([
 ])
 
 
-# In[59]:
+# In[28]:
 
 
 @debug_pp
@@ -566,7 +570,7 @@ def r_verb_I_verb(_v1_,_i_,_v2_):    return StC([
 ])
 
 
-# In[52]:
+# In[37]:
 
 
 @debug_pp
@@ -581,26 +585,26 @@ def p_verb(s,p): return p_alt(s,p,
 
 # ## Фразы, предложения, текст
 
-# In[53]:
+# In[38]:
 
 
 @debug_pp
 def p_phrase(s,p): 
-    rezs=[]
-    rezs+=p_verb(s,p)
-    if len(rezs)>0: return rezs
-    rezs+=p_noun(s,p)
-    if len(rezs)>0: return rezs
-    rezs+=p_noun_dp(s,p)
-    if len(rezs)>0: return rezs
-    rezs+=p_adj(s,p)
-    return rezs
-#    return p_alt(s,p,
-#        p_verb,    ELSE,
-#        p_noun,    ELSE,
-#        p_noun_dp, ELSE,
-#        p_adj
-#    )
+#    rezs=[]
+#    rezs+=p_verb(s,p)
+#    if len(rezs)>0: return rezs
+#    rezs+=p_noun(s,p)
+#    if len(rezs)>0: return rezs
+#    rezs+=p_noun_dp(s,p)
+#    if len(rezs)>0: return rezs
+#    rezs+=p_adj(s,p)
+#    return rezs
+    return p_alt(s,p,
+        p_verb,    #ELSE,
+        p_noun,    #ELSE,
+        p_noun_dp, #ELSE,
+        p_adj
+    )
 
 
 # In[39]:
@@ -631,7 +635,11 @@ def p_sentence(s,p):
 # In[40]:
 
 
-def maxlen_filter(patt,s,p): #
+def maxlen_filter(patt,s,p):
+    '''находит самые длинные результаты, а остальные отбрасывает
+    
+    если самых длинных несколько - warning
+    '''
     rezs=patt(s,p)
     m=0
     im=set()
@@ -643,14 +651,17 @@ def maxlen_filter(patt,s,p): #
             im.add(i)
     long_rezs= [rezs[i] for i in im]
     if len(long_rezs)>1:
-        warning('multiple results:')
-        warning(SAttrs.join(s[p:m]))
-        for void,r in long_rezs:
-            warning(str(r))
+        warning('multiple results:\n'+
+            SAttrs.join(s[p:m])+'\n'+
+            '\n'.joun(r.tostr() for void,r in long_rezs)
+        )
+            
     return [] if len(long_rezs)==0 else [long_rezs[0]]
 
 @debug_pp
 def p_text(s,p):
+    '''или последовательность предложений или 1 фраза
+    '''
     rez=[]
     while p<len(s):
         rezs=maxlen_filter(p_sentence,s,p)
@@ -665,22 +676,34 @@ def p_text(s,p):
         
 
 
-# In[55]:
+# In[41]:
 
 
 def _en2ru(s): # main
+    ''' (text|.)* + warning-и
+    '''
     s=[ i for i in tokenizer(s)]
     if len(s)==0:
         warning('no tokens')
         return ''
-    rezs= p_text(s,0)
-    if len(rezs)==0:
-        warning('NO RESULTS AT ALL')
-        return ''
-    p,r1 = rezs[0]
-    if p!=len(s):
-        warning('NOT PARSED:\n'+SAttrs().join(s[p:]))
-    return r1.tostr()
+    
+    ret_s = ''
+    p=0
+    while p<len(s):
+        rezs= p_text(s,0)
+        assert len(rezs)<=1
+        if len(rezs)==0:
+            warning("CAN'T TRANSLATE: "+s[p])
+            ret_s += (' ' if p>0 else '')+ s[p]
+            p+=1
+        else:
+            p1,r1 = rezs[0]
+            s1 = r1.tostr()
+            ret_s += (' ' if p>0 else '')+ s1
+            if p>0:
+                warning('TRANSLATION BREAKS: '+s1)
+            p=p1
+    return ret_s
 
 def en2ru(s):
     global DEBUGGING
@@ -823,16 +846,11 @@ en2ru('I see jam and one cup.')
 # In[46]:
 
 
-en2ru('''''')
+pr_en2ru('''This girl has a fish.
+This fish is the dish.''')
 
 
 # In[47]:
-
-
-en2ru('''''')
-
-
-# In[48]:
 
 
 en2ru('''''')

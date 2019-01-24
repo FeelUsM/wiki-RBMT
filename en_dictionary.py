@@ -45,15 +45,39 @@ def add_dict_variant(dic,enw,ruw):
 	else:
 		dic[enw]=ruw
 
-		
+def remove_dict_variant(dic,enw,ruw):
+	if env not in dict: return
+	if type(dic[enw])==list:
+		if len(dic[enw])>3:
+			for i in range(1,len(dic[enw])):
+				if dic[enw][i]==ruw:
+					del dic[enw][i]
+					if dic[enw][0]>=i:
+						dic[enw][0]-=1
+					break
+		else:
+			if dic[enw][1]==ruw:
+				dic[enw]=dic[enw][2]
+			elif dic[enw][2]==ruw:
+				dic[enw]=dic[enw][1]
+	else:
+		if dic[enw]==ruw:
+			del dic[enw]
+	
 # ## Noun ----------------------------
 
 
-dict_noun={}
-def add_ennoun2(enw,enwmn,ruw,wuwmn,r,o):
-	add_runoun2(ruw,wuwmn,r,o)
+dict_noun={'__name__':'dict_noun'}
+def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o):
+	# add_runoun2 обновляет ruwords[ruw/mn]
+	# а add_dict_variant просто добавляет еще один вариант
+	# по этому если старый вариант уже был, его надо сначала удалить из dict_noun
+	# иначе в dict_noun остануться оба варианта: и старый и новый
+	if ruw   in ruwords: remove_dict_variant(dict_noun,enw,  ruwords[ruw]  )
+	if ruwmn in ruwords: remove_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
+	add_runoun2(ruw,ruwmn,r,o)
 	add_dict_variant(dict_noun,enw,  ruwords[ruw]  )
-	add_dict_variant(dict_noun,enwmn,ruwords[wuwmn])
+	add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
 	
 def ____Noun():
 	
@@ -87,9 +111,9 @@ def ____Noun():
 	add_ennoun2('star'    ,'stars'     ,"звезда"  ,"звёзды"    ,'g',False)
 	add_ennoun2('lamp'    ,'lamps'     ,"лампа"   ,"лампы"     ,'g',False)
 
-	add_ennoun2('squirrel','squirrels',"белка"   ,"белки"     ,'g',True)
-	add_ennoun2('wolf'    ,'wolfs'    ,"волк"    ,"волки"     ,'m',True)
-	add_ennoun2('zebra'   ,'zebras'   ,"зебра"   ,"зебры"     ,'g',True)
+	add_ennoun2('squirrel','squirrels' ,"белка"   ,"белки"     ,'g',True)
+	add_ennoun2('wolf'    ,'wolfs'     ,"волк"    ,"волки"     ,'m',True)
+	add_ennoun2('zebra'   ,'zebras'    ,"зебра"   ,"зебры"     ,'g',True)
 	add_skl2('m',True,make_skl2(
 		'парень'  ,'парни',
 		'парня'   ,'парней',
@@ -97,24 +121,24 @@ def ____Noun():
 		'парня'   ,'парней',
 		'парнем'  ,'парнями',
 		'парне'   ,'парнях'))
-	add_ennoun2('boy'     ,'boys'     ,"парень"  ,"парни"     ,'m',True)
-	add_ennoun2('boy'     ,'boys'     ,"мальчик" ,"мальчики"  ,'m',True)
+	add_ennoun2('boy'     ,'boys'      ,"парень"  ,"парни"     ,'m',True)
+	add_ennoun2('boy'     ,'boys'      ,"мальчик" ,"мальчики"  ,'m',True)
 
-	add_ennoun2('copy-book','copy-books',"тетрадь" ,"тетради"   ,'g',False)
-	add_ennoun2('book'    ,'books'    ,"книга"   ,"книги"     ,'g',False)
-	add_ennoun2('spoon'   ,'spoons'   ,"ложка"   ,"ложки"     ,'g',False)
-	add_ennoun2('morning' ,'mornings' ,"утро"    ,"утра"      ,'s',False)
-
-	add_ennoun2('pistol'  ,'pistols'  ,"пистолет","пистолеты" ,'m',False)
-	add_ennoun2('ball'    ,'balls'    ,"мяч"     ,"мячи"      ,'m',False)
-	add_ennoun2('stick'   ,'sticks'   ,"палка"   ,"палки"     ,'g',False)
-	add_ennoun2('word'    ,'words'    ,"слово"   ,"слова"     ,'s',False)
-
-	add_ennoun2('girl'    ,'girls'    ,"девочка" ,"девочки"   ,'g',True)
-	add_ennoun2('dish'    ,'dishes'   ,"блюдо"   ,"блюда"     ,'s',False)
-	add_ennoun2('fish'    ,'fishes'   ,"рыба"    ,"рыбы"      ,'g',True)
-
-	add_ennoun2('child'   ,'children' ,"ребёнок" ,"дети"      ,'m',True)
+	add_ennoun2('copy-book','copy-books',"тетрадь","тетради"   ,'g',False)
+	add_ennoun2('book'    ,'books'     ,"книга"   ,"книги"     ,'g',False)
+	add_ennoun2('spoon'   ,'spoons'    ,"ложка"   ,"ложки"     ,'g',False)
+	add_ennoun2('morning' ,'mornings'  ,"утро"    ,"утра"      ,'s',False)
+                                       
+	add_ennoun2('pistol'  ,'pistols'   ,"пистолет","пистолеты" ,'m',False)
+	add_ennoun2('ball'    ,'balls'     ,"мяч"     ,"мячи"      ,'m',False)
+	add_ennoun2('stick'   ,'sticks'    ,"палка"   ,"палки"     ,'g',False)
+	add_ennoun2('word'    ,'words'     ,"слово"   ,"слова"     ,'s',False)
+                                       
+	add_ennoun2('girl'    ,'girls'     ,"девочка" ,"девочки"   ,'g',True)
+	add_ennoun2('dish'    ,'dishes'    ,"блюдо"   ,"блюда"     ,'s',False)
+	add_ennoun2('fish'    ,'fishes'    ,"рыба"    ,"рыбы"      ,'g',True)
+                                       
+	add_ennoun2('child'   ,'children'  ,"ребёнок" ,"дети"      ,'m',True)
 	add_ennoun2('information','informations',"информация","информации",'g',False)
 
 
@@ -151,8 +175,8 @@ ____Noun()
 # ## Pronoun ----------------------------
 
 
-dict_pronoun_ip={}
-dict_pronoun_dp={}
+dict_pronoun_ip={'__name__':'dict_pronoun_ip'}
+dict_pronoun_dp={'__name__':'dict_pronoun_dp'}
 def ____Pronoun():
 
 	dict_pronoun_ip['I']=   [0, ruwords["я (муж)"],  ruwords["я (жен)"] ]
@@ -181,7 +205,7 @@ ____Pronoun()
 # In[26]:
 
 
-dict_adj={}
+dict_adj={'__name__':'dict_adj'}
 def ____Adj():
 
 	# In[27]:
@@ -189,6 +213,7 @@ def ____Adj():
 
 	dict_adj['a'] = ruwords["некоторый"]
 	dict_adj['an']= ruwords["некоторый"]
+	dict_adj['the']= ruwords["определённый"]
 
 	dict_adj['good']=ruwords["хороший"]
 
@@ -201,7 +226,7 @@ ____Adj()
 # In[40]:
 
 
-dict_numeral={}
+dict_numeral={'__name__':'dict_numeral'}
 def ____Numeral():
 
 	dict_numeral['one']=       ruwords['один']
@@ -232,8 +257,8 @@ ____Numeral()
 # In[42]:
 
 
-dict_verb={}
-dict_verb_s={}
+dict_verb={'__name__':'dict_verb'}
+dict_verb_s={'__name__':'dict_verb_s'}
 def ____Verb():
 
 	dict_verb  ['see']=   ruwords['видеть']
@@ -243,8 +268,8 @@ def ____Verb():
 
 	dict_verb  ['give']=  ruwords['дать']
 	dict_verb_s['gives']= ruwords['дать']
-	dict_verb  ['show']=  ruwords['показать']
-	dict_verb_s['shows']= ruwords['показать']
+	dict_verb  ['show']=  [ 2, ruwords['показать'], ruwords['показывать'] ]
+	dict_verb_s['shows']= [ 2, ruwords['показать'], ruwords['показывать'] ]
 	dict_verb  ['say']=   ruwords['сказать']
 	dict_verb_s['says']=  ruwords['сказать']
 

@@ -69,7 +69,8 @@ set_property  - функция, изменяющая внешнее свойст
 pull_deferred - функция, изменяющая внешние свойство к объекту внутри tupl-а
 '''
 
-from parse_system import SAttrs, S
+from parse_system import SAttrs, ParseInfo, S
+from copy import copy
 
 # ## Классы отображения
 
@@ -89,13 +90,15 @@ def repr_attrs(self):
 
 
 def I(**args):
-#	if len(args)!=1:
-#		raise ValueError()
 	i=iter(args.items())
 	p=next(i)
 	assert isinstance(p[1],Struct) or isinstance(p[1],S)
 	args.pop(p[0])
-	tup = (p[0], p[1], {})
+	if ParseInfo.enabled: # чтобы отделить деревья результатов от того, что кэшируется
+		tup = (p[0], copy(p[1]), {})
+		tup[1].parse_info = copy(tup[1].parse_info)
+	else:
+		tup = (p[0], p[1], {})
 	for k,v in args.items():
 		set_property(tup,**{k:v})
 	return tup #p
@@ -152,8 +155,9 @@ class Struct:
 		перед (между) узлами, у которых attrs.pre=='' при выводе вставляются пробелы
 		по этому перед выводом pre из 0го дочернего узла должно быть перемещено в узел выше
 	'''
-	__slots__=['attrs','talk']
+	__slots__=['attrs','parse_info','talk']
 	def __init__(self,attrs=None):
+		self.parse_info = ParseInfo()
 		if attrs==None:
 			self.attrs=SAttrs()
 		elif type(attrs)==list:
@@ -478,7 +482,7 @@ class StDeclinable(Struct):
 		self.odush=self.odush_checker(o)
 		self.rod  =self.  rod_checker(r)
 		self.chis =self. chis_checker(c)
-		self._pad =self.  pad_checker(p)
+		self.pad =self.  pad_checker(p)
 		
 	pad=property()
 	@pad.getter
