@@ -383,10 +383,18 @@ def p_alt(s,p,*args):
 		e_rezs = [(p1,r1) for p1,r1 in e_rezs if p1 not in wrong_ends]
 		
 	remain_ends = r_ends - e_ends
+	notexc_ends = set()
 	for p1,r1 in e_rezs:
 		if r1==0:               
-			remain_ends|={p1}
-			
+			notexc_ends|={p1}
+	remain_ends|=notexc_ends
+
+	if ParseInfo.enabled and len(notexc_ends)>0:
+		for p1,r1 in r_ends:
+			if p1 in notexc_ends:
+				if not hasattr(r1.parse_info,'patterns'):
+					r1.parse_info.patterns = []
+				r1.parse_info.patterns.append('__ELSE__')
 	def else_adder(r):
 		if not hasattr(r.parse_info,'patterns'):
 			r.parse_info.patterns = []
@@ -430,7 +438,10 @@ def seq(patterns,rule_group):#,numbrs=None
 		return [(pos,                 rule(*rez) ) for pos,rez in sp_seq(s,p,patterns)]
 	return p_seq_info if ParseInfo.enabled else p_seq
 
-	
+
+# In[*]:
+
+
 def default_warning(s): 
     print(s)
 warning = default_warning
