@@ -41,7 +41,7 @@ ParseError
 TextError
 '''
 
-from copy import deepcopy
+from copy import deepcopy, copy
 import re
 
 
@@ -128,7 +128,7 @@ class SAttrs:
 
 class ParseInfo:
 	enabled = False
-	__slots__=['p_start','p_end','rule_group','pattern']
+	__slots__=['p_start','p_end','rule_group','patterns']
 
 # In[6]:
 
@@ -322,7 +322,7 @@ def D(d):
 			tmp=deepcopy(r)
 			tmp.attrs=deepcopy(s[p].attrs)
 			if ParseInfo.enabled:
-				tmp.parse_info.pattern = [d['__name__']]
+				tmp.parse_info.patterns = [d['__name__']]
 				tmp.parse_info.p_start = p
 				tmp.parse_info.p_end = p+1
 				tmp.parse_info.rule_group = d[s[p]]
@@ -346,36 +346,60 @@ def p_alt(s,p,*args):
 			удаляем все результаты со значением 0
 			добавляем регулярные результаты
 		всё
+		
+		+защита от коротких/длинных исключений:
+		исключение длины r замещает регулярный текст длины r
 	'''
-	for i in range(len(args)):
+	for i in range(len(args)): #идем по аргументам до 1го ELSE
 		if args[i]==ELSE:
 			break
-	else:
+	else:                      #если ELSE нет - парсим все аргументы и всё
 		rezs=[]
 		for patt in args:
 			rezs+=patt(s,p)
 		return rezs
 	i+=1
-	r_rezs=[]
+	r_rezs=[]                  #парсим все аргументы после ELSE
 	while i<len(args):
-		assert args[i]!=ELSE
+		assert args[i]!=ELSE   #    assert ELSE больше не встречается
 		r_rezs+=args[i](s,p)
 		i+=1
-	if len(r_rezs)==0: return []
+	if len(r_rezs)==0: return []#если результатов нет (регулярных), то всё
+	r_ends = {p1 for p1,r1 in r_rezs}### длины регулярных результатов
 	i=0
-	e_rezs=[]
+	e_rezs=[]                  #парсим все аргументы с начала до ELSE
 	while args[i]!=ELSE:
 		e_rezs+=args[i](s,p)
 		i+=1
-	if len(e_rezs)==0: return r_rezs
-	has0=False
-	for p,r in e_rezs:
-		if r==0:
-			return [(p,r) for p,r in e_rezs if r!=0]+r_rezs
+	e_ends = {p1 for p1,r1 in e_rezs}### длины результатов исключений
+	if len(e_rezs)==0: 
+		return r_rezs          #если результатов (исключений) нет, возвращаем регулярные, всё
+		
+	wrong_ends = e_ends - r_ends#защита от коротких/длинных исключений
+	if len(wrong_ends)>0:
+		for p1,r1 in e_rezs:
+			if p1 in wrong_ends:
+				print('WRONG_EXCEPTION ('+str(p)+':'+str(p1)+'): '+str(r1))
+		e_rezs = [(p1,r1) for p1,r1 in e_rezs if p1 not in wrong_ends]
+		
+	remain_ends = r_ends - e_ends
+	for p1,r1 in e_rezs:
+		if r1==0:               
+			remain_ends|={p1}
+			
+	def else_adder(r):
+		if not hasattr(r.parse_info,'patterns'):
+			r.parse_info.patterns = []
+		r.parse_info.patterns.append('__ELSE__')
+		return r
+	if ParseInfo.enabled:
+		return [(p1,else_adder(r1)) for p1,r1 in e_rezs if r1!=0]+\
+			[(p1,r1) for p1,r1 in r_rezs if p1 in remain_ends]#добавляем регулярные результаты
 	else:
-		return e_rezs
+		return [(p1,r1) for p1,r1 in e_rezs if r1!=0]+\
+			[(p1,r1) for p1,r1 in r_rezs if p1 in remain_ends]#добавляем регулярные результаты
 	return
-#	
+#	old p_alt:
 	rezs=[]
 	for patt in args:
 		if patt==ELSE:
@@ -397,11 +421,114 @@ def seq(patterns,rule_group):#,numbrs=None
 		rule = null_handler if rule_group[0]==0 else rule_group[rule_group[0]]
 	else:
 		rule = rule_group
-	def rule_froup_adder(r):
+	def rule_group_adder(r):
 		r.parse_info.rule_group = rule_group
 		return r
 	def p_seq_info(s,p):
-		return [(pos,rule_froup_adder(rule(*rez))) for pos,rez in sp_seq(s,p,patterns)]
+		return [(pos,rule_group_adder(rule(*rez))) for pos,rez in sp_seq(s,p,patterns)]
 	def p_seq(s,p):
 		return [(pos,                 rule(*rez) ) for pos,rez in sp_seq(s,p,patterns)]
 	return p_seq_info if ParseInfo.enabled else p_seq
+
+	
+def default_warning(s): 
+    print(s)
+warning = default_warning
+
+DEBUGGING=False
+CURRENT_DEBUG_DEPTH=0
+
+def debug_pp(fun):
+    s_point=[] # когда изменяется s - означает, что нужно сбросить кэш
+    cache={}
+    def wrapper(s,p):
+        global CURRENT_DEBUG_DEPTH
+        nonlocal s_point,cache
+        if not(s is s_point):
+            s_point=s
+            cache={}
+        if DEBUGGING:
+            indent = '    '*CURRENT_DEBUG_DEPTH
+            debug_s = '.'*p+'*'+'.'*(len(s)-p-1)+(' ' if p<len(s) else '')+\
+                fun.__name__+'___'+str(p)
+        if p in cache:
+            if cache[p]==None:
+                raise ParseError('зацикливание '+fun.__name__+'(s,'+p+')')
+            if DEBUGGING: 
+                print(indent+'|'+debug_s)
+                if ParseInfo.enabled:
+                    for p1,r1,patts in cache[p]:
+                        print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+                             str(r1)+' <'+str(id(patts))+'>'+repr(patts))
+                else:
+                    for p1,r1 in cache[p]:
+                        print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+                             str(r1))
+            if ParseInfo.enabled:
+                def cache_info_adder(r1,patterns):
+                    r1.parse_info.patterns = patterns
+                    return r1
+                return [(p1,cache_info_adder(r1,patterns)) \
+                        for p1,r1,patterns in cache[p]]
+            else:
+                return cache[p]
+        else:
+            if DEBUGGING: print(indent+'{'+debug_s)
+        
+        cache[p]=None
+        rezs=fun(s,p)   # CALL FUN
+        if not ParseInfo.enabled:
+            cache[p]=rezs
+        else:
+            def info_adder(p1,r1):
+                r1.parse_info.p_start = p
+                r1.parse_info.p_end = p1
+                if not hasattr(r1.parse_info,'patterns'):
+                    r1.parse_info.patterns = []
+                patt = copy(r1.parse_info.patterns)
+                patt.append(fun.__name__)
+                r1.parse_info.patterns = patt
+                return r1
+            rezs = [(p1,info_adder(p1,r1)) for p1,r1 in rezs]
+            cache[p]=[ ( p1,r1,r1.parse_info.patterns ) for p1,r1 in rezs]
+        
+        #for p1,r1 in rezs:
+        #    assert p1>p, r1
+        
+        if DEBUGGING:
+            print(indent+'}'+debug_s)
+            if ParseInfo.enabled:
+                for p1,r1 in rezs:
+                    print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+                         str(r1)+' <'+str(id(r1.parse_info.patterns))+'>'+\
+                          repr(r1.parse_info.patterns))
+            else:
+                for p1,r1 in rezs:
+                    print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+                         str(r1))
+            
+#            print('_'+'.'*p+str(len(rezs)),'in ',fun.__name__,'}',
+#                  [(p,str(r)) for (p,r) in rezs],'\n')
+#            for i in rezs:
+#                if isinstance(i[1],StDeclinable):
+#                    i[1].check_attrs('wrapper:'+fun.__name__)
+        
+        return rezs
+    
+    def wrapper2(s,p):
+        global CURRENT_DEBUG_DEPTH
+        CURRENT_DEBUG_DEPTH+=1
+        r = wrapper(s,p)
+        CURRENT_DEBUG_DEPTH-=1
+        return r
+    
+    return wrapper2
+
+def reset_globals():
+	global DEBUGGING
+	global CURRENT_DEBUG_DEPTH
+	global warning
+	DEBUGGING=False
+	CURRENT_DEBUG_DEPTH=0
+	warning = default_warning
+	
