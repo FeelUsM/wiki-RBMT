@@ -266,12 +266,12 @@ def ____Verb():
 	dict_verb  ['have']=  ruwords['иметь']
 	dict_verb_s['has']=   ruwords['иметь']
 
-	dict_verb  ['give']=  ruwords['дать']
-	dict_verb_s['gives']= ruwords['дать']
+	dict_verb  ['give']=  ruwords['давать']
+	dict_verb_s['gives']= ruwords['давать']
 	dict_verb  ['show']=  [ 2, ruwords['показать'], ruwords['показывать'] ]
 	dict_verb_s['shows']= [ 2, ruwords['показать'], ruwords['показывать'] ]
-	dict_verb  ['say']=   ruwords['сказать']
-	dict_verb_s['says']=  ruwords['сказать']
+	dict_verb  ['say']=   ruwords['говорить']
+	dict_verb_s['says']=  ruwords['говорить']
 
 	dict_verb  ['be']= [0, ruwords['являться'], ruwords['находиться'] ]
 	dict_verb  ['am']= [0, ruwords['являться'], ruwords['находиться'] ]

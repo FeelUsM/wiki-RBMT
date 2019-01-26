@@ -590,7 +590,7 @@ def ____Verb():
 				end = they
 		return word+end
 	def add_ruverb(word,oasp,asp,wo,ends):
-		ruwords[word]= StVerb(word,oasp,asp,'povel','mn',None,None)
+		ruwords[word]= StVerb(word,oasp,asp,'neopr',None,None,None)
 		show_verb_map[word]=    lambda st: show_verb1(st,wo,ends)
 
 	# In[23]:
@@ -616,10 +616,20 @@ def ____Verb():
 				 'povel':("жи","жите"),
 				 'nast': ("жу","жешь","жет","жет","жет","жем","жете","жут")
 			}   )
+	add_ruverb('говорить','сказать','nesov','говор',
+			{    'neopr':"ить",
+				 'povel':("и","ите"),
+				 'nast': ("ю","ишь","ит","ит","ит","им","ите","ят")
+			}   )
 	add_ruverb('дать','давать'    ,'sov','да',
 			{    'neopr':"ть",
 				 'povel':("й","йте"),
 				 'nast': ("м","шь","ст","ст","ст","дим","дите","дут")
+			}   )
+	add_ruverb('давать','дать'    ,'nesov','да',
+			{    'neopr':"вать",
+				 'povel':("вай","вайте"),
+				 'nast': ("ю","ёшь","ёт","ёт","ёт","ём","ёте","ют")
 			}   )
 	add_ruverb('иметь',"заиметь"   ,'nesov','име',
 			{    'neopr':"ть",

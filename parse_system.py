@@ -106,11 +106,11 @@ class SAttrs:
 		if ch_sentence in self.changers:
 			stored = CH_ANTI_SENTENCE
 			CH_ANTI_SENTENCE = ch_none
-			
-		r = ''.join(subr(iter(arr)))
-		
-		if ch_sentence in self.changers:
-			CH_ANTI_SENTENCE = stored
+		try:
+			r = ''.join(subr(iter(arr)))
+		finally:
+			if ch_sentence in self.changers:
+				CH_ANTI_SENTENCE = stored
 		return r
 
 	@staticmethod
@@ -312,7 +312,7 @@ def W(w):
 
 def D(d):
 	'''если найденное слово находится в заданном словаре - возвращает то, что ему сопоставлено'''
-	assert type(d)==dict
+	assert type(d)==dict , (type(d),d, id(d))
 	def p_from_dict(s,p):
 		if p<len(s) and s[p] in d:
 			if type(d[s[p]])==list:
@@ -450,96 +450,101 @@ DEBUGGING=False
 CURRENT_DEBUG_DEPTH=0
 
 def debug_pp(fun):
-    s_point=[] # когда изменяется s - означает, что нужно сбросить кэш
-    cache={}
-    def wrapper(s,p):
-        global CURRENT_DEBUG_DEPTH
-        nonlocal s_point,cache
-        if not(s is s_point):
-            s_point=s
-            cache={}
-        if DEBUGGING:
-            indent = '    '*CURRENT_DEBUG_DEPTH
-            debug_s = '.'*p+'*'+'.'*(len(s)-p-1)+(' ' if p<len(s) else '')+\
-                fun.__name__+'___'+str(p)
-        if p in cache:
-            if cache[p]==None:
-                raise ParseError('зацикливание '+fun.__name__+'(s,'+p+')')
-            if DEBUGGING: 
-                print(indent+'|'+debug_s)
-                if ParseInfo.enabled:
-                    for p1,r1,patts in cache[p]:
-                        print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
-                             str(r1)+' <'+str(id(patts))+'>'+repr(patts))
-                else:
-                    for p1,r1 in cache[p]:
-                        print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
-                             str(r1))
-            if ParseInfo.enabled:
-                def cache_info_adder(r1,patterns):
-                    r1.parse_info.patterns = patterns
-                    return r1
-                return [(p1,cache_info_adder(r1,patterns)) \
-                        for p1,r1,patterns in cache[p]]
-            else:
-                return cache[p]
-        else:
-            if DEBUGGING: print(indent+'{'+debug_s)
-        
-        cache[p]=None
-        rezs=fun(s,p)   # CALL FUN
-        if not ParseInfo.enabled:
-            cache[p]=rezs
-        else:
-            def info_adder(p1,r1):
-                r1.parse_info.p_start = p
-                r1.parse_info.p_end = p1
-                if not hasattr(r1.parse_info,'patterns'):
-                    r1.parse_info.patterns = []
-                patt = copy(r1.parse_info.patterns)
-                patt.append(fun.__name__)
-                r1.parse_info.patterns = patt
-                return r1
-            rezs = [(p1,info_adder(p1,r1)) for p1,r1 in rezs]
-            cache[p]=[ ( p1,r1,r1.parse_info.patterns ) for p1,r1 in rezs]
-        
-        #for p1,r1 in rezs:
-        #    assert p1>p, r1
-        
-        if DEBUGGING:
-            print(indent+'}'+debug_s)
-            if ParseInfo.enabled:
-                for p1,r1 in rezs:
-                    print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
-                         str(r1)+' <'+str(id(r1.parse_info.patterns))+'>'+\
-                          repr(r1.parse_info.patterns))
-            else:
-                for p1,r1 in rezs:
-                    print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
-                         str(r1))
-            
+	s_point=[] # когда изменяется s - означает, что нужно сбросить кэш
+	cache={}
+	def wrapper(s,p):
+		global CURRENT_DEBUG_DEPTH
+		nonlocal s_point,cache
+		if not(s is s_point):
+			s_point=s
+			cache={}
+		if DEBUGGING:
+			indent = '    '*CURRENT_DEBUG_DEPTH
+			debug_s = '.'*p+'*'+'.'*(len(s)-p-1)+(' ' if p<len(s) else '')+\
+				fun.__name__+'___'+str(p)
+		if p in cache:
+			if cache[p]==None:
+				raise ParseError('зацикливание '+fun.__name__+'(s,'+p+')')
+			if DEBUGGING: 
+				print(indent+'|'+debug_s)
+				if ParseInfo.enabled:
+					for p1,r1,patts in cache[p]:
+						print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+							 str(r1)+' <'+str(id(patts))+'>'+repr(patts))
+				else:
+					for p1,r1 in cache[p]:
+						print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+							 str(r1))
+			if ParseInfo.enabled:
+				def cache_info_adder(r1,patterns):
+					r1.parse_info.patterns = patterns
+					return r1
+				return [(p1,cache_info_adder(r1,patterns)) \
+						for p1,r1,patterns in cache[p]]
+			else:
+				return cache[p]
+		else:
+			if DEBUGGING: print(indent+'{'+debug_s)
+		
+		cache[p]=None
+		rezs=fun(s,p)   # CALL FUN
+		if not ParseInfo.enabled:
+			cache[p]=rezs
+		else:
+			def info_adder(p1,r1):
+				r1.parse_info.p_start = p
+				r1.parse_info.p_end = p1
+				if not hasattr(r1.parse_info,'patterns'):
+					r1.parse_info.patterns = []
+				patt = copy(r1.parse_info.patterns)
+				patt.append(fun.__name__)
+				r1.parse_info.patterns = patt
+				return r1
+			rezs = [(p1,info_adder(p1,r1)) for p1,r1 in rezs]
+			cache[p]=[ ( p1,r1,r1.parse_info.patterns ) for p1,r1 in rezs]
+		
+		#for p1,r1 in rezs:
+		#    assert p1>p, r1
+		
+		if DEBUGGING:
+			print(indent+'}'+debug_s)
+			if ParseInfo.enabled:
+				for p1,r1 in rezs:
+					print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+						 str(r1)+' <'+str(id(r1.parse_info.patterns))+'>'+\
+						  repr(r1.parse_info.patterns))
+			else:
+				for p1,r1 in rezs:
+					print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+						 str(r1))
+			
 #            print('_'+'.'*p+str(len(rezs)),'in ',fun.__name__,'}',
 #                  [(p,str(r)) for (p,r) in rezs],'\n')
 #            for i in rezs:
 #                if isinstance(i[1],StDeclinable):
 #                    i[1].check_attrs('wrapper:'+fun.__name__)
-        
-        return rezs
-    
-    def wrapper2(s,p):
-        global CURRENT_DEBUG_DEPTH
-        CURRENT_DEBUG_DEPTH+=1
-        r = wrapper(s,p)
-        CURRENT_DEBUG_DEPTH-=1
-        return r
-    
-    return wrapper2
+		
+		return rezs
+	
+	def wrapper2(s,p):
+		global CURRENT_DEBUG_DEPTH
+		CURRENT_DEBUG_DEPTH+=1
+		try:
+			r = wrapper(s,p)
+		finally:
+			CURRENT_DEBUG_DEPTH-=1
+		return r
+	
+	return wrapper2
 
 def reset_globals():
 	global DEBUGGING
-	global CURRENT_DEBUG_DEPTH
-	global warning
 	DEBUGGING=False
+	global CURRENT_DEBUG_DEPTH
 	CURRENT_DEBUG_DEPTH=0
+	global warning
 	warning = default_warning
+	global CH_ANTI_SENTENCE
+	CH_ANTI_SENTENCE=ch_title
+	ParseInfo.enabled = False
 	

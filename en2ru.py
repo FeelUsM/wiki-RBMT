@@ -118,11 +118,14 @@ r_noun_comma_noun
 # -Когда в правилах использовать S а когда один из классов Struct ?
 # 
 # -S используется для неизменяемых узлов-листьев. Во всех остальных случаях используется один из классов Struct
+# 
+# pull_attrs - если имеющуюся структуру надо расширить константами и распространить attrs структуры на расширенную структуру - смотри пример в как в r_U_noun_EST_noun
+# значение pull_attrs задается равным исходной структуры в расширенной
 
 # In[2]:
 
 
-from parse_system import S, SAttrs, ParseInfo, tokenizer,                         ch_title, ch_sentence, ch_anti_sentence, ch_open,                         seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp
+from parse_system import S, SAttrs, ParseInfo, tokenizer, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open,                         seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals
 import parse_system
 from classes import StC, StNum, StNoun, StVerb, I
 from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2
@@ -186,7 +189,7 @@ def r_U_noun_EST_noun(_n1_,_h_,_n2_):    return StC([
     I(nodep=StC([
         I(nodep=S('у')),
         I(nodep=_n1_,   pad='rp', npad='n' )# у Него
-    ])),
+    ]), pull_attrs=1 ),
     I(nodep=S('есть',_h_.attrs)),
     I(nodep=_n2_)
 ])
@@ -195,7 +198,7 @@ def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
     I(nodep=StC([
         I(nodep=S('у')),
         I(nodep=_n1_,   pad='rp', npad='n' )# у Него
-    ])),
+    ]), pull_attrs=1 ),
     I(nodep=S('нет',_h_.attrs)),
     I(nodep=_n2_,        pad='rp')
 ])
@@ -216,9 +219,56 @@ def pe_noun_HAVE_noun(s,p):
     )
 
 
+# In[8]:
+
+
+def re_povel_verb2_sov_ed(_v): return StVerb([
+    I(maindep = _v, asp='sov',form='povel',chis='ed')
+])
+def re_povel_verb2_sov_mn(_v): return StVerb([
+    I(maindep = _v, asp='sov',form='povel',chis='mn')
+])
+
+
+# In[9]:
+
+
+#verb3: Сделать кому
+list_verb_sov = ['say','says','give','gives']
+dict_verb_sov = {'__name__':'dict_verb_sov'}
+for v in list_verb_sov:
+    dict_verb_sov[v] = dict_verb[v] if v in dict_verb else dict_verb_s[v]
+@debug_pp
+def pe_verb3_sov(s,p): 
+    return p_alt(s,p,
+        seq([ D(dict_verb_sov) ,         p_noun_dp ],r_verb_noun_dp),
+        seq([ D(dict_verb_sov), W('no'), p_noun_dp ],r_NE_verb_noun_dp),
+        D(dict_verb_sov),                                       
+    )
+
+
+# In[10]:
+
+
+#verb2: сделать что
+@debug_pp
+def pe_verb2_sov(s,p): return p_alt(s,p,
+    #seq([ alt(W('say'),W('says')),                 p_phrase      ], r_SKAZHI_noun), 
+       #ELSE, # исключение исключения
+    #seq([ alt(W('say'),W('says')),                 p_phrase      ], r_SKAZHI_phrase),
+    seq([ alt(W('say'),W('says')), W(':'),         p_phrase      ], r_SKAZHI_c_phrase),
+    seq([ alt(W('say'),W('says')),         W('"'), p_text, W('"')], r_SKAZHI_q_text),
+    seq([ alt(W('say'),W('says')), W(':'), W('"'), p_text, W('"')], r_SKAZHI_c_q_text), 
+#ELSE,
+    seq([ pe_verb3_sov, p_noun ]         ,r_verb_noun),    #ELSE, # переход к следующему уровню
+    seq([ pe_verb3_sov, W('no'), p_noun ],r_NE_verb_noun),    #ELSE, # переход к следующему уровню
+    pe_verb3_sov
+)
+
+
 # ## Other
 
-# In[8]:
+# In[11]:
 
 
 @debug_pp
@@ -226,7 +276,7 @@ def p_numeral(s,p):
     return D(dict_numeral)(s,p)
 
 
-# In[9]:
+# In[12]:
 
 
 #2->
@@ -237,7 +287,7 @@ def p_adj(s,p):
 
 # ## Noun-like
 
-# In[10]:
+# In[13]:
 
 
 def r_noun_numeral(n,num): return StNoun([
@@ -246,7 +296,7 @@ def r_noun_numeral(n,num): return StNoun([
 ])
 
 
-# In[11]:
+# In[14]:
 
 
 def r_numeral_noun(num,n):
@@ -258,7 +308,7 @@ def r_numeral_noun(num,n):
     ],quantity=num.quantity)
 
 
-# In[12]:
+# In[15]:
 
 
 def r_noun_and_noun(sn,a,n):    return StNoun([
@@ -273,7 +323,7 @@ def r_noun_comma_noun(sn,c,n):    return StNoun([
 ],c='mn', p='ip',o=False,r='m')
 
 
-# In[13]:
+# In[16]:
 
 
 @debug_pp
@@ -285,7 +335,7 @@ ELSE,
 )
 
 
-# In[14]:
+# In[17]:
 
 
 @debug_pp
@@ -297,7 +347,7 @@ def p_noun3(s,p): return p_alt(s,p,
 )
 
 
-# In[15]:
+# In[18]:
 
 
 @debug_pp
@@ -307,7 +357,7 @@ def p_noun2(s,p): return p_alt(s,p,
 )
 
 
-# In[16]:
+# In[19]:
 
 
 @debug_pp
@@ -317,7 +367,7 @@ def p_noun1(s,p): return p_alt(s,p,
 )
 
 
-# In[17]:
+# In[20]:
 
 
 @debug_pp
@@ -333,7 +383,7 @@ def p_noun(s,p):
 
 # ## Существительные в разных формах
 
-# In[18]:
+# In[21]:
 
 
 def r_noun_dp(_n): return StNoun([
@@ -341,7 +391,7 @@ def r_noun_dp(_n): return StNoun([
 ])
 
 
-# In[19]:
+# In[22]:
 
 
 def r_TO_noun_dp(_t,_n): return StNoun([
@@ -349,7 +399,7 @@ def r_TO_noun_dp(_t,_n): return StNoun([
 ])
 
 
-# In[20]:
+# In[23]:
 
 
 @debug_pp
@@ -361,32 +411,22 @@ def p_noun_dp(s,p): return p_alt(s,p,
 
 # ## Verb-like
 
-# In[21]:
+# In[24]:
 
 
 #verb3: Сделать кому
-def r_verb_noun_dp_mn(_v,_n):    return StVerb([
-    I(maindep=_v, chis='mn'),
-    I(dp     =_n, pad='dp')
-])
-def r_NE_verb_noun_dp_mn(_v,no,_n):    return StVerb([
-    I(nodep  =S('не',no.attrs)),
-    I(maindep=_v, chis='mn'),
-    I(dp     =_n, pad='dp')
-])
-
-def r_verb_noun_dp_ed(_v_,_n_):     return StVerb([
-    I(maindep=_v_,  chis='ed'),
+def r_verb_noun_dp(_v_,_n_):     return StVerb([
+    I(maindep=_v_),
     I(dp=_n_,       pad='dp')
 ])
-def r_NE_verb_noun_dp_ed(_v,no,_n):    return StVerb([
+def r_NE_verb_noun_dp(_v,no,_n):    return StVerb([
     I(nodep  =S('не',no.attrs)),
-    I(maindep=_v, chis='ed'),
+    I(maindep=_v),
     I(dp     =_n, pad='dp')
 ])
 
 
-# In[22]:
+# In[25]:
 
 
 #verb2: сделать что
@@ -401,7 +441,7 @@ def r_NE_verb_noun(v,no,n): return StVerb([
 ])
 
 
-# In[23]:
+# In[26]:
 
 
 #verb1: кто делает
@@ -414,8 +454,15 @@ def r_noun_verb(n,v): return StVerb([
     I(main=v,   form='nast', pers=n.pers, chis=n.chis, rod=n.rod)
 ])
 
+def r_povel_verb_ed(_v): return StVerb([
+    I(maindep=_v, form='povel',chis='ed')
+])
+def r_povel_verb_mn(_v): return StVerb([
+    I(maindep=_v, form='povel',chis='mn')
+])
 
-# In[24]:
+
+# In[27]:
 
 
 #verb1: кто (тоже) делает
@@ -426,7 +473,7 @@ def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
 ])
 
 
-# In[25]:
+# In[28]:
 
 
 #verb: сделать одно и/но сделать сдругое
@@ -450,21 +497,21 @@ def r_verb_I_verb(_v1_,_i_,_v2_):    return StC([
 ])
 
 
-# In[26]:
+# In[29]:
 
 
 #verb3: Сделать кому
 @debug_pp
 def p_verb3(s,p): return p_alt(s,p,
-    seq([ alt(D(dict_verb),D(dict_verb_s)),          p_noun_dp ],r_verb_noun_dp_ed),
-    seq([ alt(D(dict_verb),D(dict_verb_s)), W('no'), p_noun_dp ],r_NE_verb_noun_dp_ed),
+    seq([ alt(D(dict_verb),D(dict_verb_s)),          p_noun_dp ],r_verb_noun_dp),
+    seq([ alt(D(dict_verb),D(dict_verb_s)), W('no'), p_noun_dp ],r_NE_verb_noun_dp),
 #    seq([ D(dict_verb_s), p_noun_dp ],r_verb_noun_dp_mn)
     D(dict_verb),                                       
     D(dict_verb_s)
 )
 
 
-# In[27]:
+# In[30]:
 
 
 #verb2: сделать что
@@ -483,21 +530,34 @@ def p_verb2(s,p): return p_alt(s,p,
 )
 
 
-# In[28]:
+# In[31]:
 
 
 #verb1: кто делает
+
 @debug_pp
-def p_verb1_1(s,p): return p_alt(s,p,
+def p_noun_verb1(s,p): return p_alt(s,p,
     pe_noun_HAVE_noun,                           
 ELSE,
-    seq([ p_noun, p_verb2 ],r_noun_verb),
+    seq([ p_noun , p_verb2 ],r_noun_verb)
+)
+
+@debug_pp
+def p_verb1_2(s,p): return p_alt(s,p,
+    seq([pe_verb2_sov],[1,re_povel_verb2_sov_ed,re_povel_verb2_sov_mn]),
+ELSE,
+    seq([          p_verb2 ],[1,r_povel_verb_ed,r_povel_verb_mn])
+)
+
+@debug_pp
+def p_verb1_1(s,p): return p_alt(s,p,
+    p_noun_verb1,
     seq([ W('to'), p_verb2 ],r_to_verb),   #ELSE, # переход к следующему уровню
-    p_verb2
+    p_verb1_2
 )
 
 
-# In[29]:
+# In[32]:
 
 
 #verb1: кто (тоже) делает
@@ -508,7 +568,7 @@ def p_verb1(s,p): return p_alt(s,p,
 )
 
 
-# In[30]:
+# In[33]:
 
 
 #verb: сделать одно и/но сделать сдругое
@@ -524,7 +584,7 @@ def p_verb(s,p): return p_alt(s,p,
 
 # ## Фразы, предложения, текст
 
-# In[31]:
+# In[34]:
 
 
 @debug_pp
@@ -546,7 +606,7 @@ def p_phrase(s,p):
     )
 
 
-# In[32]:
+# In[35]:
 
 
 dict_proper={}# имена собственные
@@ -562,16 +622,16 @@ def p_sentence(s,p):
         s[p].attrs.changers-={ch_title}
         s[p].attrs.changers|={ch_anti_sentence}
         restore_title=True
-    
-    rezs=seq([p_phrase,alt(W('.'),W('!'))],r_sentence)(s,p)
-    
-    if restore_title:
-        s[p].attrs.changers|={ch_title}
-        s[p].attrs.changers-={ch_anti_sentence}
+    try:
+        rezs=seq([p_phrase,alt(W('.'),W('!'))],r_sentence)(s,p)
+    finally:
+        if restore_title:
+            s[p].attrs.changers|={ch_title}
+            s[p].attrs.changers-={ch_anti_sentence}
     return rezs
 
 
-# In[33]:
+# In[36]:
 
 
 def maxlen_filter(patt,s,p):
@@ -618,7 +678,7 @@ def p_text(s,p):
 
 # ## Запуск и отладка
 
-# In[34]:
+# In[37]:
 
 
 def _en2ru(s): # main
@@ -657,8 +717,10 @@ def en2ru(s):
 def d_en2ru(s):
     l_d = parse_system.DEBUGGING
     parse_system.DEBUGGING=True
-    r=_en2ru(s)
-    parse_system.DEBUGGING=l_d
+    try:
+        r=_en2ru(s)
+    finally:
+        parse_system.DEBUGGING=l_d
     return r
 
 def pr_en2ru(s):
@@ -666,66 +728,7 @@ def pr_en2ru(s):
     
 
 
-# In[35]:
-
-
-def _parse_pat(patt,s):
-    s=[ i for i in tokenizer(s)]
-    return patt(s,0)
-
-def parse_pat(patt,s):
-    parse_system.DEBUGGING=False
-    return _parse_pat(patt,s)
-
-def d_parse_pat(patt,s):
-    l_d = parse_system.DEBUGGING
-    parse_system.DEBUGGING=True
-    r=parsepat(s,patt)
-    parse_system.DEBUGGING=l_d
-    return r
-
-
-# In[36]:
-
-
-def parse_scheme(s,full=False):
-    s=[ i for i in tokenizer(s)]
-    ParseInfo.enabled = True
-    rezs=maxlen_filter(p_phrase,s,0)
-    ParseInfo.enabled = False
-    for end,rez in rezs:
-        def print_rez(rez,depth):
-            info = rez.parse_info
-            if hasattr(info,'p_start'):
-                print('  '*depth+' '+SAttrs().join( s[info.p_start : info.p_end] ))
-            if hasattr(info,'patterns') or hasattr(info,'rule_group'):
-                if hasattr(info,'patterns'):
-                    #'<'+str(id(info.patterns))+'>'+
-                    patterns = ' '.join(info.patterns) if full else info.patterns[0]
-                else:
-                    patterns = ''
-                if hasattr(info,'rule_group'):
-                    if type(info.rule_group)==list:
-                        assert info.rule_group[0]!=0
-                        rule = info.rule_group[info.rule_group[0]]
-                        rules = str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
-                    else:
-                        rule = info.rule_group
-                        rules = ''
-                    rules += (rule.__name__ if callable(rule) else str(rule))
-                else:
-                    rules = ''
-                print('  '*depth +' '+ patterns+' -> '+rules)
-            print('  '*depth+'*'+str(rez))
-            
-            if hasattr(rez,'talk'):
-                for x in rez.talk:
-                    print_rez(x[1],depth+1)
-        rez.pull_deferred()
-        print_rez(rez,0)
-
-
-# In[37]:
+# In[38]:
 
 
 def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
@@ -744,6 +747,264 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
         tmp.pad=p
         m.append(prompt+tmp.tostr())#        print(prompt+str(tmp))
     return m
+
+
+# In[39]:
+
+
+def _parse_pat(patt,s):
+    s=[ i for i in tokenizer(s)]
+    return patt(s,0)
+
+def parse_pat(patt,s):
+    parse_system.DEBUGGING=False
+    return _parse_pat(patt,s)
+
+def d_parse_pat(patt,s):
+    l_d = parse_system.DEBUGGING
+    parse_system.DEBUGGING=True
+    try:
+        r=parsepat(s,patt)
+    finally:
+        parse_system.DEBUGGING=l_d
+    return r
+
+
+# In[40]:
+
+
+def scheme(s,full=True):
+    s=[ i for i in tokenizer(s)]
+    ParseInfo.enabled = True
+    rezs=maxlen_filter(p_text,s,0)
+    ParseInfo.enabled = False
+    for end,rez in rezs:
+        if 0:
+            def print_rez0(rez,depth):
+                info = rez.parse_info
+                if hasattr(info,'p_start'):
+                    print('  '*depth+' '+SAttrs().join( s[info.p_start : info.p_end] ))
+                if hasattr(info,'patterns') or hasattr(info,'rule_group'):
+                    if hasattr(info,'patterns'):
+                        #'<'+str(id(info.patterns))+'>'+
+                        patterns = ' '.join(info.patterns) if full else info.patterns[0]
+                    else:
+                        patterns = ''
+                    if hasattr(info,'rule_group'):
+                        if type(info.rule_group)==list:
+                            assert info.rule_group[0]!=0
+                            rule = info.rule_group[info.rule_group[0]]
+                            rules = str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
+                        else:
+                            rule = info.rule_group
+                            rules = ''
+                        rules += (rule.__name__ if callable(rule) else str(rule))
+                    else:
+                        rules = ''
+                    print('  '*depth +' '+ patterns+' -> '+rules)
+                print('  '*depth+'*'+str(rez))
+
+                if hasattr(rez,'talk'):
+                    for x in rez.talk:
+                        print_rez0(x[1],depth+1)
+        
+            rez.pull_deferred()
+            print_rez0(rez,0)
+        
+        class Node:
+            __slots__ = ['childs','p_start','p_end','patterns','rule','rez']
+        def make_tree(struct):
+            if hasattr(struct,'talk'):
+                if hasattr(struct.parse_info,'p_start'):
+                    info = struct.parse_info
+                    node = Node()
+                    node.p_start = info.p_start
+                    node.p_end = info.p_end
+                    node.patterns = info.patterns
+                    if hasattr(info,'rule_group'):
+                        if type(info.rule_group)==list:
+                            assert info.rule_group[0]!=0
+                            rule = info.rule_group[info.rule_group[0]]
+                            rules = str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
+                        else:
+                            rule = info.rule_group
+                            rules = ''
+                        node.rule = rules + (rule.__name__ if callable(rule) else str(rule))
+                    else:
+                        node.rule = ''
+                    node.rez = struct
+                    node.childs = []
+                    depth = 0
+                    for tup in struct.talk:
+                        d,m = make_tree(tup[1])
+                        if d>depth: depth = d
+                        node.childs+=m
+                    node.childs.sort(key=lambda node:node.p_start)
+                    return (depth+1,[node])
+                else:
+                    mm = []
+                    depth = 0
+                    for tup in struct.talk:
+                        d,m = make_tree(tup[1])
+                        if d>depth: depth = d
+                        mm+=m
+                    return (depth,mm)
+            elif hasattr(struct.parse_info,'p_start'):
+                info = struct.parse_info
+                node = Node()
+                node.p_start = info.p_start
+                node.p_end = info.p_end
+                node.patterns = info.patterns
+                if hasattr(info,'rule_group'):
+                    if type(info.rule_group)==list:
+                        assert info.rule_group[0]!=0
+                        rule = info.rule_group[info.rule_group[0]]
+                        rules = str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
+                    else:
+                        rule = info.rule_group
+                        rules = ''
+                    node.rule = rules + (rule.__name__ if callable(rule) else str(rule))
+                else:
+                    node.rule = ''
+                node.rez = struct
+                node.childs = []
+                return (1,[node])
+            else:
+                return (0,[])
+        
+        if 0:
+            def print_rez1(info,depth):
+                if hasattr(info,'p_start'):
+                    print('  '*depth+' '+SAttrs().join( s[info.p_start : info.p_end] ))
+                patterns = ' '.join(info.patterns) if full else info.patterns[0]
+                print('  '*depth +' '+ patterns+' -> '+info.rule)
+                print('  '*depth+'*'+str(info.rez))
+
+                if hasattr(info,'childs'):
+                    for x in info.childs:
+                        print_rez1(x,depth+1)
+                    
+            rez.pull_deferred()
+            
+        depth,mm = make_tree(rez)
+        assert len(mm)==1
+        tree=mm[0]
+        
+        if 0:
+            print('depth=',depth)
+            print_rez1(tree,0)
+        
+        DISTANCE = 2
+        cols = []
+        pos=0
+        for word in s:
+            cols.append(pos)
+            pos+=len(word)+DISTANCE
+        cols.append(pos)
+        
+        class Line:
+            __slots__=['h','line']
+            def __init__(self,h,l):
+                self.h = h
+                self.line = l
+                
+        lines = [Line(0,[None for i in range(len(s))]) for j in range(depth)]
+        def make_lines(node):
+            dd=0
+            for c in node.childs:
+                d = make_lines(c)
+                if d>dd: dd = d
+                    
+            node.rez = repr(node.rez.tostr())[1:-1]
+            for i in range(1,len(node.patterns)):
+                node.patterns[i] = '('+node.patterns[i]+')'
+            
+            if len(node.patterns)>lines[dd].h: lines[dd].h = len(node.patterns)
+                
+            maxlen = max(len(node.rule),len(node.rez),max([len(i) for i in node.patterns]))
+            dlen = (maxlen+DISTANCE) - (cols[node.p_end]-cols[node.p_start])
+            #print(node.rez,maxlen,dlen)
+            if dlen>0:
+                for i in range(node.p_end,len(cols)):
+                    cols[i]+=dlen
+            
+            lines[dd].line[node.p_start] = node
+            return dd+1
+        dd = make_lines(tree)
+        assert dd==depth
+        
+        def inde(s,p_start,p_end):
+            return s+' '*(cols[p_end]-cols[p_start]-len(s))
+        
+        for i in range(len(s)):
+            print(inde(s[i],i,i+1),end='')
+        print()
+        
+        for line_ in lines:
+            line=line_.line
+            
+            # _______
+            i=0
+            l=''
+            while i<len(s):
+                if line[i]==None:
+                    l+=inde('',i,i+1)
+                    i+=1
+                else:
+                    l+='_'*(cols[line[i].p_end]-cols[line[i].p_start]-DISTANCE)+' '*DISTANCE
+                    i=line[i].p_end
+            print(l)
+            
+            # patterns[0]
+            i=0
+            l=''
+            while i<len(s):
+                if line[i]==None:
+                    l+=inde('',i,i+1)
+                    i+=1
+                else:
+                    l+=inde(line[i].patterns[0],line[i].p_start,line[i].p_end)
+                    i=line[i].p_end
+            print(l)
+
+            # rule
+            i=0
+            l=''
+            while i<len(s):
+                if line[i]==None:
+                    l+=inde('',i,i+1)
+                    i+=1
+                else:
+                    l+=inde(line[i].rule,line[i].p_start,line[i].p_end)
+                    i=line[i].p_end
+            print(l)
+
+            # rez
+            i=0
+            l=''
+            while i<len(s):
+                if line[i]==None:
+                    l+=inde('',i,i+1)
+                    i+=1
+                else:
+                    l+=inde(line[i].rez,line[i].p_start,line[i].p_end)
+                    i=line[i].p_end
+            print(l)
+            
+            if full:
+                for j in range(1,line_.h):
+                    # patterns[j]
+                    i=0
+                    l=''
+                    while i<len(s):
+                        if line[i]==None or j>=len(line[i].patterns):
+                            l+=inde('',i,i+1)
+                            i+=1
+                        else:
+                            l+=inde(line[i].patterns[j],line[i].p_start,line[i].p_end)
+                            i=line[i].p_end
+                    print(l)
+           
 
 
 # # Тесты
@@ -805,44 +1066,98 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
 #     - чтобы обновить кэши ф-ций
 # 
 # исключения парсить, если регулярным образом распарсилось
-#     каждая функция будет с аргументом парсить или нет исключения
+#     каждая функция будет с аргументом: парсить или нет исключения
 # 
 # атрибуты слов: (теги)
 # отображение открывающейся кавычки (SAttrs.join)
 # ```
 
-# In[38]:
+# In[41]:
 
 
 #decline('two watches')
 
 
-# In[39]:
+# In[42]:
 
 
 en2ru('')
 
 
-# In[40]:
+# In[43]:
 
 
 en2ru('I see jam and one cup.')
 
 
-# In[41]:
+# In[44]:
 
 
-en2ru('Say information')
+en2ru('two balls')
 
 
-# In[42]:
+# In[45]:
+
+
+en2ru('boy sees')
+
+
+# In[46]:
+
+
+en2ru('see')
+
+
+# In[47]:
+
+
+en2ru('boy says')
+
+
+# In[48]:
+
+
+en2ru('say')
+
+
+# In[49]:
+
+
+en2ru('boy gives')
+
+
+# In[50]:
+
+
+en2ru('give')
+
+
+# In[51]:
+
+
+en2ru('boy has')
+
+
+# In[52]:
+
+
+en2ru('have')
+
+
+# In[53]:
+
+
+en2ru('\nThis girl has three balls.')
+
+
+# In[55]:
 
 
 pr_en2ru('''This girl has a fish.
 This fish is on the dish.''')
 
 
-# In[43]:
+# In[56]:
 
 
 pr_en2ru('''This girl has three dolls.
@@ -851,31 +1166,7 @@ That girl has five books.
 That boy has four pens.''')
 
 
-# In[44]:
-
-
-parse_scheme('boy has two balls',True)
-
-
-# In[45]:
-
-
-parse_scheme('boy has two balls',True)
-
-
-# In[46]:
-
-
-en2ru('two balls')
-
-
-# In[47]:
-
-
-parse_scheme('Say: "Seven, six, four, two, five, three, one."',True)
-
-
-# In[48]:
+# In[57]:
 
 
 pr_en2ru('''The girl has one dish.
@@ -884,7 +1175,7 @@ The boy has three sticks.
 He has five stars.''')
 
 
-# In[49]:
+# In[58]:
 
 
 pr_en2ru('''This frog is on the log.
@@ -892,7 +1183,7 @@ That frog is in the lake.
 The snake is in the box.''')
 
 
-# In[50]:
+# In[59]:
 
 
 pr_en2ru('''The spoon is in the cup.

@@ -116,7 +116,7 @@ def set_property(tup,**kwarg): #set_property(tup,prop=val)
 	assert len(kwarg)==1
 	prop, val= next(iter(kwarg.items()))
 	assert len(tup)==3, tup
-	if prop in {'attrs_from_left','attrs_from_right','add_changers'}:
+	if prop in {'attrs_from_left','attrs_from_right','add_changers','pull_attrs'}:
 		tup[2][prop]=val
 	else:
 		assert hasattr(tup[1],prop)
@@ -125,6 +125,7 @@ def set_property(tup,**kwarg): #set_property(tup,prop=val)
 		else: tup[2][prop]=val
 
 def pull_deferred(tup):
+	pull_attrs_no = None
 	for prop,val in tup[2].items():
 		if prop=='attrs_from_left':
 			SAttrs._to_right(val,tup[1])
@@ -132,10 +133,24 @@ def pull_deferred(tup):
 			SAttrs._to_left(tup[1],val)
 		elif prop=='add_changers':
 			tup[1].attrs.changers|=val
+		elif prop=='pull_attrs':
+			pull_attrs_no = val # val ignored
 		else: setattr(tup[1],prop,val)
 	tup[2].clear()
+	
 	if isinstance(tup[1],Struct):
 		tup[1].pull_deferred()
+		
+	if pull_attrs_no!=None:
+		assert hasattr(tup[1],'talk') and tup[1].attrs.pre=='',\
+			(hasattr(tup[1],'talk') , tup[1].attrs.pre=='')
+		tup[1].attrs.pre=tup[1].talk[pull_attrs_no][1].attrs.pre
+		tup[1].talk[pull_attrs_no][1].attrs.pre=''
+		tup[1].attrs.changers=tup[1].talk[pull_attrs_no][1].attrs.changers
+		tup[1].talk[pull_attrs_no][1].attrs.changers=set()
+		tup[1].attrs.tags=tup[1].talk[pull_attrs_no][1].attrs.tags
+		tup[1].talk[pull_attrs_no][1].attrs.tags=set()
+		
 
 # In[28]:
 
@@ -274,7 +289,7 @@ class StVerb(Struct):
 		'word', # None или слово - индекс для отображения
 		'oasp', # None или слово - с противоположной совершенностью
 		
-		'asp',	# 'sov'/'nesov' - аспект
+		'_asp',	# 'sov'/'nesov' - аспект
 		'_form',# 'neopr'/'povel'/'nast' - форма-наклонение-время
 		'_rod', # 'm'/'g'/'s'
 		'_chis',# 'ed'/'mn'
@@ -294,19 +309,19 @@ class StVerb(Struct):
 	@staticmethod
 	def chis_checker(form,chis):
 		assert form=='neopr' and chis==None or \
-			   form!='neopr' and chis in{'ed','mn'},                   'wrong chis: '+repr(chis)
+			   form!='neopr' and chis in{'ed','mn'},                   'wrong chis: '+repr(chis)+' /'+repr(form)
 		return chis
 
 	@staticmethod
 	def rod_checker(form,rod):
 		assert form in {'neopr','povel'}     and rod==None or \
-			   form not in {'neopr','povel'} and rod in {'m','g','s'}, 'wrong rod: '+repr(rod)
+			   form not in {'neopr','povel'} and rod in {'m','g','s'}, 'wrong rod: '+repr(rod)+' /'+repr(form)
 		return rod
 
 	@staticmethod
 	def pers_checker(form,pers):
 		assert form in {'neopr','povel'}     and pers==None or \
-			   form not in {'neopr','povel'} and pers in {1,2,3},      'wrong pers: '+repr(pers)
+			   form not in {'neopr','povel'} and pers in {1,2,3},      'wrong pers: '+repr(pers)+' /'+repr(form)
 		return pers
 
 	def __init__(self,word,oasp=0,asp=None,form=None,chis=0,rod=0,pers=0):
@@ -334,10 +349,10 @@ class StVerb(Struct):
 					chis=get_property(chis=found)
 					pers=get_property(pers=found)
 		self.asp  =self.asp_checker(asp)
-		self._form=self.form_checker(form)
-		self._rod =self.rod_checker(form,rod)
-		self._chis=self.chis_checker(form,chis)
-		self._pers=self.pers_checker(form,pers)
+		self.form =self.form_checker(form)
+		self.rod  =self.rod_checker(form,rod)
+		self.chis =self.chis_checker(form,chis)
+		self.pers =self.pers_checker(form,pers)
 
 	@staticmethod
 	def ext_props_setter(tup,**kwarg): #ext_prop_setter(tup,prop=val)
@@ -403,6 +418,32 @@ class StVerb(Struct):
 				if i[0]=='dep' or i[0]=='maindep' :
 					set_property(i,pers=val)
 				
+	asp=property()
+	@asp.getter
+	def asp(self):
+		return self._asp
+	@asp.setter
+	def asp(self,val):
+		#print('set asp')#,repr(self))
+		if not hasattr(self,'_asp'): # for constructor
+			self._asp=val
+		elif self._asp!=val:
+			#print('change asp')
+			self._asp=val
+			if self.word!=None:
+				if self.oasp==None :
+					pass
+				elif type(self.oasp)==str:
+					tmp=self.oasp
+					self.oasp=self.word
+					self.word=tmp
+				else:
+					raise RuntimeError('internal error: StNoun.oasp = '+self.oasp)
+			else:
+				for i in self.talk:
+					if i[0]=='dep' or i[0]=='maindep' :
+						set_property(i,asp=val)
+
 	def __repr__(self):
 		return 'StVerb'+repr_id(self)+'('+(repr(self.talk) if self.word==None else repr(self.word)+','\
 			+repr(self.oasp))+','+ 'asp='+repr(self.asp)+','+ 'form='+repr(self.form)+','+ 'chis='+repr(self.chis)+','+            'pers='+repr(self.pers)+')'+repr_attrs(self)
