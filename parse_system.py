@@ -379,7 +379,7 @@ def p_alt(s,p,*args):
 	if len(wrong_ends)>0:
 		for p1,r1 in e_rezs:
 			if p1 in wrong_ends:
-				print('WRONG_EXCEPTION ('+str(p)+':'+str(p1)+'): '+str(r1))
+				warning('WRONG_EXCEPTION ('+str(p)+':'+str(p1)+'): '+str(r1))
 		e_rezs = [(p1,r1) for p1,r1 in e_rezs if p1 not in wrong_ends]
 		
 	remain_ends = r_ends - e_ends
@@ -444,7 +444,9 @@ def seq(patterns,rule_group):#,numbrs=None
 
 def default_warning(s): 
     print(s)
-warning = default_warning
+warning_fun = default_warning
+def warning(s):
+	return warning_fun(s)
 
 DEBUGGING=False
 CURRENT_DEBUG_DEPTH=0
@@ -464,7 +466,7 @@ def debug_pp(fun):
 				fun.__name__+'___'+str(p)
 		if p in cache:
 			if cache[p]==None:
-				raise ParseError('зацикливание '+fun.__name__+'(s,'+p+')')
+				raise ParseError('зацикливание '+fun.__name__+'(s,'+str(p)+')')
 			if DEBUGGING: 
 				print(indent+'|'+debug_s)
 				if ParseInfo.enabled:

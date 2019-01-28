@@ -44,9 +44,11 @@ def add_dict_variant(dic,enw,ruw):
 			dic[enw]=[2,tmp,ruw]
 	else:
 		dic[enw]=ruw
+	if rd.VERBOSE_ADDS:
+		print('в',dic['__name__'],'добавлено',enw)
 
 def remove_dict_variant(dic,enw,ruw):
-	if env not in dict: return
+	if enw not in dic: return
 	if type(dic[enw])==list:
 		if len(dic[enw])>3:
 			for i in range(1,len(dic[enw])):
@@ -75,9 +77,9 @@ def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o):
 	# иначе в dict_noun остануться оба варианта: и старый и новый
 	if ruw   in ruwords: remove_dict_variant(dict_noun,enw,  ruwords[ruw]  )
 	if ruwmn in ruwords: remove_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
-	add_runoun2(ruw,ruwmn,r,o)
-	add_dict_variant(dict_noun,enw,  ruwords[ruw]  )
-	add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
+	if add_runoun2(ruw,ruwmn,r,o):
+		add_dict_variant(dict_noun,enw,  ruwords[ruw]  )
+		add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
 	
 def ____Noun():
 	
@@ -141,7 +143,21 @@ def ____Noun():
 	add_ennoun2('child'   ,'children'  ,"ребёнок" ,"дети"      ,'m',True)
 	add_ennoun2('information','informations',"информация","информации",'g',False)
 
-
+	add_ennoun2('doll'    ,'dolls'     ,"кукла"   ,"куклы"     ,'g',False)
+	add_ennoun2('frog'    ,'frogs'     ,"ягушка"  ,"лягушки"   ,'g',True)
+	add_ennoun2('log'     ,'logs'      ,"бревно"  ,"брёвна"    ,'s',False)
+	add_ennoun2('lake'    ,'lakes'     ,"озеро"   ,"озёра"     ,'s',False)
+	add_ennoun2('snake'   ,'snakes'    ,"змея"    ,"змеи"      ,'g',True)
+	add_ennoun2('cake'    ,'cakes'     ,"торт"    ,"торты"     ,'m',False)
+	#add_skl2('s',False,make_skl2(
+	#'пирожное'   ,'пирожные',
+	#'пирожного'  ,'пирожных',
+	#'пирожному'  ,'пирожным',
+	#'пирожное'   ,'пирожные',
+	#'пирожным'   ,'пирожными',
+	#'пирожном'   ,'пирожных'
+	#))                     #cakes
+	#add_ennoun2('cake'    ,'cakes'     ,"пирожное","пирожные"  ,'s',False)
 	#add_runoun('часы (предмет)',None,False,'m','mn','час','ы','ов','ам','ы','ами','ах')
 	#dict_noun['watch']= ruwords['часы (предмет)']
 	#dict_noun['watches']= ruwords['часы (предмет)']
@@ -199,7 +215,6 @@ def ____Pronoun():
 ____Pronoun()
 
 
-
 # ## Adj
 
 # In[26]:
@@ -221,6 +236,8 @@ def ____Adj():
 	dict_adj['that']=ruwords["тот"]
 
 ____Adj()
+
+
 # ## Numeral
 
 # In[40]:
@@ -252,34 +269,58 @@ def ____Numeral():
 
 ____Numeral()
 
+
 # ## Verb
 
 # In[42]:
 
 
-dict_verb={'__name__':'dict_verb'}
-dict_verb_s={'__name__':'dict_verb_s'}
+dict_verb_simple={'__name__':'dict_verb_simple'}
+dict_verb_komu={'__name__':'dict_verb_komu'}
 def ____Verb():
 
-	dict_verb  ['see']=   ruwords['видеть']
-	dict_verb_s['sees']=  ruwords['видеть']
-	dict_verb  ['have']=  ruwords['иметь']
-	dict_verb_s['has']=   ruwords['иметь']
-
-	dict_verb  ['give']=  ruwords['давать']
-	dict_verb_s['gives']= ruwords['давать']
-	dict_verb  ['show']=  [ 2, ruwords['показать'], ruwords['показывать'] ]
-	dict_verb_s['shows']= [ 2, ruwords['показать'], ruwords['показывать'] ]
-	dict_verb  ['say']=   ruwords['говорить']
-	dict_verb_s['says']=  ruwords['говорить']
-
-	dict_verb  ['be']= [0, ruwords['являться'], ruwords['находиться'] ]
-	dict_verb  ['am']= [0, ruwords['являться'], ruwords['находиться'] ]
-	dict_verb  ['are']=[0, ruwords['являться'], ruwords['находиться'] ]
-	dict_verb_s['is']= [0, ruwords['являться'], ruwords['находиться'] ]
+	#dict_verb['be']= [0, ruwords['являться'], ruwords['находиться'] ]
+	#dict_verb['am']= [0, ruwords['являться'], ruwords['находиться'] ]
+	#dict_verb['are']=[0, ruwords['являться'], ruwords['находиться'] ]
+	#dict_verb['is']= [0, ruwords['являться'], ruwords['находиться'] ]
+	#dict_verb['have']=  ruwords['иметь']
+	#dict_verb['has']=   ruwords['иметь']
 	
+	dict_verb_komu['give']=  ruwords['давать']
+	dict_verb_komu['gives']= ruwords['давать']
+	dict_verb_komu['show']=  [ 2, ruwords['показать'], ruwords['показывать'] ]
+	dict_verb_komu['shows']= [ 2, ruwords['показать'], ruwords['показывать'] ]
+	dict_verb_komu['say']=   ruwords['говорить']
+	dict_verb_komu['says']=  ruwords['говорить']
+
+	dict_verb_simple['see']=   ruwords['видеть']
+	dict_verb_simple['sees']=  ruwords['видеть']
+	dict_verb_simple['like']=  ruwords['любить']
+	dict_verb_simple['likes']= ruwords['любить']
 ____Verb()
 
+
+# ## Other
+
+# In[42]:
+
+
+dict_other={'__name__':'dict_other'}
+def ____Other():
+	dict_other['on']=S('на')
+	dict_other['in']=S('в')
+	dict_other['no']=S('нет')
+	dict_other['not']=S('не')
+	dict_other['and']=S('и')
+	dict_other['but']=S('но')
+	dict_other['to']=S('к')
+	dict_other['.']=S('.')
+	dict_other[',']=S(',')
+	dict_other['!']=S('!')
+	dict_other[':']=S(':')
+	dict_other['"']=S('"')
+	dict_other["'"]=S("'")
+____Other()
 
 
 # # Правила: Составные - общие

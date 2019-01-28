@@ -269,8 +269,11 @@ def auto1_skl_noun2(word,wordmn,r,o):
 	set1=set()
 	skl=skl_noun[(r,o)]
 	for i in range(len(skl)):
+		#print(i,word,skl[i]['ed'][0],wordmn,skl[i]['mn'][0],\
+		#	end_match(word,skl[i]['ed'][0]),end_match(wordmn,skl[i]['mn'][0]))
 		if end_match(word,skl[i]['ed'][0]) and end_match(wordmn,skl[i]['mn'][0]):
 			set1|={i}
+	#print(repr(set1))
 	set2 = set()# подходят для suffix
 	set11=set()# не подходят для suffix
 	for i in set1:
@@ -332,13 +335,13 @@ def add_runoun2(word,wordmn,r,o,skl=None,sense=None):
 	if skl==None:
 		skl = auto1_skl_noun2(word,wordmn,r,o)
 		if len(skl)==0:
-			errmes('Не найдено ни одного подходящего склонения')
-			return
+			errmes('Не найдено ни одного подходящего склонения:', word,wordmn)
+			return False
 		elif len(skl)>1:
 			errmes('найдено больше одного склонения, уточните:', word,wordmn,skl)
 			for i in skl:
 				decline_show_noun2(word, wordmn, r,o,i)
-			return
+			return False
 		else:
 			skl=next(iter(skl))
 	name = word+((' ('+sense+')') if sense !=None else '')
@@ -354,6 +357,7 @@ def add_runoun2(word,wordmn,r,o,skl=None,sense=None):
 	if VERBOSE_ADDS:
 		print('добавлены',word,wordmn)
 		decline_show_noun2(word, wordmn, r,o,skl)
+	return True
 
 def add_runoun1(word,c,r,o,skl=None,sense=None):
 	pass
@@ -475,7 +479,7 @@ def ____Adj():
 
 	add_ruadj('добрый' ,'добр' ,adj_std_ends_y)
 	add_ruadj('некоторый' ,'некотор' ,adj_std_ends_y_sh)
-	add_ruadj('определённый' ,'определённ' ,adj_std_ends_ny)
+	add_ruadj('определённый' ,'определён' ,adj_std_ends_ny)
 
 	add_ruadj('этот' ,'эт' ,{
 		'm' :('от','ого','ому',('ого','от'),'им' ,'ом',None),
@@ -636,6 +640,11 @@ def ____Verb():
 				 'povel':("й","йте"),
 				 'nast': ("ю","ешь","ет","ет","ет","ем","ете","ют")
 			}   )
+	add_ruverb('есть (быть)','стать'   ,'nesov','',
+			{    'neopr':"есть",
+				 'povel':("стань","станьте"),
+				 'nast': ("есть","есть","есть","есть","есть","есть","есть","есть")
+			}   )
 	add_ruverb('являться',None   ,'nesov','явля',
 			{    'neopr':"яться",
 				 'povel':("йся","йтесь"),
@@ -645,6 +654,26 @@ def ____Verb():
 			{    'neopr':"диться",
 				 'povel':("дись","дитесь"),
 				 'nast': ("жусь","дишься","дится","дится","дится","димся","дитесь","дятся")
+			}   )
+	add_ruverb('любить','полюбить','nesov','люб',
+			{    'neopr':"ить",
+				 'povel':("и","ите"),
+				 'nast': ("лю","ишь","ит","ит","ит","им","ите","ят")
+			}   )
+	add_ruverb('полюбить','любить','sov','полюб',
+			{    'neopr':"ить",
+				 'povel':("и","ите"),
+				 'nast': ("лю","ишь","ит","ит","ит","им","ите","ят")
+			}   )
+	add_ruverb('нравиться','понравиться','nesov','нрав',
+			{    'neopr':"иться",
+				 'povel':("ься","ьтесь"),
+				 'nast': ("люсь","ишься","ится","ится","ится","имся","итесь","ятся")
+			}   )
+	add_ruverb('понравиться','нравиться','sov','понрав',
+			{    'neopr':"иться",
+				 'povel':("ься","ьтесь"),
+				 'nast': ("люсь","ишься","ится","ится","ится","имся","итесь","ятся")
 			}   )
 ____Verb()
 	

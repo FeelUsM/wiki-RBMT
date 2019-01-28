@@ -144,12 +144,14 @@ def pull_deferred(tup):
 	if pull_attrs_no!=None:
 		assert hasattr(tup[1],'talk') and tup[1].attrs.pre=='',\
 			(hasattr(tup[1],'talk') , tup[1].attrs.pre=='')
-		tup[1].attrs.pre=tup[1].talk[pull_attrs_no][1].attrs.pre
-		tup[1].talk[pull_attrs_no][1].attrs.pre=''
-		tup[1].attrs.changers=tup[1].talk[pull_attrs_no][1].attrs.changers
-		tup[1].talk[pull_attrs_no][1].attrs.changers=set()
-		tup[1].attrs.tags=tup[1].talk[pull_attrs_no][1].attrs.tags
-		tup[1].talk[pull_attrs_no][1].attrs.tags=set()
+		tup[1].attrs = tup[1].talk[pull_attrs_no][1].attrs
+		tup[1].talk[pull_attrs_no][1].attrs = SAttrs()
+#		tup[1].attrs.pre=tup[1].talk[pull_attrs_no][1].attrs.pre
+#		tup[1].talk[pull_attrs_no][1].attrs.pre=''
+#		tup[1].attrs.changers=tup[1].talk[pull_attrs_no][1].attrs.changers
+#		tup[1].talk[pull_attrs_no][1].attrs.changers=set()
+#		tup[1].attrs.tags=tup[1].talk[pull_attrs_no][1].attrs.tags
+#		tup[1].talk[pull_attrs_no][1].attrs.tags=set()
 		
 
 # In[28]:
@@ -525,6 +527,7 @@ class StDeclinable(Struct):
 		self.chis =self. chis_checker(c)
 		self.pad =self.  pad_checker(p)
 		
+	pers=3 #for pronoun
 	pad=property()
 	@pad.getter
 	def pad(self):
@@ -568,7 +571,7 @@ class StNoun(StDeclinable):
 	'''
 	obediences = {
 		'dep'    : lambda x:_types_assert(x,StDeclinable),
-		'maindep': lambda x:_types_assert(x,StNoun),
+		'maindep': lambda x:_types_assert(x,StDeclinable),
 		'nodep'  : none_fun,
 		'nomer'  : lambda x:_types_assert(x,StNum),
 		'punct'  :           types_assert(S)
@@ -614,7 +617,6 @@ class StNoun(StDeclinable):
 					if i[0]=='dep' or i[0]=='maindep' :
 						set_property(i,chis=val)
 
-	pers=3 #for pronoun
 	npad=property()
 	@npad.getter
 	def npad(self):
