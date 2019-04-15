@@ -31,8 +31,8 @@ rd.VERBOSE_ADDS=False
 # # Паттерны: EN-Словарь
 
 
-def add_dict_variant(dic,enw,ruw):
-	if enw in dic:
+def add_dict_variant(dic,enw,ruw,reset=False):
+	if enw in dic and not reset:
 		if type(dic[enw])==list:
 			for w in dic[enw]:
 				assert w!=ruw, 'добавляем уже имеющееся слово'
@@ -70,7 +70,7 @@ def remove_dict_variant(dic,enw,ruw):
 
 
 dict_noun={'__name__':'dict_noun'}
-def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o):
+def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,reset=False):
 	# add_runoun2 обновляет ruwords[ruw/mn]
 	# а add_dict_variant просто добавляет еще один вариант
 	# по этому если старый вариант уже был, его надо сначала удалить из dict_noun
@@ -78,7 +78,7 @@ def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o):
 	if ruw   in ruwords: remove_dict_variant(dict_noun,enw,  ruwords[ruw]  )
 	if ruwmn in ruwords: remove_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
 	if add_runoun2(ruw,ruwmn,r,o):
-		add_dict_variant(dict_noun,enw,  ruwords[ruw]  )
+		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 		add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
 	
 def ____Noun():
@@ -158,6 +158,17 @@ def ____Noun():
 	#'пирожном'   ,'пирожных'
 	#))                     #cakes
 	#add_ennoun2('cake'    ,'cakes'     ,"пирожное","пирожные"  ,'s',False)
+
+	add_ennoun2('chicken'  ,'chickens'  ,"цыплёнок","цыплята"   ,'m',True)
+	add_skl2('m',True,make_skl2(
+		'заяц'    ,'зайцы',
+		'зайца'   ,'зайцев',
+		'зайцу'   ,'зайцам',
+		'зайца'   ,'зайцев',
+		'зайцем'  ,'зайцами',
+		'зайце'   ,'зайцах'))
+	add_ennoun2('rabbit'   ,'rabbits'   ,"заяц"    ,"зайцы"     ,'m',True)
+	add_ennoun2('rabbit'   ,'rabbits'   ,"кролик"  ,"кролики"   ,'m',True)
 	#add_runoun('часы (предмет)',None,False,'m','mn','час','ы','ов','ам','ы','ами','ах')
 	#dict_noun['watch']= ruwords['часы (предмет)']
 	#dict_noun['watches']= ruwords['часы (предмет)']
@@ -297,6 +308,10 @@ def ____Verb():
 	dict_verb_simple['sees']=  ruwords['видеть']
 	dict_verb_simple['like']=  ruwords['любить']
 	dict_verb_simple['likes']= ruwords['любить']
+	dict_verb_simple['catch']= ruwords['ловить']
+	dict_verb_simple['catches']=ruwords['ловить']
+	dict_verb_simple['count']=  ruwords['считать']
+	dict_verb_simple['counts']= ruwords['считать']
 ____Verb()
 
 
@@ -309,6 +324,7 @@ dict_other={'__name__':'dict_other'}
 def ____Other():
 	dict_other['on']=S('на')
 	dict_other['in']=S('в')
+	dict_other['yes']=S('да')
 	dict_other['no']=S('нет')
 	dict_other['not']=S('не')
 	dict_other['and']=S('и')

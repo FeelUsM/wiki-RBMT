@@ -1,7 +1,7 @@
 '''функции, связанные с парсингом, обработкой строк и их атрибутами
 
 Вначале текст разбивается на токены - слова в нижнем регистре (кроме 'I') и знаки пунктуации.
-Нестандартные пробелы (отличные от ' ') записываются атрибут pre.
+Нестандартные пробелы (отличные от ' ') записываются в атрибут pre.
 Во время преобразования массива элементов, обладающих строковыми атрибутами, 
 	они разделяются этими префиксами, если префиксы не пусты, иначе пробелами ' '
 Различные виды регистра слова записываются в changers.
@@ -42,6 +42,7 @@ TextError
 '''
 
 from copy import deepcopy, copy
+import sys
 import re
 
 
@@ -58,6 +59,18 @@ class TestError(ValueError):
 	pass
 
 
+# In[*]:
+
+
+def default_warning(s): 
+    print(s,file=sys.stderr)
+warning_fun = default_warning
+def warning(s):
+	return warning_fun(s)
+
+DEBUGGING=False
+CURRENT_DEBUG_DEPTH=0
+
 # # Паттерны парсинга
 
 # In[3]:
@@ -69,22 +82,53 @@ class TestError(ValueError):
 PUNCT_CHARS=".,:;?!'-\""
 
 
+# In[9]:
+
+
+def ch_title(s):
+	"""делает заглавными первые буквы в словах"""
+	return s.title()
+def ch_upper(s):
+	"""делает все буквы заглавными"""
+	return s.upper()
+def ch_sentence(s):
+	"""делает заглавной только первую букву"""
+	if len(s)==0: return ''
+	return s[0].upper()+s[1:]
+CH_ANTI_SENTENCE=ch_title
+def ch_anti_sentence(s):
+	"""используется в p_sentence как некоторый хак"""
+	return CH_ANTI_SENTENCE(s)
+def ch_prefix(s):
+	"""используется в p_sentence как некоторый хак"""
+	return s
+CH_ANTI_PREFIX=ch_title
+def ch_anti_prefix(s):
+	"""используется в p_sentence как некоторый хак"""
+	return s
+def ch_none(s):
+	return s
+def ch_open(s): # для открывающихся кавычек
+	return s
+
 # In[5]:
 
 
 class SAttrs:
+	"""Атрибуты строки: 'pre','changers','tags'
+	pre - префикс, который добавится перед строкой перед выводом
+	changers - функции-changer-ы, которые будут применены к строке перед выводом
+	tags - not implemented
+	"""
 	__slots__=['pre','changers','tags']
 	def __init__(self,pre='',changers=None,tags=None):
 		if changers==None: changers=set()
 		if tags==None: tags=set()
+		assert type(changers)==set
+		assert type(tags)==set
 		self.pre=pre
 		self.changers=changers
 		self.tags=tags
-	def change(self,s):
-		for changer in self.changers:
-			s=changer(s)
-		# todo gtags
-		return self.pre+s
 	def __repr__(self):
 	#			'<'+str(id(self))+'>'+\
 		return 'SAttrs'+\
@@ -93,28 +137,46 @@ class SAttrs:
 					if len(self.changers)>0 else 'set()')+\
 			',tags='+repr(self.tags)+')'
 
+	def get_pre(self):
+		if ch_anti_prefix in self.changers and CH_ANTI_PREFIX==ch_none:
+			return ''
+		else: return self.pre
+	def change(self,s):
+		"""применяет себя к строке"""
+		for changer in self.changers:
+			s=changer(s)
+		# todo gtags
+		return self.get_pre()+s
 	#@staticmethod
 	def join(self,arr): #todo сделать поддержку ch_open
+		"""преобразует элементы массива в строку и объединяет их, где надо добавляя пробелы"""
 		def subr(g):
 			yield str(next(g))
 			for i in g:
 				s=str(i)
-				if i.attrs.pre!='' or re.fullmatch('['+re.escape(PUNCT_CHARS)+']*',s):
+				if i.attrs.get_pre()!='' or re.fullmatch('['+re.escape(PUNCT_CHARS)+']*',s):
 					yield s
 				else: yield ' '+s
 		global CH_ANTI_SENTENCE
+		global CH_ANTI_PREFIX
 		if ch_sentence in self.changers:
 			stored = CH_ANTI_SENTENCE
 			CH_ANTI_SENTENCE = ch_none
+		if ch_prefix in self.changers:
+			stored_prefix = CH_ANTI_PREFIX
+			CH_ANTI_PREFIX = ch_none
 		try:
 			r = ''.join(subr(iter(arr)))
 		finally:
 			if ch_sentence in self.changers:
 				CH_ANTI_SENTENCE = stored
+			if ch_prefix in self.changers:
+				CH_ANTI_PREFIX = stored_prefix
 		return r
 
 	@staticmethod
 	def _to_right(l,r):
+		"""копирование атрибутов от левого объекта к правому"""
 		if r.attrs.pre=='':
 			r.attrs.pre=l.attrs.pre
 		r.attrs.changers|=l.attrs.changers
@@ -122,18 +184,28 @@ class SAttrs:
 		return r
 	@staticmethod
 	def _to_left(l,r):
+		"""копирование атрибутов от правого объекта к левому"""
 		l.attrs.change|=r.attrs.change
 		l.attrs.tags|=r.attrs.tags
 		return l
 
 class ParseInfo:
+	"""система отладки для scheme
+	инф-а добавляется в результат (в S и в Struct) в функциях D() и debug_pp()
+
+	p_start - начало
+	p_end - конец
+	rule_group - rule_group
+	patterns - массив имен паттернов, которые возвращали этот узел корневым
+	"""
 	enabled = False
 	__slots__=['p_start','p_end','rule_group','patterns']
 
 # In[6]:
 
 
-class S(str): # строка с атрибутом
+class S(str):
+	"""строка с атрибутом"""
 	__slots__=['attrs','parse_info']
 	def __new__(cls,s,attrs=None):
 		return str.__new__(cls,s)
@@ -153,24 +225,6 @@ class S(str): # строка с атрибутом
 #.changers - множество функций - объединяется
 
 
-# In[7]:
-
-
-def sp_seq(str,pos,patterns):
-	if len(patterns)==1:
-		return [(p,[r]) for (p,r) in patterns[0](str,pos)]
-	first=patterns[0](str,pos)
-	first.sort(key=lambda i:i[0]) # в дальнейшем отключить повторное вычисление 
-	# продолжения для одинаковых позиций
-	rezs=[]
-	for r in first:
-		tmp=sp_seq(str,r[0],patterns[1:])
-		for rr in tmp:
-			rr[1].insert(0,r[1])
-		rezs+=tmp
-	return rezs
-
-
 # In[8]:
 
 
@@ -179,30 +233,13 @@ def sp_const_word(str,pos,word):
 	return [(pos+len(word),word)] if str[pos:pos+len(word)]==word else []
 
 
-# In[9]:
-
-
-def ch_title(s):
-	return s.title()
-def ch_upper(s):
-	return s.upper()
-def ch_sentence(s):
-	if len(s)==0: return ''
-	return s[0].upper()+s[1:]
-CH_ANTI_SENTENCE=ch_title
-def ch_anti_sentence(s):
-	return CH_ANTI_SENTENCE(s)
-def ch_none(s):
-	return s
-def ch_open(s): # для открывающихся кавычек
-	return s
-
 # [a-zA-Z]+
 def sp_word(str,pos):
+	"""выставляет слову определенные changer-ы, по особому обрабатывает слово'I' """
 	pos1=pos
 	while pos1<len(str) and \
 			(str[pos1]>='a' and str[pos1]<='z' or str[pos1]>='A' and str[pos1]<='Z' or\
-				str[pos1]=='-' and pos1+1<len(str) and pos1-1>=0 and\
+				str[pos1]=='-' and pos1+1<len(str) and pos1-1>=pos and\
 					(str[pos1+1]>='a' and str[pos1+1]<='z' or str[pos1+1]>='A' and str[pos1+1]<='Z') and\
 					(str[pos1-1]>='a' and str[pos1-1]<='z' or str[pos1-1]>='A' and str[pos1-1]<='Z')) :
 		pos1+=1
@@ -220,7 +257,7 @@ def sp_word(str,pos):
 	elif str[pos:pos1].isupper():
 		s.attrs.changers={ch_upper}
 	else:
-		print(s,' - перепутаны заглавные и малые буквы')
+		warning(s,' - перепутаны заглавные и малые буквы')
 	return [(pos1,s)]
 
 
@@ -371,9 +408,9 @@ def p_alt(s,p,*args):
 	while args[i]!=ELSE:
 		e_rezs+=args[i](s,p)
 		i+=1
-	e_ends = {p1 for p1,r1 in e_rezs}### длины результатов исключений
 	if len(e_rezs)==0: 
 		return r_rezs          #если результатов (исключений) нет, возвращаем регулярные, всё
+	e_ends = {p1 for p1,r1 in e_rezs}### длины результатов исключений
 		
 	wrong_ends = e_ends - r_ends#защита от коротких/длинных исключений
 	if len(wrong_ends)>0:
@@ -382,10 +419,10 @@ def p_alt(s,p,*args):
 				warning('WRONG_EXCEPTION ('+str(p)+':'+str(p1)+'): '+str(r1))
 		e_rezs = [(p1,r1) for p1,r1 in e_rezs if p1 not in wrong_ends]
 		
-	remain_ends = r_ends - e_ends
+	remain_ends = r_ends - e_ends#регулярные результаты, для которых нет исключений
 	notexc_ends = set()
 	for p1,r1 in e_rezs:
-		if r1==0:               
+		if r1==0:               #??? а где такие результаты возникают???
 			notexc_ends|={p1}
 	remain_ends|=notexc_ends
 
@@ -419,6 +456,24 @@ def p_alt(s,p,*args):
 def alt(*args):
 	return lambda s,p: p_alt(s,p,*args)
 
+# In[7]:
+
+
+def sp_seq(str,pos,patterns):
+	if len(patterns)==1:
+		return [(p,[r]) for (p,r) in patterns[0](str,pos)]
+	first=patterns[0](str,pos)
+	first.sort(key=lambda i:i[0]) # в дальнейшем отключить повторное вычисление 
+	# продолжения для одинаковых позиций
+	rezs=[]
+	for r in first:
+		tmp=sp_seq(str,r[0],patterns[1:])
+		for rr in tmp:
+			rr[1].insert(0,r[1])
+		rezs+=tmp
+	return rezs
+
+
 def seq(patterns,rule_group):#,numbrs=None
 	#numbers = range(len(patterns)) if numbrs==None else numbrs
 	def null_handler(*args):
@@ -439,21 +494,12 @@ def seq(patterns,rule_group):#,numbrs=None
 	return p_seq_info if ParseInfo.enabled else p_seq
 
 
-# In[*]:
-
-
-def default_warning(s): 
-    print(s)
-warning_fun = default_warning
-def warning(s):
-	return warning_fun(s)
-
-DEBUGGING=False
-CURRENT_DEBUG_DEPTH=0
-
 def debug_pp(fun):
 	s_point=[] # когда изменяется s - означает, что нужно сбросить кэш
 	cache={}
+	#эта вся функция относится к какому-то паттерну (который обернут этой функцией)
+	#cache индексируется позицией в строке
+	# и содержит полный_результат - массив пар (позиция,разултат)
 	def wrapper(s,p):
 		global CURRENT_DEBUG_DEPTH
 		nonlocal s_point,cache
@@ -490,6 +536,7 @@ def debug_pp(fun):
 		
 		cache[p]=None
 		rezs=fun(s,p)   # CALL FUN
+		assert type(rezs)==list , 'паттерн '+fun.__name__+' вернул неправильный тип'
 		if not ParseInfo.enabled:
 			cache[p]=rezs
 		else:
@@ -520,11 +567,11 @@ def debug_pp(fun):
 					print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
 						 str(r1))
 			
-#            print('_'+'.'*p+str(len(rezs)),'in ',fun.__name__,'}',
-#                  [(p,str(r)) for (p,r) in rezs],'\n')
-#            for i in rezs:
-#                if isinstance(i[1],StDeclinable):
-#                    i[1].check_attrs('wrapper:'+fun.__name__)
+			#print('_'+'.'*p+str(len(rezs)),'in ',fun.__name__,'}',
+			#      [(p,str(r)) for (p,r) in rezs],'\n')
+			#for i in rezs:
+			#    if isinstance(i[1],StDeclinable):
+			#        i[1].check_attrs('wrapper:'+fun.__name__)
 		
 		return rezs
 	

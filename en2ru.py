@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # # Зачем всё это?
@@ -61,7 +61,7 @@
 # ```
 # В дальнейшем предполагается, что паттерны и правила будут писать пользователи
 # грамматика не преобразовывается в LL(1) или какой-то другой промежуточный формат,
-# а парсится как есть, с возвратами (LL(*)), по этому результаты нетерминалов кэшируются.
+# а парсится как есть, с возвратами (LL(*)), поэтому результаты нетерминалов кэшируются.
 # Также стоит защита от зацикливания.
 # Никто не обещал, что грамматика будет однозначной, 
 # поэтому каждый нетерминал возвращает массив результатов.
@@ -69,7 +69,13 @@
 # Ситуация, когда получаются одинаковые результаты явлется нежелательной.
 # 
 # В дальнейшем предполагается, что будет центральная грамматика, 
-# а у ее правил пользователи будут создавать исключения.
+# а у ее правил пользователи будут создавать исключения и расширения.
+# Фишка в том, что приредактировании грамматики этим способом 
+#     поведение грамматики для уже имеющихся тестов/текстов не изменится.
+# Возможно периодически для оптимизации грамматики будет требоваться полная ее переработка,
+# но чисто математическая и довольно вычислительно-сложная задача.
+# Впрочем и без оптимизации производительность ухудшается не сильно.
+# 
 # Паттерн A является исключением паттерна B, если 
 # всё что может разобрать паттерн A может разобрать паттерн B,
 # т.е. A задает подъязык языка B, 
@@ -77,6 +83,9 @@
 # Сначала парсится B, и если это оказалось удачным, парсится A.
 # Если А распарсилось неудачно, то результатом станосится результат B,
 # а если удачно - то результат B отбрасывается и результатом станосится результат A.
+# 
+# Паттерн C является расширением паттерна B, если
+# ...
 # 
 # В дальнейшем предполагается возможность каждый паттерн связывать с 
 # набором правил, а точнее с одним правилом из заданного набора.
@@ -100,20 +109,114 @@
 # 
 # ```
 
+# # Организация кода
+
+# * parse_system.py - низкоуровневые классы, токенезация и базовые функции парсинга
+# * classes.py - классы частей речи
+# * ru_dictionary.py - функции отображения, русские слова и функции их добавления
+# * en_dictionary.py - словарь
+# 
+# 
+# * en2ru.ipynb .py - описание всего, грамматика, маленькие тесты, todo
+# * tests.ipynb - тесты уже имеющихся переводов
+# * utils.ipynb - прочее
+
 # In[1]:
 
 
 '''англо-русский переводчик, основанный на правилах, с простым добавлением паттернов и правил
 
-en2ru
-decline
+en2ru(s) -> str - переводит строку, возвращает строку
+d_en2ru(s) -> str - дополнительно печатает отладочный вывод
+pr_l_repr(s) - печатает строку в тройных кавычках
+decline(s,pads=['ip','rp','dp','vp','tp','pp']) - возвращает список склонений переведенной фразы
+parse_pat(patt,s) -> Struct - парсит строку паттерном, возвращает нестрингифицированный объект
+d_parse_pat(patt,s) -> Struct - дополнительно печатает отладочный вывод
+scheme(s) - печатает схему разбора строки
+
+паттерны:
+p_text
+p_sentence
+p_phrase
+p_verb
+...
 p_noun
-p_noun1
-r_noun_comma_noun
+...
 ''';
 
 
+# ## import
+
+# In[2]:
+
+
+import parse_system
+from parse_system import S, SAttrs, ParseInfo, tokenizer, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open, ch_prefix, ch_anti_prefix,                        seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals
+import classes
+from classes import StC, StNum, StNoun, StVerb, I
+import ru_dictionary
+from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2
+import en_dictionary
+from en_dictionary import dict_adj, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb_simple, dict_verb_komu, r_adj_noun, dict_other,                        add_ennoun2
+from importlib import reload
+
+
+# In[3]:
+
+
+if 0:
+    parse_system = reload(parse_system)
+    S            = parse_system.S
+    SAttrs       = parse_system.SAttrs
+    ParseInfo    = parse_system.ParseInfo
+    tokenizer    = parse_system.tokenizer
+    tokenize     = parse_system.tokenize
+    ch_title     = parse_system.ch_title
+    ch_sentence  = parse_system.ch_sentence
+    ch_anti_sentence = parse_system.ch_anti_sentence
+    ch_open      = parse_system.ch_open
+    ch_prefix    = parse_system.ch_prefix
+    ch_anti_prefix = parse_system.ch_anti_prefix
+    seq          = parse_system.seq
+    alt          = parse_system.alt
+    p_alt        = parse_system.p_alt
+    ELSE         = parse_system.ELSE
+    W            = parse_system.W
+    D            = parse_system.D
+    warning      = parse_system.warning
+    debug_pp     = parse_system.debug_pp
+    reset_globals = parse_system.reset_globals
+if 0:
+    classes = reload(classes)
+    StC    = classes.StC
+    StNum  = classes.StNum
+    StNoun = classes.StNoun
+    StVerb = classes.StVerb
+    I      = classes.I
+if 0:
+    ru_dictionary = reload(ru_dictionary)
+    ruwords     = ru_dictionary.ruwords
+    CW          = ru_dictionary.CW
+    add_runoun2 = ru_dictionary.add_runoun2
+    add_skl2    = ru_dictionary.add_skl2
+    make_skl2   = ru_dictionary.make_skl2
+if 0:
+    en_dictionary = reload(en_dictionary)
+    dict_adj        = en_dictionary.dict_adj
+    dict_noun       = en_dictionary.dict_noun
+    dict_pronoun_ip = en_dictionary.dict_pronoun_ip
+    dict_pronoun_dp = en_dictionary.dict_pronoun_dp
+    dict_numeral    = en_dictionary.dict_numeral
+    dict_verb_simple= en_dictionary.dict_verb_simple
+    dict_verb_komu  = en_dictionary.dict_verb_komu
+    r_adj_noun      = en_dictionary.r_adj_noun
+    dict_other      = en_dictionary.dict_other
+    add_ennoun2     = en_dictionary.add_ennoun2
+
+
 # # Паттерны и правила: Составные
+
+# ## FAQ
 
 # -Когда в правилах использовать S а когда один из классов Struct ?
 # 
@@ -125,19 +228,9 @@ r_noun_comma_noun
 # attrs_from_left/attrs_from_right - если в правиле один из аргументов пропадает, то его атрибуты желательно добавить к другому аргументу. 
 # Синтаксис `I(tag=remain_arg, ... , attrs_from_left=lost_arg)`
 
-# In[2]:
-
-
-from parse_system import S, SAttrs, ParseInfo, tokenizer, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open,                         seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals
-import parse_system
-from classes import StC, StNum, StNoun, StVerb, I
-from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2
-from en_dictionary import dict_adj, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb_simple, dict_verb_komu, r_adj_noun, dict_other,                        add_ennoun2
-
-
 # ## Исключения
 
-# In[3]:
+# In[4]:
 
 
 def r_A_noun(_a,_n): return StNoun([
@@ -148,7 +241,7 @@ def r_THE_noun(_a,_n): return StNoun([
 ])
 
 
-# In[4]:
+# In[5]:
 
 
 def r_GOOD_MORNING(_g,_m):  return r_adj_noun(
@@ -157,7 +250,7 @@ def r_GOOD_MORNING(_g,_m):  return r_adj_noun(
 )
 
 
-# In[5]:
+# In[6]:
 
 
 def r_U_noun_EST_noun(_n1_,_h_,_n2_):    return StC([
@@ -178,8 +271,24 @@ def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
     I(nodep=_n2_,        pad='rp')
 ])
 
+def r_U_noun_EST(_n1_,_h_):    return StC([
+    I(nodep=StC([
+        I(nodep=S('у')),
+        I(nodep=_n1_,   pad='rp', npad='n' )# у Него
+    ]), pull_attrs=1 ),
+    I(nodep=S('есть',_h_.attrs))
+])
 
-# In[6]:
+def r_U_noun_NET(_n1_,_h_,_no_):    return StC([
+    I(nodep=StC([
+        I(nodep=S('у')),
+        I(nodep=_n1_,   pad='rp', npad='n' )# у Него
+    ]), pull_attrs=1 ),
+    I(nodep=S('нет',_h_.attrs))
+])
+
+
+# In[7]:
 
 
 @debug_pp
@@ -193,8 +302,18 @@ def pe_noun_HAVE_noun(s,p):
 #        seq([ p_noun, p_HAVE_HAS, W('no'), p_pronoun_dp ],r_noun_NET_U_noun)
     )
 
+@debug_pp
+def pe_noun_HAVE(s,p):
+    p_HAVE_HAS = alt( W('have'), W('has') )
+    return p_alt(s,p,
+        seq([ p_noun, p_HAVE_HAS          ],r_U_noun_EST),
+        seq([ p_noun, p_HAVE_HAS, alt(W('no'),W('not')) ],r_U_noun_NET)
+#        seq([ p_noun, p_HAVE_HAS,          p_pronoun_dp ],r_noun_EST_U_noun),
+#        seq([ p_noun, p_HAVE_HAS, W('no'), p_pronoun_dp ],r_noun_NET_U_noun)
+    )
 
-# In[7]:
+
+# In[8]:
 
 
 def r_noun_X_where(_n,x,_w): return StC([
@@ -203,7 +322,7 @@ def r_noun_X_where(_n,x,_w): return StC([
 ])
 
 
-# In[8]:
+# In[9]:
 
 
 @debug_pp
@@ -212,7 +331,7 @@ def pe_noun_TOBE_where(s,p): return p_alt(s,p,
 )
 
 
-# In[9]:
+# In[10]:
 
 
 def re_povel_verb2_sov_ed(_v): return StVerb([
@@ -223,7 +342,7 @@ def re_povel_verb2_sov_mn(_v): return StVerb([
 ])
 
 
-# In[10]:
+# In[11]:
 
 
 # глагол с дополнением
@@ -236,7 +355,7 @@ def pe_verb2_sov(s,p): return p_alt(s,p,
 
 # ## Other
 
-# In[11]:
+# In[12]:
 
 
 @debug_pp
@@ -244,7 +363,7 @@ def p_numeral(s,p):
     return D(dict_numeral)(s,p)
 
 
-# In[12]:
+# In[13]:
 
 
 #2->
@@ -255,7 +374,7 @@ def p_adj(s,p):
 
 # ## Noun-like
 
-# In[13]:
+# In[14]:
 
 
 def r_noun_numeral(n,num): return StNoun([
@@ -264,7 +383,7 @@ def r_noun_numeral(n,num): return StNoun([
 ])
 
 
-# In[14]:
+# In[15]:
 
 
 def r_numeral_noun(num,n):
@@ -276,7 +395,7 @@ def r_numeral_noun(num,n):
     ],quantity=num.quantity)
 
 
-# In[15]:
+# In[16]:
 
 
 def r_noun_and_noun(sn,a,n):    return StNoun([
@@ -291,7 +410,7 @@ def r_noun_comma_noun(sn,c,n):    return StNoun([
 ],c='mn', p='ip',o=False,r='m')
 
 
-# In[16]:
+# In[17]:
 
 
 @debug_pp
@@ -304,7 +423,7 @@ ELSE,
 )
 
 
-# In[17]:
+# In[18]:
 
 
 @debug_pp
@@ -316,7 +435,7 @@ def p_noun3(s,p): return p_alt(s,p,
 )
 
 
-# In[18]:
+# In[19]:
 
 
 @debug_pp
@@ -326,7 +445,7 @@ def p_noun2(s,p): return p_alt(s,p,
 )
 
 
-# In[19]:
+# In[20]:
 
 
 @debug_pp
@@ -336,7 +455,7 @@ def p_noun1(s,p): return p_alt(s,p,
 )
 
 
-# In[20]:
+# In[21]:
 
 
 @debug_pp
@@ -352,7 +471,7 @@ def p_noun(s,p):
 
 # ## Существительные в разных формах
 
-# In[21]:
+# In[22]:
 
 
 def r_noun_dp(_n): return StNoun([
@@ -360,7 +479,7 @@ def r_noun_dp(_n): return StNoun([
 ])
 
 
-# In[22]:
+# In[23]:
 
 
 def r_TO_noun_dp(_t,_n): return StNoun([
@@ -368,7 +487,7 @@ def r_TO_noun_dp(_t,_n): return StNoun([
 ])
 
 
-# In[23]:
+# In[24]:
 
 
 @debug_pp
@@ -380,7 +499,7 @@ def p_noun_dp(s,p): return p_alt(s,p,
 
 # ## Глагол с дополнениями
 
-# In[24]:
+# In[25]:
 
 
 def r_NE_IMET_noun_vp(_v,no,_n): return StVerb([
@@ -393,6 +512,10 @@ def r_IMET_noun_vp(_v,_n): return StVerb([
     I(vp=_n,   pad='vp')
 ])
 def r_IMET(_v): return StVerb([
+    I(maindep=CW('иметь',_v)),
+])
+def r_NE_IMET(_v,no): return StVerb([
+    I(nodep=S('не',no.attrs)),
     I(maindep=CW('иметь',_v)),
 ])
 
@@ -409,7 +532,7 @@ def r_JAVLYATSA_noun_tp(_v,_n): return StVerb([
 ])
 
 
-# In[25]:
+# In[26]:
 
 
 @debug_pp
@@ -418,7 +541,8 @@ def p_HAVE(s,p):
     return p_alt(s,p,
         seq([p_have,          alt(p_noun,D(dict_pronoun_dp))], r_IMET_noun_vp),
         seq([p_have, W('no'), alt(p_noun,D(dict_pronoun_dp))], r_NE_IMET_noun_vp),
-        seq([p_have],r_IMET)
+        seq([p_have],r_IMET),
+        seq([p_have,alt(W('no'),W('not'))],r_NE_IMET)
     )
 @debug_pp
 def p_TOBE_(s,p): return p_alt(s,p,
@@ -436,7 +560,7 @@ def p_TOBE(s,p): return p_alt(s,p,
 )
 
 
-# In[26]:
+# In[27]:
 
 
 def r_verb_noun_vp(_v,_p): return StVerb([
@@ -467,7 +591,7 @@ def r_verb_c_q_text(_v,c,q1,_p,q2): return StVerb([
 ])
 
 
-# In[27]:
+# In[28]:
 
 
 @debug_pp
@@ -500,11 +624,22 @@ def p_verb3(s,p): return p_alt(s,p,
 )
 
 
-# In[28]:
+# In[29]:
 
 
 def r_X_noun_dp(x,n): return StNoun([
     I(maindep=n,  pad='dp',         attrs_from_left=x)
+])
+def r_IZ_noun(iz,n): return StNoun([
+    I(nodep=S('из',iz.attrs)),
+    I(maindep=n,  pad='rp')
+])
+def re_verb_OT_noun_DO_noun(_v,ot,_n1,do,_n2): return StVerb([
+    I(maindep=_v),
+    I(nodep=S('от',ot.attrs)),
+    I(nodep=_n1,  pad='rp'),
+    I(nodep=S('до',do.attrs)),
+    I(nodep=_n2,  pad='rp')
 ])
 
 def r_V_noun_pp(v,_n): return StC([
@@ -526,7 +661,7 @@ def r_verb_dops(_v,_d): return StVerb([
 ])
 
 
-# In[29]:
+# In[30]:
 
 
 # одно дополнение
@@ -539,6 +674,7 @@ def p_where(s,p): return p_alt(s,p,
 @debug_pp
 def p_dop(s,p): return p_alt(s,p,
     seq([W('to'), p_noun ],r_X_noun_dp),
+    seq([W('from'),p_noun],r_IZ_noun),
     p_where
 )
 
@@ -552,6 +688,8 @@ def p_dops(s,p): return p_alt(s,p,
 # глагол с дополнением
 @debug_pp
 def p_verb2(s,p): return p_alt(s,p,
+    seq([p_verb3,W('from'),p_noun,W('to'), p_noun],re_verb_OT_noun_DO_noun),
+    ELSE,
     seq([p_verb3, p_dops],r_verb_dops),
     p_verb3
 )
@@ -559,7 +697,7 @@ def p_verb2(s,p): return p_alt(s,p,
 
 # ## Глагол(ы) с подлежащим
 
-# In[30]:
+# In[31]:
 
 
 #verb1: кто делает
@@ -580,7 +718,7 @@ def r_povel_verb_mn(_v): return StVerb([
 ])
 
 
-# In[31]:
+# In[32]:
 
 
 #verb1: кто (тоже) делает
@@ -591,7 +729,7 @@ def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
 ])
 
 
-# In[32]:
+# In[33]:
 
 
 #verb: сделать одно и/но сделать сдругое
@@ -615,7 +753,13 @@ def r_verb_I_verb(_v1_,_i_,_v2_):    return StC([
 ])
 
 
-# In[33]:
+# In[ ]:
+
+
+
+
+
+# In[34]:
 
 
 #verb1: кто делает/ делать/ делай
@@ -623,6 +767,7 @@ def r_verb_I_verb(_v1_,_i_,_v2_):    return StC([
 @debug_pp
 def p_noun_verb1(s,p): return p_alt(s,p,
     pe_noun_HAVE_noun,
+    pe_noun_HAVE,
     pe_noun_TOBE_where,
 ELSE,
     seq([ p_noun , p_verb2 ],r_noun_verb)
@@ -643,7 +788,7 @@ def p_verb1_1(s,p): return p_alt(s,p,
 )
 
 
-# In[34]:
+# In[35]:
 
 
 #verb1: кто (тоже) делает
@@ -654,7 +799,7 @@ def p_verb1(s,p): return p_alt(s,p,
 )
 
 
-# In[35]:
+# In[36]:
 
 
 #verb: сделать одно и/но сделать сдругое
@@ -668,32 +813,67 @@ def p_verb(s,p): return p_alt(s,p,
 )
 
 
+# In[37]:
+
+
+def r_have_question(_h,_n1,_n2):    return StC([
+    I(nodep=StC([
+        I(nodep=S('у')),
+        I(nodep=_n1,   pad='rp', npad='n' )# у Него
+    ]), pull_attrs=1 ),
+    I(nodep=S('есть',_h.attrs)),
+    I(nodep=_n2)
+])
+
+@debug_pp
+def p_have_question(s,p):
+    p_have = alt(W('have'),W('has'))
+    return seq([p_have,p_noun,p_noun],r_have_question)(s,p)
+
+
 # ## Фразы, предложения, текст
 
-# In[36]:
+# In[38]:
 
+
+def r_DA_COMMA_verb(yes,comma,_v):    return StC([
+    I(nodep=S('да',yes.attrs)),
+    I(nodep=comma),
+    I(nodep=_v)
+])
+
+def r_NET_COMMA_verb(no,comma,_v):    return StC([
+    I(nodep=S('нет',no.attrs)),
+    I(nodep=comma),
+    I(nodep=_v)
+])
+
+def r_noun_COMMA_verb(_n,comma,_v):    return StC([
+    # обращение
+    I(nodep=_n),
+    I(nodep=comma),
+    I(nodep=_v)
+])
 
 @debug_pp
 def p_phrase(s,p): 
-#    rezs=[]
-#    rezs+=p_verb(s,p)
-#    if len(rezs)>0: return rezs
-#    rezs+=p_noun(s,p)
-#    if len(rezs)>0: return rezs
-#    rezs+=p_noun_dp(s,p)
-#    if len(rezs)>0: return rezs
-#    rezs+=p_adj(s,p)
-#    return rezs
     return p_alt(s,p,
         p_verb,    #ELSE,
         p_noun,    #ELSE,
         p_noun_dp, #ELSE,
         p_adj,
-        D(dict_other)
+        D(dict_other),
+        seq([W('yes'),W(','),p_verb],r_DA_COMMA_verb),
+        seq([W('no') ,W(','),p_verb],r_NET_COMMA_verb),
+        seq([p_noun  ,W(','),p_verb],r_noun_COMMA_verb),
     )
 
+@debug_pp
+def p_question_phrase(s,p): 
+    return p_have_question(s,p)
 
-# In[37]:
+
+# In[39]:
 
 
 dict_proper={}# имена собственные
@@ -703,22 +883,30 @@ def p_sentence(s,p):
     def r_sentence(ph,d):
         rez=StC([I(nodep=ph),I(punct=d)])
         if first_capital: rez.attrs.changers|={ch_sentence}
+        rez.attrs.pre = prefix + rez.attrs.pre
+        rez.attrs.changers|={ch_prefix}
         return rez
     restore_title=False
     if ch_title in s[p].attrs.changers and s[p] not in dict_proper:
         s[p].attrs.changers-={ch_title}
-        s[p].attrs.changers|={ch_anti_sentence}
+        s[p].attrs.changers|={ch_anti_sentence}# хак, реализованный в SAttrs.join()
         restore_title=True
+    prefix = s[p].attrs.pre
+    s[p].attrs.changers |= {ch_anti_prefix}
     try:
-        rezs=seq([p_phrase,alt(W('.'),W('!'))],r_sentence)(s,p)
-    finally:
+        rezs=p_alt(s,p,
+            seq([p_phrase,alt(W('.'),W('!'))],r_sentence),
+            seq([p_question_phrase,W('?')],r_sentence)
+        )
+    finally:# не работает, т.к. всё закешировалось
         if restore_title:
             s[p].attrs.changers|={ch_title}
             s[p].attrs.changers-={ch_anti_sentence}
+        s[p].attrs.pre = prefix
     return rezs
 
 
-# In[38]:
+# In[40]:
 
 
 def maxlen_filter(patt,s,p):
@@ -748,6 +936,7 @@ def maxlen_filter(patt,s,p):
 @debug_pp
 def p_text(s,p):
     '''или последовательность предложений или 1 фраза
+    p_text::= p_sentence* | p_phrase
     '''
     rez=[]
     while p<len(s):
@@ -759,13 +948,13 @@ def p_text(s,p):
     if len(rez)>0:
         return [(p,StC(rez))]
     else:
-        return maxlen_filter(p_phrase,s,p)
+        return maxlen_filter(alt(p_phrase,p_question_phrase),s,p)
         
 
 
 # ## Запуск и отладка
 
-# In[39]:
+# In[41]:
 
 
 def _en2ru(s): # main
@@ -798,10 +987,14 @@ def _en2ru(s): # main
     return ret_s
 
 def en2ru(s):
+    '''переводит строку, возвращает строку'''
     parse_system.DEBUGGING=False
     return _en2ru(s)
 
 def d_en2ru(s):
+    '''переводит строку, возвращает строку
+    
+    дополнительно пишет отладочный вывод'''
     l_d = parse_system.DEBUGGING
     parse_system.DEBUGGING=True
     try:
@@ -810,12 +1003,13 @@ def d_en2ru(s):
         parse_system.DEBUGGING=l_d
     return r
 
-def pr_en2ru(s):
-    print("'''"+en2ru(s)+"'''")
+def pr_l_repr(s):
+    """печатает строку в тройных кавычках"""
+    print("'''"+s+"'''")
     
 
 
-# In[40]:
+# In[42]:
 
 
 def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
@@ -836,7 +1030,7 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
     return m
 
 
-# In[41]:
+# In[43]:
 
 
 def _parse_pat(patt,s):
@@ -844,10 +1038,14 @@ def _parse_pat(patt,s):
     return patt(s,0)
 
 def parse_pat(patt,s):
+    '''парсит строку паттерном, и возвращает не стрингифицированный объект'''
     parse_system.DEBUGGING=False
     return _parse_pat(patt,s)
 
 def d_parse_pat(patt,s):
+    '''парсит строку паттерном, и возвращает не стрингифицированный объект
+    
+    дополнительно пишет отладочный вывод'''
     l_d = parse_system.DEBUGGING
     parse_system.DEBUGGING=True
     try:
@@ -857,16 +1055,31 @@ def d_parse_pat(patt,s):
     return r
 
 
-# In[42]:
+# In[44]:
 
 
-def scheme(s,full=True):
+def scheme(s,detailed=1):
+    '''печатает схему разбора
+    
+    есть дополнительный аргумент datailed
+        0 - не печатает сквозные паттерны (которые без правил)
+        1 - дефолтный вывод
+        2 - дополнительно печатает нестрингифицированные объекты
+    '''
+    # токенизируем строку
     s=[ i for i in tokenizer(s)]
+    
+    # парсим строку
     ParseInfo.enabled = True
-    rezs=maxlen_filter(p_text,s,0)
-    ParseInfo.enabled = False
+    try:
+        rezs=maxlen_filter(p_text,s,0)
+    finally:
+        ParseInfo.enabled = False
+        
+    # анализируем каждый результат
     for end,rez in rezs:
-        if 0:
+        # простой построчный вывод узлов результата
+        if detailed==2:
             def print_rez0(rez,depth):
                 info = rez.parse_info
                 if hasattr(info,'p_start'):
@@ -874,14 +1087,14 @@ def scheme(s,full=True):
                 if hasattr(info,'patterns') or hasattr(info,'rule_group'):
                     if hasattr(info,'patterns'):
                         #'<'+str(id(info.patterns))+'>'+
-                        patterns = ' '.join(info.patterns) if full else info.patterns[0]
+                        patterns = ' '.join(info.patterns) if detailed>=1 else info.patterns[0]
                     else:
                         patterns = ''
                     if hasattr(info,'rule_group'):
                         if type(info.rule_group)==list:
-                            assert info.rule_group[0]!=0
-                            rule = info.rule_group[info.rule_group[0]]
-                            rules = str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
+                            n = info.rule_group[0] if info.rule_group[0]!=0 else 1
+                            rule = info.rule_group[n]
+                            rules = str(n)+'/'+str(len(info.rule_group)-1)+' '
                         else:
                             rule = info.rule_group
                             rules = ''
@@ -890,6 +1103,7 @@ def scheme(s,full=True):
                         rules = ''
                     print('  '*depth +' '+ patterns+' -> '+rules)
                 print('  '*depth+'*'+str(rez))
+                print('  '*depth+'*'+repr(rez))
 
                 if hasattr(rez,'talk'):
                     for x in rez.talk:
@@ -898,6 +1112,7 @@ def scheme(s,full=True):
             rez.pull_deferred()
             print_rez0(rez,0)
         
+        # создание узлов
         class Node:
             __slots__ = ['childs','p_start','p_end','patterns','rule','rez']
         def make_tree(struct):
@@ -959,6 +1174,7 @@ def scheme(s,full=True):
             else:
                 return (0,[])
         
+        # простой вывод узлов
         if 0:
             def print_rez1(info,depth):
                 if hasattr(info,'p_start'):
@@ -973,10 +1189,12 @@ def scheme(s,full=True):
                     
             rez.pull_deferred()
             
+        # создание дерева
         depth,mm = make_tree(rez)
         assert len(mm)==1
         tree=mm[0]
         
+        # простой вывод узлов
         if 0:
             print('depth=',depth)
             print_rez1(tree,0)
@@ -1078,7 +1296,7 @@ def scheme(s,full=True):
                     i=line[i].p_end
             print(l)
             
-            if full:
+            if detailed>=1:
                 for j in range(1,line_.h):
                     # patterns[j]
                     i=0
@@ -1099,10 +1317,8 @@ def scheme(s,full=True):
 # ```
 # 
 #     КОДИТЬ И ДЕБАЖИТЬ ТЕКУЩЕЕ
-#     10) вопросы-ответы
-#         считать от до
-#         ловить
 #     11) сколько
+#     12) цвета и прилагательные
 #     13) где
 #     14) какого цвета
 #         КОНТЕКСТ
@@ -1156,20 +1372,48 @@ def scheme(s,full=True):
 # отображение открывающейся кавычки (SAttrs.join)
 # ```
 
-# In[43]:
+# In[46]:
 
 
 #decline('two watches')
 
 
-# In[44]:
+# In[47]:
 
 
 en2ru('')
 
 
-# In[45]:
+# In[48]:
 
 
 en2ru('I see jam and one cup.')
+
+
+# In[113]:
+
+
+import tests
+tests = reload(tests)
+tests.init(parse_system,parse_system.TestError,seq,W,SAttrs,
+           tokenize,
+           en2ru,decline,scheme,d_en2ru,pr_l_repr,p_noun,p_noun1,r_noun_comma_noun,
+          1,False)
+tests.test1()
+tests.test2()
+tests.test3()
+tests.test4()
+tests.test5and6()
+tests.test7()
+tests.test8()
+tests.test8_1()
+tests.test9()
+tests.test10()
+tests.TEST_ERRORS
+
+
+# In[ ]:
+
+
+
 

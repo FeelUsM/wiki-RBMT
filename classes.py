@@ -30,7 +30,7 @@ StC(S(у) StNoun(StAdj(рыжей) StNoun(кошки)))
 		Они будут выполнены в момент вызова pull_deferred().
 	Если при изменении свойства объекта должны измениться другие свойства этого же объекта,
 		то эти действия записываются в статическом методе ext_props_setter().
-		Они будут выполнены сразу при изменении внешнего свойства, и отразатся на внешних свойствах.
+		Они будут выполнены сразу при изменении внешнего свойства, и отразятся на внешних свойствах.
 
 
 Объекты-листья содержат поле word, которое является индексом в show_<type>_map,
@@ -66,10 +66,14 @@ Struct                            - Абстрактный базовый тип
 I             - функция с красивым синтаксисом, которая создает tupl-ы для talk-ов
 get_property  - функция, возвращающая внешнее свойство объекта внутри tupl-а
 set_property  - функция, изменяющая внешнее свойство объекта внутри tupl-а
-pull_deferred - функция, изменяющая внешние свойство к объекту внутри tupl-а
+pull_deferred - функция, применяющая внешние свойства к объекту внутри tupl-а
+
+для более детальной отладки имеются глобальные переменные:
+DEBUGGING_ID
+DEBUGGING_ATTRS
 '''
 
-from parse_system import SAttrs, ParseInfo, S
+from parse_system import SAttrs, ParseInfo, S, ch_anti_prefix
 from copy import copy
 
 # ## Классы отображения
@@ -84,15 +88,20 @@ def repr_id(self):
 	return '<'+str(id(self))+'>' if DEBUGGING_ID else ''
 	
 DEBUGGING_ATTRS=False
-def repr_attrs(self):
+def repr_attrs(self,_n=False):
 	global DEBUGGING_ATTRS
-	return '_'+repr(self.attrs) if DEBUGGING_ATTRS else ''
+	return ('\n' if _n else '')+'_'+repr(self.attrs) if DEBUGGING_ATTRS else ''
 
+def repr_talk(talk):
+	s = '[\n'
+	for tup in talk:
+		s+=repr(tup)+',\n'
+	return s+']'
 
 def I(**args):
 	i=iter(args.items())
 	p=next(i)
-	assert isinstance(p[1],Struct) or isinstance(p[1],S)
+	assert isinstance(p[1],Struct) or isinstance(p[1],S), (type(p[1]),p )
 	args.pop(p[0])
 	if ParseInfo.enabled: # чтобы отделить деревья результатов от того, что кэшируется
 		tup = (p[0], copy(p[1]), {})
@@ -125,7 +134,9 @@ def set_property(tup,**kwarg): #set_property(tup,prop=val)
 		else: tup[2][prop]=val
 
 def pull_deferred(tup):
+	'''функция pull_deferred(tup)'''
 	pull_attrs_no = None
+	# применяю внешние свойства
 	for prop,val in tup[2].items():
 		if prop=='attrs_from_left':
 			SAttrs._to_right(val,tup[1])
@@ -138,9 +149,11 @@ def pull_deferred(tup):
 		else: setattr(tup[1],prop,val)
 	tup[2].clear()
 	
+	# вызываю метод .pull_deferred()
 	if isinstance(tup[1],Struct):
 		tup[1].pull_deferred()
 		
+	# если во внешних свойствах было указано 'pull_attrs', подтягиваю attrs
 	if pull_attrs_no!=None:
 		assert hasattr(tup[1],'talk') and tup[1].attrs.pre=='',\
 			(hasattr(tup[1],'talk') , tup[1].attrs.pre=='')
@@ -159,7 +172,7 @@ def pull_deferred(tup):
 class Struct:
 	'''абстрактный базовый класс всех узлов
 	
-	talk - массив дочерних узлов, снаженных тегами
+	talk - массив дочерних узлов, снабженных тегами
 	obediences - набор допустимых тегов и проверок типов узлов, снабженных этими тегами
 	обычно, если в объекте есть поле word, и оно строка, то это терминальный узел (без потомков)
 	
@@ -198,11 +211,17 @@ class Struct:
 
 	def pull_deferred(self):
 		if not hasattr(self,'talk'): return
+		# во свех потомках вызываем pukk_deferred
 		for tup in self.talk:
 			pull_deferred(tup)
+		# подтягиваем префикс
 		if self.attrs.pre=='':
 			self.attrs.pre=self.talk[0][1].attrs.pre
 			self.talk[0][1].attrs.pre=''
+			# подтягиваем запрет на префикс
+			if ch_anti_prefix in self.talk[0][1].attrs.changers:
+				self.attrs.changers|={ch_anti_prefix}
+				self.talk[0][1].attrs.changers-={ch_anti_prefix}
 		return self
 		
 	def tostr(self):
@@ -247,7 +266,7 @@ class StC(Struct): # Container
 		self.talk_checker()
 		
 	def __repr__(self):
-		return 'StContainer'+repr_id(self)+'('+            repr(self.talk) +')'+repr_attrs(self)
+		return 'StContainer'+repr_id(self)+'('+            repr_talk(self.talk) +')'+repr_attrs(self,False)
 
 	def __str__(self):
 		return self.attrs.change( self.attrs.join(i[1] for i in self.talk) )
@@ -283,9 +302,9 @@ class StVerb(Struct):
 		'vp': lambda x:_types_assert(x,StDeclinable),
 		'tp': lambda x:_types_assert(x,StDeclinable),
 		'pp': lambda x:_types_assert(x,StDeclinable),
-#		'gde',
-#		'kogda',
-#		'skolko'
+		#'gde',
+		#'kogda',
+		#'skolko'
 	}
 	__slots__=[
 		'word', # None или слово - индекс для отображения
@@ -447,8 +466,8 @@ class StVerb(Struct):
 						set_property(i,asp=val)
 
 	def __repr__(self):
-		return 'StVerb'+repr_id(self)+'('+(repr(self.talk) if self.word==None else repr(self.word)+','\
-			+repr(self.oasp))+','+ 'asp='+repr(self.asp)+','+ 'form='+repr(self.form)+','+ 'chis='+repr(self.chis)+','+            'pers='+repr(self.pers)+')'+repr_attrs(self)
+		return 'StVerb'+repr_id(self)+'('+(repr_talk(self.talk) if self.word==None else repr(self.word)+','\
+			+repr(self.oasp))+','+ 'asp='+repr(self.asp)+','+ 'form='+repr(self.form)+','+ 'chis='+repr(self.chis)+','+            'pers='+repr(self.pers)+')'+repr_attrs(self,self.word!=None)
 
 	def __str__(self):
 		return self.attrs.change(
@@ -541,7 +560,7 @@ class StDeclinable(Struct):
 					set_property(i,pad=val)
 				
 	def post_repr(self):
-		return 'o='+repr(self.odush)+',r='+repr(self.rod)+            ',c='+repr(self.chis)+',p='+repr(self.pad)+')'+repr_attrs(self)
+		return 'o='+repr(self.odush)+',r='+repr(self.rod)+ ',c='+repr(self.chis)+',p='+repr(self.pad)+')'+repr_attrs(self,self.word!=None)
 	def __repr__(self):
 		raise NotImplementedError('virtual function')
 
@@ -585,11 +604,11 @@ class StNoun(StDeclinable):
 			self.och=och
 		StDeclinable.__init__(self,word,o,r,c,p)
 
-#	@staticmethod
-#	def ext_props_setter(tup,**kwarg): #ext_prop_setter(tup,prop=val)
-#	word и och являются постоянными параметрами и снаружи их менять нельзя
-#todo сделать для этого checker
-#   по этому ext_props_setter для chis не нужен
+	#	@staticmethod
+	#	def ext_props_setter(tup,**kwarg): #ext_prop_setter(tup,prop=val)
+	#	word и och являются постоянными параметрами и снаружи их менять нельзя
+	#todo сделать для этого checker
+	#   по этому ext_props_setter для chis не нужен
 		
 	chis=property()
 	@chis.getter
@@ -626,7 +645,7 @@ class StNoun(StDeclinable):
 		pass
 		
 	def __repr__(self):
-		return 'StNoun'+repr_id(self)+'('+            (repr(self.talk) if self.word==None                  else repr(self.word)+','+repr(self.och))+','+            self.post_repr()
+		return 'StNoun'+repr_id(self)+'('+   (repr_talk(self.talk) if self.word==None   else repr(self.word)+','+repr(self.och))+','+            self.post_repr()
 
 	show_map=show_noun_map
 
@@ -718,7 +737,7 @@ class StNum(StDeclinable):
 						raise RuntimeError()
 
 	def __repr__(self):
-		return 'StNum'+repr_id(self)+'('+            (repr(self.talk) if self.word==None                  else repr(self.word))+','+            repr(self.quantity)+','+            self.post_repr()
+		return 'StNum'+repr_id(self)+'('+            (repr_talk(self.talk) if self.word==None                  else repr(self.word))+','+            repr(self.quantity)+','+            self.post_repr()
 
 	show_map=show_num_map
 
@@ -745,7 +764,7 @@ class StAdj(StDeclinable):
 		StDeclinable.__init__(self,word,o,r,c,p)
 
 	def __repr__(self):
-		return 'StAdj'+repr_id(self)+'('+            (repr(self.talk) if self.word==None                  else repr(self.word))+','+            self.post_repr()
+		return 'StAdj'+repr_id(self)+'('+            (repr_talk(self.talk) if self.word==None                  else repr(self.word))+','+            self.post_repr()
 	
 	show_map=show_adj_map
 	
