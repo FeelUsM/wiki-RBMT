@@ -1,4 +1,5 @@
 import time
+import sys
 
 # In[3]:
 
@@ -80,7 +81,8 @@ def ttest(f,arg,expected,ddt=5):
 def warning_hook(s):
 	raise TestError(s)
 def warning_print(s):
-	print(s)
+	print(s,file=sys.stderr)
+tmp_warning_fun = None
 
 TestError = None
 parse_system = None
@@ -105,8 +107,9 @@ def init(_parse_system, _TestError, _seq, _W, _SAttrs,
 	_tokenize, 
 	_en2ru, _decline, _scheme, _d_en2ru, _pr_l_repr, _p_noun, _p_noun1, _r_noun_comma_noun,
 	_multiplier,_print_timing):
-	global TestError
+	global tmp_warning_fun
 	global parse_system
+	global TestError
 	global seq
 	global W
 	global SAttrs
@@ -125,8 +128,10 @@ def init(_parse_system, _TestError, _seq, _W, _SAttrs,
 	global multiplier
 	global print_timing
 
-	TestError = _TestError
 	parse_system = _parse_system
+	tmp_warning_fun = parse_system.warning_fun
+	parse_system.warning_fun=warning_hook
+	TestError = _TestError
 	seq = _seq
 	W = _W
 	SAttrs = _SAttrs
@@ -144,6 +149,10 @@ def init(_parse_system, _TestError, _seq, _W, _SAttrs,
 
 	multiplier = _multiplier
 	print_timing = _print_timing
+
+def finalize():
+	global tmp_warning_fun
+	parse_system.warning_fun = tmp_warning_fun
 
 
 def test1():
@@ -404,7 +413,7 @@ def test3():
 	'думаю о ребёнке, одном ребёнке, детях, двух детях, трёх детях, пяти детях'])#,15
 
 def test4():
-	print('--- Lesson 4 (? видьте кота ?) ---')
+	print('--- Lesson 4 (? увидь кота ?) ---')
 
 	# In[43]:
 
@@ -443,7 +452,7 @@ def test4():
 	# In[48]:
 
 
-	ttest(en2ru,'see cat','видь кота')#,25
+	ttest(en2ru,'see cat','увидь кота')#,25
 
 
 	# In[49]:
@@ -557,7 +566,7 @@ def test7():
 	# In[64]:
 
 
-	ttest(en2ru,'have','имей')#,20
+	ttest(en2ru,'have','заимей')#,20
 
 
 	# In[65]:
@@ -733,7 +742,7 @@ def test8_1():
 	# In[92]:
 
 
-	ttest(en2ru,'see','видь')
+	ttest(en2ru,'see','увидь')
 
 
 	# In[93]:
@@ -769,7 +778,7 @@ def test8_1():
 	# In[98]:
 
 
-	ttest(en2ru,'have','имей')
+	ttest(en2ru,'have','заимей')
 
 
 	# In[99]:
@@ -1016,7 +1025,7 @@ def test10():
 	Catch that rabbit!''',
 	'''У тебя есть шляпа? Да, у меня есть.
 	У тебя есть палка? Нет, у меня нет.
-	Лови того кролика!''')
+	Поймай того кролика!''')
 
 	ttest(en2ru,'''Have you a ball?
 	Yes, I have.
@@ -1032,11 +1041,88 @@ def test10():
 	'''У тебя есть мяч?
 	Да, у меня есть.
 	Покажи мне мяч!
-	Кот, кот, лови летучую мышь!
+	Кот, кот, поймай летучую мышь!
 	Считай цыплят!
-	Лови того мальчика!
+	Поймай того мальчика!
 	Покажи мне этого кролика!
 	Считай от десяти до одного!
 	У тебя есть кукла?
 	Нет, у меня нет.
 	Скажи десять слов!''')
+
+def test11():
+	print('--- Lesson 11 ---')
+	global N
+	N=11
+
+	ttest(en2ru,'How many balls have you?','Сколько у тебя мячей?')
+
+	ttest(en2ru,'duck with duckling','утка с утёнком')
+
+	ttest(en2ru,'''How many hens have you? I have eight
+	hens.
+	How many cows have you?''',
+	'''Сколько у тебя куриц? У меня есть восемь
+	куриц.
+	Сколько у тебя коров?''')
+
+	ttest(en2ru,'''We have one cow.
+	How many dogs
+	have you?
+	I have two dogs.
+	How many books
+	has this boy?
+	He has eleven.
+	''',
+	'''У нас есть одна корова.
+	Сколько у тебя собаок?
+	У меня есть две собаки.
+	Сколько у этого мальчика книг?
+	У него есть одинадцать.''')
+
+	ttest(en2ru,'''She has four.
+	How many pens has she?
+	She has ten pens.
+	How many kittens have you?
+	I have three kittens.
+	''',
+	'''У неё есть четыре.
+	Сколько у неё ручек?
+	У неё есть десять ручек.
+	Сколько у тебя котят?
+	У меня есть три котёнка.''')
+
+	ttest(en2ru,'''I have a copy-book.
+	You have a book.
+	He has a ball.
+	She has a doll.
+	We have a cake.
+	Have you many rabbits?
+	We have many chickens.
+	She has many hens.
+	Count from ten to one!
+	I see a girl with a doll.
+	''',
+	'''У меня есть тетрадь.
+	У тебя есть книга.
+	У него есть мяч.
+	У неё есть кукла.
+	У нас есть торт.
+	У тебя есть много кроликов?
+	У нас есть много цыплят.
+	У неё есть много куриц.
+	Считай от десяти до одного!
+	Я вижу девочку с куклой.''')
+
+	ttest(en2ru,'I see a girl with a doll.','Я вижу девочку с куклой.')
+
+	ttest(en2ru,'cat with dog with rat','кот с собакой с крысой')
+
+	ttest(en2ru,'It has four legs, a long tail and it give milk.',
+		'У него есть четыре ноги, длинный хвост и оно даёт молоко.')
+
+	ttest(en2ru,'it can give milk','оно может давать молоко')
+
+	ttest(en2ru,'It has four legs, a long tail and it can give milk.',
+		'У него есть четыре ноги, длинный хвост и оно может давать молоко.')
+

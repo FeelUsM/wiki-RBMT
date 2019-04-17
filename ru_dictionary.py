@@ -45,7 +45,9 @@ def CW(ru,en=None):
 ruwords={} #однословные правила складываются сюда
 
 
-VERBOSE_ADDS=False
+VERBOSE_ADDS=False 
+# во время загрузки модуля ничего не выводим
+# в конце включаем отклик на действия со словарём
 def errmes(*args):
 	if VERBOSE_ADDS:
 		print(*args)
@@ -63,6 +65,7 @@ def start_match(start,word):
 	return bool(re.match(start,word))
 
 def make_skl_pos(*words):
+	'''возвращает позицию, начиная с которой слова начинают различаться'''
 	for i in range(len(words[0])+1):
 		start=words[0][:i]
 		for w in words:
@@ -72,11 +75,13 @@ def make_skl_pos(*words):
 	#print(i)
 	return i
 def make_skl(*words):
+	'''возвращает массив различающихся частей слов'''
 	i=make_skl_pos(*words)
 	return tuple(w[i:] for w in words)
 def make_skl_word(*words):
+	'''возвращает одинаковую ччасть слов'''
 	i=make_skl_pos(*words)
-	return ip[:i]
+	return word[0][:i]
 
 
 # ## Noun ----------------------------
@@ -224,6 +229,9 @@ def make_skl2(ip1,ip2, rp1,rp2, dp1,dp2, vp1,vp2, tp1,tp2, pp1,pp2):
 	return (make_skl(ip1,rp1,dp1,vp1,tp1,pp1), make_skl(ip2,rp2,dp2,vp2,tp2,pp2)) 
 
 def decline_show_noun2(word, wordmn, r,o,skl):
+	'''склоняет слова в ед. и мн. ч. по заданному склонению и печает это
+
+	аргументы: слово, слово во мн.ч., род, одушевленность, склонение'''
 	skl_ed=skl_noun[(r,o)][skl]['ed']
 	skl_mn=skl_noun[(r,o)][skl]['mn']
 	assert end_match(word,skl_ed[0]), (word,skl_ed[0])
@@ -235,6 +243,19 @@ def decline_show_noun2(word, wordmn, r,o,skl):
 	errmes('склонение',skl)
 	for i in range(len(intro)):
 		errmes(intro[i]+repr(w_ed+skl_ed[i])+' '*(dl-len(skl_ed[i]))+','+repr(w_mn+skl_mn[i])+',')
+	errmes('')
+
+def decline_show_noun1(word, c, r,o,skl_n):
+	'''склоняет слова в заданном числе по заданному склонению и печает это
+
+	аргументы: слово, число, род, одушевленность, склонение'''
+	skl=skl_noun[(r,o)][skl_n][c]
+	assert end_match(word,skl[0]), (word,skl[0])
+	w = word  [:-len(skl[0])] if len(skl[0])>0 else word
+	intro=('        ','нет     ','дать    ','вижу    ','творю   ','думаю о ')
+	errmes('склонение',skl_n)
+	for i in range(len(intro)):
+		errmes(intro[i]+repr(w+skl[i])+',')
 	errmes('')
 
 def auto2_skl_noun2(r,o,set1):
@@ -264,7 +285,9 @@ def auto2_skl_noun2(r,o,set1):
 def auto1_skl_noun2(word,wordmn,r,o):
 	'''по окончаниям ип (и если есть по suffix) ищет подходящие варианты
 		
-	если есть и с suffix и без suffix, оставляет только с suffix
+	сначала ищет просто по окончаниям, потом сужает поиск по suffix (если есть)
+	если есть и с suffix и без suffix, оставляет только с suffix (там остается 1 вариант)
+	иначе возвращает auto2_skl_noun2(от найденного множества)
 	'''
 	set1=set()
 	skl=skl_noun[(r,o)]
@@ -281,7 +304,7 @@ def auto1_skl_noun2(word,wordmn,r,o):
 			for e in skl[i]['suffix']:
 				eed=e if type(e)==str else e[0]
 				emn=e if type(e)==str else e[1]
-				if end_match(word,eed+skl[i]['ed'][0]) and                    end_match(wordmn,emn+skl[i]['mn'][0]):
+				if end_match(word,eed+skl[i]['ed'][0]) and end_match(wordmn,emn+skl[i]['mn'][0]):
 					set2|={i}
 					break
 			else:
@@ -295,12 +318,83 @@ def auto1_skl_noun2(word,wordmn,r,o):
 				print(skl[i]['suffix'])
 				decline_show_noun2(word, wordmn, r,o,i)
 		return auto2_skl_noun2(r,o,set1-set11)
+
+def auto2_skl_noun1(c,r,o,set1):
+	'''находит и возвращает более частное склонение (склонения)
 	
+	по хорошему надо делать матрицу, кто в ком содержится
+	обязательно должен быть флаг склонений (a subset b, b subset c, c subset d...)
+	но мы просто найдем склонения, которые содержатся в минимальном количестве склонений
+	или склонения, в которых содержится максимальное количество склонений
+	кароче что-то одно из этого
+	'''
+	if len(set1)==0: 
+		return set1
+	
+	skl=skl_noun[(r,o)]
+	def subset(i,j):
+		return end_match(skl[i][c][0],skl[j][c][0])
+	m = {i:0 for i in set1} # создаем map из set-а
+	for i in set1:
+		for j in set1:
+			if subset(i,j):
+				m[i]+=1
+	#print(repr(m))
+	ma=max(v for k,v in m.items())
+	return {k for k,v in m.items() if v==ma}
+
+def same_skl_filter(c,r,o,set1):
+	tmp=set()
+	for sn in set1:
+		for ysn in tmp:
+			if skl_noun[(r,o)][sn][c] == skl_noun[(r,o)][ysn][c]:
+				break
+		else:
+			tmp|={sn}
+	return tmp
+
+def auto1_skl_noun1(word,c,r,o):
+	'''по окончаниям ип (и если есть по suffix) ищет подходящие варианты
+		
+	сначала ищет просто по окончаниям, потом сужает поиск по suffix (если есть)
+	если есть и с suffix и без suffix, оставляет только с suffix (там остается 1 вариант)
+	иначе возвращает auto2_skl_noun2(от найденного множества)
+	'''
+	set1=set()
+	skl=skl_noun[(r,o)]
+	for i in range(len(skl)):
+		#print(i,word,skl[i]['ed'][0],wordmn,skl[i]['mn'][0],\
+		#	end_match(word,skl[i]['ed'][0]),end_match(wordmn,skl[i]['mn'][0]))
+		if end_match(word,skl[i][c][0]):
+			set1|={i}
+	#print(repr(set1))
+	set2 = set()# подходят для suffix
+	set11=set()# не подходят для suffix
+	for i in set1:
+		if 'suffix' in skl[i]:
+			for e in skl[i]['suffix']:
+				eed=e if type(e)==str else e[0]
+				emn=e if type(e)==str else e[1]
+				if end_match(word,eed+skl[i]['ed'][0]) and end_match(wordmn,emn+skl[i]['mn'][0]):
+					set2|={i}
+					break
+			else:
+				set11|={i}
+	if len(set2)>0:
+		return same_skl_filter(c,r,o,set2)
+	else:
+		if len(set11)>0 and VERBOSE_ADDS:
+			print('из-за уточняющих suffix отбрасываются следующие склонения',same_skl_filter(c,r,o,set11))
+			for i in same_skl_filter(c,r,o,set11):
+				print(skl[i]['suffix'])
+				decline_show_noun1(word, c, r,o,i)
+		return auto2_skl_noun1(c,r,o,same_skl_filter(c,r,o,set1-set11))
 
 # In[5]:
 
 
 def show_noun_fun(st,word,ends):
+	'''берет слово и добавляет к нему окончание в падеже, указанном в структуре'''
 	ip,rp,dp,vp,tp,pp = ends
 	if st.pad=='ip' : return word+ip
 	if st.pad=='rp' : return word+rp
@@ -311,6 +405,9 @@ def show_noun_fun(st,word,ends):
 	raise RuntimeError()
 	
 def add_skl2(r,o,ends):
+	'''добавляет склонение для ед. и мн. ч.
+
+	при этом проверяет, чтобы оно не дублировалось'''
 	ed_ends, mn_ends = ends
 	skl_ro = skl_noun[(r,o)]
 	for i in range(len(skl_ro)):
@@ -332,6 +429,7 @@ def add_skl1(c,r,o,ends):
 		
 
 def add_runoun2(word,wordmn,r,o,skl=None,sense=None):
+	'''определяет склонение (если не указано) и добавляет слово в словарь'''
 	if skl==None:
 		skl = auto1_skl_noun2(word,wordmn,r,o)
 		if len(skl)==0:
@@ -359,8 +457,29 @@ def add_runoun2(word,wordmn,r,o,skl=None,sense=None):
 		decline_show_noun2(word, wordmn, r,o,skl)
 	return True
 
-def add_runoun1(word,c,r,o,skl=None,sense=None):
-	pass
+def add_runoun1(word,c,r,o,skl_n=None,sense=None):
+	'''определяет склонение (если не указано) и добавляет слово в словарь'''
+	if skl_n==None:
+		skl_n = auto1_skl_noun1(word,c,r,o)
+		if len(skl_n)==0:
+			errmes('Не найдено ни одного подходящего склонения:', word)
+			return False
+		elif len(skl_n)>1:
+			errmes('найдено больше одного склонения, уточните:', word,c,skl_n)
+			for i in skl_n:
+				decline_show_noun1(word, c, r,o,i)
+			return False
+		else:
+			skl_n=next(iter(skl_n))
+	name = word+((' ('+sense+')') if sense !=None else '')
+	skl = skl_noun[(r,o)][skl_n][c]
+	shword = word  [:-len(skl[0])] if len(skl[0])>0 else word
+	ruwords[name]=StNoun(name,None,o,r,c,'ip')#StNoun
+	show_noun_map[name]=lambda st: show_noun_fun(st,shword,skl)
+	if VERBOSE_ADDS:
+		print('добавлено',word)
+		decline_show_noun1(word, c, r,o,skl_n)
+	return True
 
 
 # ## Pronoun ----------------------------
@@ -467,6 +586,12 @@ def ____Adj():
 		'g' :('ная','ной' ,'ной' ,('ную', 'ную'),'ной' ,'ной','а'),
 		'mn':('ные','ных' ,'ным' ,('ных', 'ные'),'ными','ных','ы'),
 	}
+	adj_std_ends_ny2={# ы
+		'm' :('ный','ного','ному',('ного','ный'),'ным' ,'ном','ен' ),
+		's' :('ное','ного','ному',('ное', 'ное'),'ным' ,'ном','но'),
+		'g' :('ная','ной' ,'ной' ,('ную', 'ную'),'ной' ,'ной','на'),
+		'mn':('ные','ных' ,'ным' ,('ных', 'ные'),'ными','ных','ны'),
+	}
 	adj_std_ends_y_sh={# ы
 		'm' :('ый','ого','ому',('ого','ый'),'ым' ,'ом',None),
 		's' :('ое','ого','ому',('ое', 'ое'),'ым' ,'ом',None),
@@ -480,6 +605,7 @@ def ____Adj():
 	add_ruadj('добрый' ,'добр' ,adj_std_ends_y)
 	add_ruadj('некоторый' ,'некотор' ,adj_std_ends_y_sh)
 	add_ruadj('определённый' ,'определён' ,adj_std_ends_ny)
+	add_ruadj('длинный' ,'длин' ,adj_std_ends_ny2)
 
 	add_ruadj('этот' ,'эт' ,{
 		'm' :('от','ого','ому',('ого','от'),'им' ,'ом',None),
@@ -543,6 +669,7 @@ def ____Num():
 
 	add_runum('три'          ,'2-4','mn','тр'           ,{   'mn':('и','ёх','ём',('ёх','и'),'емя','ёх'), }    )
 	add_runum('четыре'       ,'2-4','mn','четыр'        ,{   'mn':('е','ёх','ём',('ёх','е'),'ьмя','ёх'), }    )
+	add_runum('много'        ,'>=5','mn','мног'         ,{   'mn':('о','о' ,'им',('о', 'о'),'ими','их'), }    )
 	add_runum('пять'         ,'>=5','mn','пят'          ,{   'mn':('ь','и' ,'и' ,('ь', 'ь'),'ью' ,'и' ), }    )
 	add_runum('шесть'        ,'>=5','mn','шест'         ,{   'mn':('ь','и' ,'и' ,('ь', 'ь'),'ью' ,'и' ), }    )
 	add_runum('семь'         ,'>=5','mn','сем'          ,{   'mn':('ь','и' ,'и' ,('ь', 'ь'),'ью' ,'и' ), }    )
@@ -605,6 +732,12 @@ def ____Verb():
 				 'povel':("дь","дьте"),
 				 'nast': ("жу","дишь","дит","дит","дит","дим","дите","дят")
 			}   )
+	add_ruverb('увидеть',"видеть"   ,'sov','уви',
+			{    'neopr':"деть",
+				 'povel':("дь","дьте"),
+				 'nast': ("жу","дишь","дит","дит","дит","дим","дите","дят")
+			}   )
+
 	add_ruverb('показать','показывать','sov','пока',
 			{    'neopr':"зать",
 				 'povel':("жи","жите"),
@@ -615,6 +748,7 @@ def ____Verb():
 				 'povel':("жи","жите"),
 				 'nast': ("зываю","зываешь","зывает","зывает","зывает","зываем","зываете","зывают")
 			}   )
+
 	add_ruverb('сказать','говорить'  ,'sov','ска',
 			{    'neopr':"зать",
 				 'povel':("жи","жите"),
@@ -625,6 +759,7 @@ def ____Verb():
 				 'povel':("и","ите"),
 				 'nast': ("ю","ишь","ит","ит","ит","им","ите","ят")
 			}   )
+
 	add_ruverb('дать','давать'    ,'sov','да',
 			{    'neopr':"ть",
 				 'povel':("й","йте"),
@@ -635,11 +770,29 @@ def ____Verb():
 				 'povel':("вай","вайте"),
 				 'nast': ("ю","ёшь","ёт","ёт","ёт","ём","ёте","ют")
 			}   )
+
 	add_ruverb('иметь',"заиметь"   ,'nesov','име',
 			{    'neopr':"ть",
 				 'povel':("й","йте"),
 				 'nast': ("ю","ешь","ет","ет","ет","ем","ете","ют")
 			}   )
+	add_ruverb('заиметь',"иметь"   ,'sov','заиме',
+			{    'neopr':"ть",
+				 'povel':("й","йте"),
+				 'nast': ("ю","ешь","ет","ет","ет","ем","ете","ют")
+			}   )
+
+	add_ruverb('мочь',"смочь"   ,'nesov','мо',
+			{    'neopr':"чь",
+				 'povel':("ги","гите"),
+				 'nast': ("гу","жешь","жет","жет","жет","жем","жете","гут")
+			}   )
+	add_ruverb('смочь',"мочь"   ,'sov','смо',
+			{    'neopr':"чь",
+				 'povel':("ги","гите"),
+				 'nast': ("гу","жешь","жет","жет","жет","жем","жете","гут")
+			}   )
+
 	add_ruverb('есть (быть)','стать'   ,'nesov','',
 			{    'neopr':"есть",
 				 'povel':("стань","станьте"),
@@ -655,6 +808,7 @@ def ____Verb():
 				 'povel':("дись","дитесь"),
 				 'nast': ("жусь","дишься","дится","дится","дится","димся","дитесь","дятся")
 			}   )
+
 	add_ruverb('любить','полюбить','nesov','люб',
 			{    'neopr':"ить",
 				 'povel':("и","ите"),
@@ -665,6 +819,7 @@ def ____Verb():
 				 'povel':("и","ите"),
 				 'nast': ("лю","ишь","ит","ит","ит","им","ите","ят")
 			}   )
+
 	add_ruverb('нравиться','понравиться','nesov','нрав',
 			{    'neopr':"иться",
 				 'povel':("ься","ьтесь"),
@@ -675,6 +830,7 @@ def ____Verb():
 				 'povel':("ься","ьтесь"),
 				 'nast': ("люсь","ишься","ится","ится","ится","имся","итесь","ятся")
 			}   )
+
 	add_ruverb('ловить','поймать','nesov','лов',
 			{    'neopr':"ить",
 				 'povel':("и","ите"),
@@ -685,7 +841,8 @@ def ____Verb():
 				 'povel':("й","йте"),
 				 'nast': ("ю","ешь","ет","ет","ет","ем","ете","ют")
 			}   )
-	add_ruverb('считать','сосчитать','nesov','счита',
+
+	add_ruverb('считать','посчитать','nesov','счита',
 			{    'neopr':"ть",
 				 'povel':("й","йте"),
 				 'nast': ("ю","ешь","ет","ет","ет","ем","ете","ют")
@@ -700,6 +857,7 @@ def ____Verb():
 				 'povel':("й","йте"),
 				 'nast': ("ю","ешь","ет","ет","ет","ем","ете","ют")
 			}   )
+
 ____Verb()
 	
 VERBOSE_ADDS=True

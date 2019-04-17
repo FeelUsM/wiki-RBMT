@@ -185,7 +185,7 @@ class SAttrs:
 	@staticmethod
 	def _to_left(l,r):
 		"""копирование атрибутов от правого объекта к левому"""
-		l.attrs.change|=r.attrs.change
+		l.attrs.changers|=r.attrs.changers
 		l.attrs.tags|=r.attrs.tags
 		return l
 

@@ -24,7 +24,7 @@ dict_verb_s
 '''
 from parse_system import S
 from classes import I,StNoun
-from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2
+from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2, add_runoun1
 
 import ru_dictionary as rd
 rd.VERBOSE_ADDS=False
@@ -80,6 +80,15 @@ def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,reset=False):
 	if add_runoun2(ruw,ruwmn,r,o):
 		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 		add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
+	
+def add_ennoun1(enw,ruw,c,r,o,reset=False):
+	# add_runoun2 обновляет ruwords[ruw/mn]
+	# а add_dict_variant просто добавляет еще один вариант
+	# по этому если старый вариант уже был, его надо сначала удалить из dict_noun
+	# иначе в dict_noun остануться оба варианта: и старый и новый
+	if ruw   in ruwords: remove_dict_variant(dict_noun,enw,  ruwords[ruw]  )
+	if add_runoun1(ruw,c,r,o):
+		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 	
 def ____Noun():
 	
@@ -169,6 +178,15 @@ def ____Noun():
 		'зайце'   ,'зайцах'))
 	add_ennoun2('rabbit'   ,'rabbits'   ,"заяц"    ,"зайцы"     ,'m',True)
 	add_ennoun2('rabbit'   ,'rabbits'   ,"кролик"  ,"кролики"   ,'m',True)
+
+	add_ennoun2('duck'     ,'ducks'     ,"утка"    ,"утки"      ,'g',True)
+	add_ennoun2('duckling' ,'ducklings' ,"утёнок"  ,"утята"     ,'m',True)
+	add_ennoun2('cow'      ,'cows'      ,"корова"  ,"коровы"    ,'g',True)
+	add_ennoun2('leg'      ,'legs'      ,"нога"    ,"ноги"      ,'g',False)
+	add_ennoun2('tail'     ,'tails'     ,"хвост"   ,"хвосты"    ,'m',False)
+	add_ennoun1('milk'                  ,"молоко"  ,'ed'        ,'s',False)
+
+
 	#add_runoun('часы (предмет)',None,False,'m','mn','час','ы','ов','ам','ы','ами','ах')
 	#dict_noun['watch']= ruwords['часы (предмет)']
 	#dict_noun['watches']= ruwords['часы (предмет)']
@@ -241,6 +259,7 @@ def ____Adj():
 	dict_adj['an']= ruwords["некоторый"]
 	dict_adj['the']= ruwords["определённый"]
 
+	dict_adj['long']= ruwords["длинный"]
 	dict_adj['good']=ruwords["хороший"]
 
 	dict_adj['this']=ruwords["этот"]
@@ -261,13 +280,14 @@ def ____Numeral():
 	dict_numeral['two']=       ruwords['два']
 	dict_numeral['three']=     ruwords['три']
 	dict_numeral['four']=      ruwords['четыре']
+	dict_numeral['many']=      ruwords['много']
 	dict_numeral['five']=      ruwords['пять']
 	dict_numeral['six']=       ruwords['шесть']
 	dict_numeral['seven']=     ruwords['семь']
 	dict_numeral['eight']=     ruwords['восемь']
 	dict_numeral['nine']=      ruwords['девять']
 	dict_numeral['ten']=       ruwords['десять']
-	dict_numeral['elleven']=   ruwords['одинадцать']
+	dict_numeral['eleven']=   ruwords['одинадцать']
 	dict_numeral['twelve']=    ruwords['двенадцать']
 	dict_numeral['thirteen']=  ruwords['тринадцать']
 	dict_numeral['fourteen']=  ruwords['четырнадцать']
@@ -303,6 +323,8 @@ def ____Verb():
 	dict_verb_komu['shows']= [ 2, ruwords['показать'], ruwords['показывать'] ]
 	dict_verb_komu['say']=   ruwords['говорить']
 	dict_verb_komu['says']=  ruwords['говорить']
+
+	dict_verb_simple['can']=   ruwords['мочь']
 
 	dict_verb_simple['see']=   ruwords['видеть']
 	dict_verb_simple['sees']=  ruwords['видеть']

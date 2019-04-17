@@ -121,7 +121,7 @@
 # * tests.ipynb - тесты уже имеющихся переводов
 # * utils.ipynb - прочее
 
-# In[1]:
+# In[ ]:
 
 
 '''англо-русский переводчик, основанный на правилах, с простым добавлением паттернов и правил
@@ -147,7 +147,7 @@ p_noun
 
 # ## import
 
-# In[2]:
+# In[ ]:
 
 
 import parse_system
@@ -157,11 +157,11 @@ from classes import StC, StNum, StNoun, StVerb, I
 import ru_dictionary
 from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2
 import en_dictionary
-from en_dictionary import dict_adj, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb_simple, dict_verb_komu, r_adj_noun, dict_other,                        add_ennoun2
+from en_dictionary import dict_adj, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb_simple, dict_verb_komu, r_adj_noun, dict_other,                        add_ennoun2, add_ennoun1
 from importlib import reload
 
 
-# In[3]:
+# In[ ]:
 
 
 if 0:
@@ -230,9 +230,45 @@ if 0:
 
 # ## Исключения
 
-# In[4]:
+# ## Other
+
+# In[ ]:
 
 
+@debug_pp
+def p_numeral(s,p):
+    return D(dict_numeral)(s,p)
+
+
+# In[ ]:
+
+
+#2->
+@debug_pp
+def p_adj(s,p):
+    return D(dict_adj)(s,p)
+
+
+# ## Noun-like
+
+# In[ ]:
+
+
+@debug_pp
+def p_adj_noun3(s,p): return p_alt(s,p,
+    seq([ alt(W('an'),W('a')), p_noun3 ],r_A_noun),
+    seq([ W('the')           , p_noun3 ],r_THE_noun),
+    seq([ W('good'), W('morning') ],r_GOOD_MORNING),             
+ELSE,
+    seq([ p_adj, p_noun3 ],r_adj_noun)
+)
+# r_adj_noun определен в en_dictionary.py
+
+
+# In[ ]:
+
+
+# исключения
 def r_A_noun(_a,_n): return StNoun([
     I(maindep=_n,         attrs_from_left=_a)
 ])
@@ -240,19 +276,252 @@ def r_THE_noun(_a,_n): return StNoun([
     I(maindep=_n,         attrs_from_left=_a)
 ])
 
-
-# In[5]:
-
-
 def r_GOOD_MORNING(_g,_m):  return r_adj_noun(
     CW('добрый',_g),
     CW('утро',_m)
 )
 
 
-# In[6]:
+# In[ ]:
 
 
+@debug_pp
+def p_noun3(s,p): return p_alt(s,p,
+    p_adj_noun3, #ELSE, # переход к следующему уровню
+    p_numeral,
+    D(dict_noun)
+)
+
+
+# In[ ]:
+
+
+@debug_pp
+def p_noun2_1(s,p): return p_alt(s,p,
+    seq([ p_noun3, p_dops ], r_noun_dops), #ELSE, # переход к следующему уровню
+    p_noun3
+)
+def r_noun_dops(n,d): return StNoun([
+    I(maindep=n),
+    I(nodep=d)
+])
+
+
+# In[ ]:
+
+
+@debug_pp
+def p_noun2(s,p): return p_alt(s,p,
+    seq([ p_noun2_1, p_numeral ], r_noun_numeral), #ELSE, # переход к следующему уровню
+    p_noun2_1
+)
+@debug_pp
+def p_dop_noun2(s,p): return p_alt(s,p,
+    seq([ p_noun3, p_numeral ], r_noun_numeral), #ELSE, # переход к следующему уровню
+    p_noun3
+)
+def r_noun_numeral(n,num): return StNoun([
+    I(maindep=n),
+    I(nomer=num)
+])
+
+
+# In[ ]:
+
+
+@debug_pp
+def p_noun1(s,p): return p_alt(s,p,
+    seq([ p_numeral, p_noun2 ], r_numeral_noun), #ELSE, # переход к следующему уровню
+    p_noun2,
+    D(dict_pronoun_dp)
+)
+@debug_pp
+def p_dop_noun1(s,p): return p_alt(s,p,
+    seq([ p_numeral, p_dop_noun2 ], r_numeral_noun), #ELSE, # переход к следующему уровню
+    p_dop_noun2,
+    D(dict_pronoun_dp)
+)
+@debug_pp
+def p_noun1_ip(s,p): return p_alt(s,p,
+    seq([ p_numeral, p_noun2 ], r_numeral_noun), #ELSE, # переход к следующему уровню
+    p_noun2,
+    D(dict_pronoun_ip)
+)
+def r_numeral_noun(num,n):
+    if num.chis!=n.chis :
+        warning('не совпадают числа числ. и сущ.:'+str(num)+str(n))
+    return StNum([
+        I(quantity=num,            chis=n.chis, rod=n.rod, odush=n.odush ),
+        I(maindep=n)
+    ],quantity=num.quantity)
+
+
+# In[ ]:
+
+
+@debug_pp
+def p_noun(s,p):
+    return p_alt(s,p,
+        seq([ p_noun1, W('and'), p_noun ],r_noun_and_noun  ),
+        seq([ p_noun1, W(',')  , p_noun ],r_noun_comma_noun),
+                 #ELSE, # переход к следующему уровню
+                 # идет конфликт с and-ом из глаголов
+        p_noun1
+    )
+@debug_pp
+def p_dop_noun(s,p):
+    return p_alt(s,p,
+        seq([ p_dop_noun1, W('and'), p_dop_noun ],r_noun_and_noun  ),
+        seq([ p_dop_noun1, W(',')  , p_dop_noun ],r_noun_comma_noun),
+                 #ELSE, # переход к следующему уровню
+                 # идет конфликт с and-ом из глаголов
+        p_dop_noun1
+    )
+@debug_pp
+def p_noun_ip(s,p):
+    return p_alt(s,p,
+        seq([ p_noun1_ip, W('and'), p_noun_ip ],r_noun_and_noun  ),
+        seq([ p_noun1_ip, W(',')  , p_noun_ip ],r_noun_comma_noun),
+                 #ELSE, # переход к следующему уровню
+                 # идет конфликт с and-ом из глаголов
+        p_noun1_ip
+    )
+def r_noun_and_noun(sn,a,n):    return StNoun([
+    I(dep=sn),
+    I(nodep=S('и',a.attrs)),
+    I(dep=n)
+],c='mn', p='ip',o=False,r='m')
+def r_noun_comma_noun(sn,c,n):    return StNoun([
+    I(dep=sn),
+    I(punct=S(',',c.attrs)),
+    I(dep=n)
+],c='mn', p='ip',o=False,r='m')
+
+
+# ## Существительные в разных формах
+
+# In[ ]:
+
+
+@debug_pp
+def p_noun_dp(s,p): return p_alt(s,p,
+    seq([D(dict_pronoun_dp)],r_noun_dp), 
+    seq([ W('to'), p_noun ],r_TO_noun_dp)
+)
+def r_noun_dp(_n): return StNoun([
+    I(maindep=_n,         pad='dp')
+])
+
+def r_TO_noun_dp(_t,_n): return StNoun([
+    I(maindep=_n,         pad='dp', attrs_from_left=_t)
+])
+
+
+# In[ ]:
+
+
+# одно дополнение
+@debug_pp
+def p_where(s,p): return p_alt(s,p,
+    seq([W('in'), p_dop_noun ],r_V_noun_pp),
+    seq([W('on'), p_dop_noun ],r_NA_noun_pp),
+)
+def r_V_noun_pp(v,_n): return StC([
+    I(nodep=S('в',v.attrs)),
+    I(nodep=_n,  pad='pp'),
+])
+def r_NA_noun_pp(v,_n): return StC([
+    I(nodep=S('на',v.attrs)),
+    I(nodep=_n,  pad='pp'),
+])
+
+
+# In[ ]:
+
+
+# одно дополнение
+@debug_pp
+def p_dop(s,p): return p_alt(s,p,
+    seq([W('to'), p_dop_noun ],r_X_noun_dp),
+    seq([W('from'),p_dop_noun],r_IZ_noun),
+    seq([W('with'),p_dop_noun],r_S_noun_tp),
+    p_where
+)
+def r_X_noun_dp(x,n): return StNoun([
+    I(maindep=n,  pad='dp',         attrs_from_left=x)
+])
+def r_IZ_noun(iz,n): return StNoun([
+    I(nodep=S('из',iz.attrs)),
+    I(maindep=n,  pad='rp')
+])
+def r_S_noun_tp(s,n): return StNoun([
+    I(nodep=S('с',s.attrs)),
+    I(maindep=n,  pad='tp')
+])
+
+
+# In[ ]:
+
+
+# последовательность дополнений
+@debug_pp
+def p_dops(s,p): return p_alt(s,p,
+    p_dop,
+    seq([p_dop, p_dops], r_seq_dops)
+)
+def r_seq_dops(d1,d2): return StC([
+    I(nodep=d1),
+    I(nodep=d2)
+])
+
+
+# ## have/has
+
+# In[ ]:
+
+
+@debug_pp
+def p_have_question(s,p):
+    p_have = alt(W('have'),W('has'))
+    return p_alt(s,p,
+        seq([p_have,p_noun_ip,p_noun],r_have_question),
+        seq([W('how'), W('many'), p_noun, p_have, p_noun_ip], [2,r_SKOLKO_noun_U_noun,r_SKOLKO_U_noun_noun])
+    )
+
+def r_have_question(_h,_n1,_n2):    return StC([
+    I(nodep=StC([
+        I(nodep=S('у')),
+        I(nodep=_n1,   pad='rp', npad='n' )# у Него
+    ]), pull_attrs=1 ),
+    I(nodep=S('есть',_h.attrs)),
+    I(nodep=_n2)
+])
+def r_SKOLKO_noun_U_noun(how,many,_n1,have,_n2):  return StC([
+    I(nodep=S('сколько',how.attrs), attrs_from_right=many),
+    I(nodep=_n1, pad='rp'),
+    I(nodep=S('у')),
+    I(nodep=_n2,   pad='rp', npad='n' )# у Него
+])
+def r_SKOLKO_U_noun_noun(how,many,_n1,have,_n2):  return StC([
+    I(nodep=S('сколько',how.attrs), attrs_from_right=many),
+    I(nodep=S('у')),
+    I(nodep=_n2,   pad='rp', npad='n' ),# у Него
+    I(nodep=_n1, pad='rp'),
+])
+
+
+# In[ ]:
+
+
+@debug_pp
+def pe_noun_HAVE_noun(s,p):
+    p_HAVE_HAS = alt( W('have'), W('has') )
+    return p_alt(s,p,
+        seq([ p_noun_ip, p_HAVE_HAS,          p_noun ],r_U_noun_EST_noun),
+        seq([ p_noun_ip, p_HAVE_HAS, W('no'), p_noun ],r_U_noun_NET_noun)
+#        seq([ p_noun, p_HAVE_HAS,          p_pronoun_dp ],r_noun_EST_U_noun),
+#        seq([ p_noun, p_HAVE_HAS, W('no'), p_pronoun_dp ],r_noun_NET_U_noun)
+    )
 def r_U_noun_EST_noun(_n1_,_h_,_n2_):    return StC([
     I(nodep=StC([
         I(nodep=S('у')),
@@ -271,6 +540,19 @@ def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
     I(nodep=_n2_,        pad='rp')
 ])
 
+
+# In[ ]:
+
+
+px_HAVE_HAS = alt( W('have'), W('has') )
+@debug_pp
+def pe_noun_HAVE(s,p):
+    return p_alt(s,p,
+        seq([ p_noun_ip, px_HAVE_HAS          ],r_U_noun_EST),
+        seq([ p_noun_ip, px_HAVE_HAS, alt(W('no'),W('not')) ],r_U_noun_NET)
+#        seq([ p_noun, p_HAVE_HAS,          p_pronoun_dp ],r_noun_EST_U_noun),
+#        seq([ p_noun, p_HAVE_HAS, W('no'), p_pronoun_dp ],r_noun_NET_U_noun)
+    )
 def r_U_noun_EST(_n1_,_h_):    return StC([
     I(nodep=StC([
         I(nodep=S('у')),
@@ -288,220 +570,18 @@ def r_U_noun_NET(_n1_,_h_,_no_):    return StC([
 ])
 
 
-# In[7]:
+# In[ ]:
 
 
 @debug_pp
-def pe_noun_HAVE_noun(s,p):
-    p_HAVE_HAS = alt( W('have'), W('has') )
-    p_pronoun_dp = alt( D(dict_pronoun_dp), p_noun )
+def p_HAVE(s,p): 
+    p_have = alt(W('have'),W('has'))
     return p_alt(s,p,
-        seq([ p_noun, p_HAVE_HAS,          p_pronoun_dp ],r_U_noun_EST_noun),
-        seq([ p_noun, p_HAVE_HAS, W('no'), p_pronoun_dp ],r_U_noun_NET_noun)
-#        seq([ p_noun, p_HAVE_HAS,          p_pronoun_dp ],r_noun_EST_U_noun),
-#        seq([ p_noun, p_HAVE_HAS, W('no'), p_pronoun_dp ],r_noun_NET_U_noun)
+        seq([p_have,          p_noun], r_IMET_noun_vp),
+        seq([p_have, W('no'), p_noun], r_NE_IMET_noun_vp),
+        seq([p_have],r_IMET),
+        seq([p_have,alt(W('no'),W('not'))],r_NE_IMET)
     )
-
-@debug_pp
-def pe_noun_HAVE(s,p):
-    p_HAVE_HAS = alt( W('have'), W('has') )
-    return p_alt(s,p,
-        seq([ p_noun, p_HAVE_HAS          ],r_U_noun_EST),
-        seq([ p_noun, p_HAVE_HAS, alt(W('no'),W('not')) ],r_U_noun_NET)
-#        seq([ p_noun, p_HAVE_HAS,          p_pronoun_dp ],r_noun_EST_U_noun),
-#        seq([ p_noun, p_HAVE_HAS, W('no'), p_pronoun_dp ],r_noun_NET_U_noun)
-    )
-
-
-# In[8]:
-
-
-def r_noun_X_where(_n,x,_w): return StC([
-    I(nodep=_n),
-    I(nodep=_w, attrs_from_left=x)
-])
-
-
-# In[9]:
-
-
-@debug_pp
-def pe_noun_TOBE_where(s,p): return p_alt(s,p,
-    seq([p_noun,p_TOBE,p_where],r_noun_X_where)
-)
-
-
-# In[10]:
-
-
-def re_povel_verb2_sov_ed(_v): return StVerb([
-    I(maindep = _v, asp='sov',form='povel',chis='ed')
-])
-def re_povel_verb2_sov_mn(_v): return StVerb([
-    I(maindep = _v, asp='sov',form='povel',chis='mn')
-])
-
-
-# In[11]:
-
-
-# глагол с дополнением
-@debug_pp
-def pe_verb2_sov(s,p): return p_alt(s,p,
-    seq([p_verb3_komu_chto, p_dops],r_verb_dops),
-    p_verb3_komu_chto
-)
-
-
-# ## Other
-
-# In[12]:
-
-
-@debug_pp
-def p_numeral(s,p):
-    return D(dict_numeral)(s,p)
-
-
-# In[13]:
-
-
-#2->
-@debug_pp
-def p_adj(s,p):
-    return D(dict_adj)(s,p)
-
-
-# ## Noun-like
-
-# In[14]:
-
-
-def r_noun_numeral(n,num): return StNoun([
-    I(maindep=n),
-    I(nomer=num)
-])
-
-
-# In[15]:
-
-
-def r_numeral_noun(num,n):
-    if num.chis!=n.chis :
-        warning('не совпадают числа числ. и сущ.:'+str(num)+str(n))
-    return StNum([
-        I(quantity=num,            chis=n.chis, rod=n.rod, odush=n.odush ),
-        I(maindep=n)
-    ],quantity=num.quantity)
-
-
-# In[16]:
-
-
-def r_noun_and_noun(sn,a,n):    return StNoun([
-    I(dep=sn),
-    I(nodep=S('и',a.attrs)),
-    I(dep=n)
-],c='mn', p='ip',o=False,r='m')
-def r_noun_comma_noun(sn,c,n):    return StNoun([
-    I(dep=sn),
-    I(punct=S(',',c.attrs)),
-    I(dep=n)
-],c='mn', p='ip',o=False,r='m')
-
-
-# In[17]:
-
-
-@debug_pp
-def p_adj_noun3(s,p): return p_alt(s,p,
-    seq([ alt(W('an'),W('a')), p_noun3 ],r_A_noun),
-    seq([ W('the')           , p_noun3 ],r_THE_noun),
-    seq([ W('good'), W('morning') ],r_GOOD_MORNING),             
-ELSE,
-    seq([ p_adj, p_noun3 ],r_adj_noun)
-)
-
-
-# In[18]:
-
-
-@debug_pp
-def p_noun3(s,p): return p_alt(s,p,
-    p_adj_noun3, #ELSE, # переход к следующему уровню
-    p_numeral,
-    D(dict_noun),
-    D(dict_pronoun_ip)
-)
-
-
-# In[19]:
-
-
-@debug_pp
-def p_noun2(s,p): return p_alt(s,p,
-    seq([ p_noun3, p_numeral ], r_noun_numeral), #ELSE, # переход к следующему уровню
-    p_noun3
-)
-
-
-# In[20]:
-
-
-@debug_pp
-def p_noun1(s,p): return p_alt(s,p,
-    seq([ p_numeral, p_noun2 ], r_numeral_noun), #ELSE, # переход к следующему уровню
-    p_noun2
-)
-
-
-# In[21]:
-
-
-@debug_pp
-def p_noun(s,p):
-    return p_alt(s,p,
-        seq([ p_noun1, W('and'), p_noun ],r_noun_and_noun  ),
-        seq([ p_noun1, W(',')  , p_noun ],r_noun_comma_noun),
-                 #ELSE, # переход к следующему уровню
-                 # идет конфликт с and-ом из глаголов
-        p_noun1
-    )
-
-
-# ## Существительные в разных формах
-
-# In[22]:
-
-
-def r_noun_dp(_n): return StNoun([
-    I(maindep=_n,         pad='dp')
-])
-
-
-# In[23]:
-
-
-def r_TO_noun_dp(_t,_n): return StNoun([
-    I(maindep=_n,         pad='dp', attrs_from_left=_t)
-])
-
-
-# In[24]:
-
-
-@debug_pp
-def p_noun_dp(s,p): return p_alt(s,p,
-    seq([D(dict_pronoun_dp)],r_noun_dp), 
-    seq([ W('to'), p_noun ],r_TO_noun_dp)
-)
-
-
-# ## Глагол с дополнениями
-
-# In[25]:
-
-
 def r_NE_IMET_noun_vp(_v,no,_n): return StVerb([
     I(nodep=S('не',no.attrs)),
     I(maindep=CW('иметь',_v)),
@@ -519,9 +599,48 @@ def r_NE_IMET(_v,no): return StVerb([
     I(maindep=CW('иметь',_v)),
 ])
 
+
+# ## to_be
+
+# In[ ]:
+
+
+@debug_pp
+def pe_noun_TOBE_where(s,p): return p_alt(s,p,
+    seq([p_noun_ip,p_TOBE,p_where],r_noun_X_where)
+)
+
+def r_noun_X_where(_n,x,_w): return StC([
+    I(nodep=_n),
+    I(nodep=_w, attrs_from_left=x)
+])
+
+
+# In[ ]:
+
+
+@debug_pp
+def p_TOBE_(s,p): return p_alt(s,p,
+    seq([W('be')],r_EST),
+    seq([W('am')],r_EST),
+    seq([W('is')],r_EST),
+    seq([W('are')],r_EST)
+)
 def r_EST(_v): return StVerb([
     I(maindep=CW('есть (быть)',_v)),
 ])
+
+
+# In[ ]:
+
+
+@debug_pp
+def p_TOBE(s,p): return p_alt(s,p,
+    seq([p_TOBE_, p_noun], 
+          [1, r_EST_noun_ip, r_JAVLYATSA_noun_tp]),
+#    seq([p_tobe, W('no'), alt(p_noun,D(dict_pronoun_dp))], r_NE_IMET_noun_vp),
+    p_TOBE_
+)
 def r_EST_noun_ip(_v,_n): return StVerb([
     I(maindep=CW('есть (быть)',_v)),
     I(ip=_n,   pad='ip')
@@ -532,37 +651,12 @@ def r_JAVLYATSA_noun_tp(_v,_n): return StVerb([
 ])
 
 
-# In[26]:
+# ## Глагол с дополнениями
+
+# In[ ]:
 
 
-@debug_pp
-def p_HAVE(s,p): 
-    p_have = alt(W('have'),W('has'))
-    return p_alt(s,p,
-        seq([p_have,          alt(p_noun,D(dict_pronoun_dp))], r_IMET_noun_vp),
-        seq([p_have, W('no'), alt(p_noun,D(dict_pronoun_dp))], r_NE_IMET_noun_vp),
-        seq([p_have],r_IMET),
-        seq([p_have,alt(W('no'),W('not'))],r_NE_IMET)
-    )
-@debug_pp
-def p_TOBE_(s,p): return p_alt(s,p,
-    seq([W('be')],r_EST),
-    seq([W('am')],r_EST),
-    seq([W('is')],r_EST),
-    seq([W('are')],r_EST)
-)
-@debug_pp
-def p_TOBE(s,p): return p_alt(s,p,
-    seq([p_TOBE_, alt(p_noun,D(dict_pronoun_dp))], 
-          [1, r_EST_noun_ip, r_JAVLYATSA_noun_tp]),
-#    seq([p_tobe, W('no'), alt(p_noun,D(dict_pronoun_dp))], r_NE_IMET_noun_vp),
-    p_TOBE_
-)
-
-
-# In[27]:
-
-
+# разделяемые правила
 def r_verb_noun_vp(_v,_p): return StVerb([
     I(maindep= _v),
     I(vp=_p,   pad='vp')
@@ -571,6 +665,36 @@ def r_verb_noun_dp(_v,_p): return StVerb([
     I(maindep= _v),
     I(dp=_p,   pad='dp')
 ])
+
+
+# In[ ]:
+
+
+# сделать кому-то
+@debug_pp
+def p_verb3_komu(s,p): return p_alt(s,p,
+    seq([D(dict_verb_komu), p_noun_dp], r_verb_noun_dp),
+    D(dict_verb_komu)
+)
+# r_verb_noun_dp - разделяемое
+
+
+# In[ ]:
+
+
+# сделать кому-то что-то
+@debug_pp
+def p_verb3_komu_chto(s,p): return p_alt(s,p,
+    seq([p_verb3_komu,                D(dict_pronoun_dp)], r_verb_noun_dp),
+    ELSE,
+    seq([ p_verb3_komu,                 p_noun        ], r_verb_noun_vp),
+    seq([ p_verb3_komu, W(':'),         p_phrase      ], r_verb_c_phrase),
+    seq([ p_verb3_komu,         W('"'), p_text, W('"')], r_verb_q_text),
+    seq([ p_verb3_komu, W(':'), W('"'), p_text, W('"')], r_verb_c_q_text), 
+    p_verb3_komu
+)
+# r_verb_noun_vp - разделяемое
+# r_verb_noun_dp - разделяемое
 def r_verb_c_phrase(_v,c,_p): return StVerb([
     I(maindep=_v),
     I(punct=c),
@@ -591,48 +715,21 @@ def r_verb_c_q_text(_v,c,q1,_p,q2): return StVerb([
 ])
 
 
-# In[28]:
+# In[ ]:
 
 
+# глагол с дополнением
 @debug_pp
-def p_verb3_komu(s,p): return p_alt(s,p,
-    seq([D(dict_verb_komu), D(dict_pronoun_dp)], r_verb_noun_dp),
-    D(dict_verb_komu)
-)
-
-@debug_pp
-def p_verb3_komu_chto(s,p): return p_alt(s,p,
-    seq([ p_verb3_komu,                 p_noun        ], r_verb_noun_vp),
-    seq([ p_verb3_komu, W(':'),         p_phrase      ], r_verb_c_phrase),
-    seq([ p_verb3_komu,         W('"'), p_text, W('"')], r_verb_q_text),
-    seq([ p_verb3_komu, W(':'), W('"'), p_text, W('"')], r_verb_c_q_text), 
-    p_verb3_komu
-)
-
-@debug_pp
-def p_verb3_simple(s,p): return p_alt(s,p,
-    seq([D(dict_verb_simple), alt(p_noun,D(dict_pronoun_dp))], r_verb_noun_vp),
+def p_verb2(s,p): return p_alt(s,p,
+    seq([D(dict_verb_simple),W('from'),p_noun,W('to'), p_noun],re_verb_OT_noun_DO_noun),
+    ELSE,
+    seq([D(dict_verb_simple), p_dops],r_verb_dops),
     D(dict_verb_simple)
 )
 
-@debug_pp
-def p_verb3(s,p): return p_alt(s,p,
-    p_verb3_simple,
-    p_verb3_komu_chto,
-    p_HAVE,
-    p_TOBE,
-)
-
-
-# In[29]:
-
-
-def r_X_noun_dp(x,n): return StNoun([
-    I(maindep=n,  pad='dp',         attrs_from_left=x)
-])
-def r_IZ_noun(iz,n): return StNoun([
-    I(nodep=S('из',iz.attrs)),
-    I(maindep=n,  pad='rp')
+def r_verb_dops(_v,_d): return StVerb([
+    I(maindep=_v),
+    I(nodep=_d)
 ])
 def re_verb_OT_noun_DO_noun(_v,ot,_n1,do,_n2): return StVerb([
     I(maindep=_v),
@@ -642,86 +739,67 @@ def re_verb_OT_noun_DO_noun(_v,ot,_n1,do,_n2): return StVerb([
     I(nodep=_n2,  pad='rp')
 ])
 
-def r_V_noun_pp(v,_n): return StC([
-    I(nodep=S('в',v.attrs)),
-    I(nodep=_n,  pad='pp'),
-])
-def r_NA_noun_pp(v,_n): return StC([
-    I(nodep=S('на',v.attrs)),
-    I(nodep=_n,  pad='pp'),
-])
 
-def r_seq_dops(d1,d2): return StC([
-    I(nodep=d1),
-    I(nodep=d2)
-])
-def r_verb_dops(_v,_d): return StVerb([
-    I(maindep=_v),
-    I(nodep=_d)
-])
+# In[ ]:
 
 
-# In[30]:
-
-
-# одно дополнение
-
+# сделать что-то
 @debug_pp
-def p_where(s,p): return p_alt(s,p,
-    seq([W('in'), p_noun ],r_V_noun_pp),
-    seq([W('on'), p_noun ],r_NA_noun_pp),
+def p_verb3_simple(s,p): return p_alt(s,p,
+    seq([p_verb2, p_noun], r_verb_noun_vp),
+    p_verb2
 )
-@debug_pp
-def p_dop(s,p): return p_alt(s,p,
-    seq([W('to'), p_noun ],r_X_noun_dp),
-    seq([W('from'),p_noun],r_IZ_noun),
-    p_where
-)
+# r_verb_noun_vp - разделяемое
 
-# последовательность дополнений
-@debug_pp
-def p_dops(s,p): return p_alt(s,p,
-    p_dop,
-    seq([p_dop, p_dops], r_seq_dops)
-)
 
-# глагол с дополнением
+# In[ ]:
+
+
+# сделать (кому-то что-то)
 @debug_pp
-def p_verb2(s,p): return p_alt(s,p,
-    seq([p_verb3,W('from'),p_noun,W('to'), p_noun],re_verb_OT_noun_DO_noun),
-    ELSE,
-    seq([p_verb3, p_dops],r_verb_dops),
-    p_verb3
+def p_verb3_1(s,p): return p_alt(s,p,
+    p_verb3_simple,
+    p_verb3_komu_chto,
+    p_HAVE,
+    p_TOBE,
 )
 
 
-# ## Глагол(ы) с подлежащим
-
-# In[31]:
+# In[ ]:
 
 
-#verb1: кто делает
-def r_to_verb(_t,_v): return StVerb([
-    I(maindep=_v,         form='neopr', attrs_from_left=_t)
+# могу сделать
+@debug_pp
+def p_verb3(s,p): return p_alt(s,p,
+    seq([W('can'), p_verb3_1],r_CAN_verb),
+    p_verb3_1
+)
+def r_CAN_verb(c,v): return StVerb([
+    I(maindep=CW('мочь',c)),
+    I(nodep=v,   form='neopr')
 ])
+
+
+# ## Глагол(ы) с подлежащим, или другой формы
+
+# In[ ]:
+
+
+# некто делает
+@debug_pp
+def p_noun_verb1(s,p): return p_alt(s,p,
+    pe_noun_HAVE_noun,
+    pe_noun_HAVE,
+ELSE,
+    pe_noun_TOBE_where,
+    seq([ p_noun_ip , p_verb3 ],r_noun_verb),
+    seq([ p_noun_ip, p_verb3, W('too') ],r_noun_TOZHE_verb), #ELSE, # переход к следующему уровню
+)
 
 def r_noun_verb(n,v): return StVerb([
     I(ip=n),
     I(main=v,   form='nast', pers=n.pers, chis=n.chis, rod=n.rod)
 ])
-
-def r_povel_verb_ed(_v): return StVerb([
-    I(maindep=_v, form='povel',chis='ed')
-])
-def r_povel_verb_mn(_v): return StVerb([
-    I(maindep=_v, form='povel',chis='mn')
-])
-
-
-# In[32]:
-
-
-#verb1: кто (тоже) делает
 def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
     I(ip=_n),
     I(nodep=S('тоже',_t.attrs)),
@@ -729,10 +807,43 @@ def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
 ])
 
 
-# In[33]:
+# In[ ]:
 
 
-#verb: сделать одно и/но сделать сдругое
+# некто делает/ делать/ делай
+@debug_pp
+def p_verb1(s,p): return p_alt(s,p,
+    p_noun_verb1,
+    seq([ W('to'), p_verb3 ],r_to_verb),   #ELSE, # переход к следующему уровню
+    seq([ p_verb3 ],[1,r_povel_verb_ed,r_povel_verb_mn])
+)
+def r_to_verb(_t,_v): return StVerb([
+    I(maindep=_v,         form='neopr', attrs_from_left=_t)
+])
+
+def r_povel_verb_ed(_v): return StVerb([
+    I(maindep=_v, asp='sov', form='povel',chis='ed') #
+])
+def r_povel_verb_mn(_v): return StVerb([
+    I(maindep=_v, asp='sov', form='povel',chis='mn') # asp='sov',
+])
+
+
+# In[ ]:
+
+
+# сделать одно и/но сделать сдругое
+@debug_pp
+def p_verb(s,p): return p_alt(s,p,
+    seq([ p_noun_ip, px_HAVE_HAS, p_noun1, W(',')  , p_noun,  W('and'), p_verb1 ],re_U_noun_EST_noun_C_noun_I_verb),
+    ELSE,
+    seq([ p_verb1, W(','), p_verb1 ]          ,r_verb_c_verb),   
+    seq([ p_verb1, W(','), W('but'), p_verb1 ],r_verb_NO_verb),   
+    seq([ p_verb1, W('and'), p_verb1 ]        ,r_verb_I_verb),
+    #ELSE, # переход к следующему уровню
+    p_verb1
+)
+
 def r_verb_NO_verb(_v1_,_c_,_but_,_v2_):    return StC([
     I(nodep=_v1_),
     I(nodep=_c_),
@@ -752,89 +863,42 @@ def r_verb_I_verb(_v1_,_i_,_v2_):    return StC([
     I(nodep=_v2_)
 ])
 
-
-# In[ ]:
-
-
-
-
-
-# In[34]:
-
-
-#verb1: кто делает/ делать/ делай
-
-@debug_pp
-def p_noun_verb1(s,p): return p_alt(s,p,
-    pe_noun_HAVE_noun,
-    pe_noun_HAVE,
-    pe_noun_TOBE_where,
-ELSE,
-    seq([ p_noun , p_verb2 ],r_noun_verb)
-)
-
-@debug_pp
-def p_verb1_2(s,p): return p_alt(s,p,
-    seq([pe_verb2_sov],[1,re_povel_verb2_sov_ed,re_povel_verb2_sov_mn]),
-ELSE,
-    seq([    p_verb2 ],[1,r_povel_verb_ed,r_povel_verb_mn])
-)
-
-@debug_pp
-def p_verb1_1(s,p): return p_alt(s,p,
-    p_noun_verb1,
-    seq([ W('to'), p_verb2 ],r_to_verb),   #ELSE, # переход к следующему уровню
-    p_verb1_2
-)
-
-
-# In[35]:
-
-
-#verb1: кто (тоже) делает
-@debug_pp
-def p_verb1(s,p): return p_alt(s,p,
-    seq([ p_noun, p_verb1_1, W('too') ],r_noun_TOZHE_verb), #ELSE, # переход к следующему уровню
-    p_verb1_1
-)
-
-
-# In[36]:
-
-
-#verb: сделать одно и/но сделать сдругое
-@debug_pp
-def p_verb(s,p): return p_alt(s,p,
-    seq([ p_verb1, W(','), p_verb1 ]          ,r_verb_c_verb),   
-    seq([ p_verb1, W(','), W('but'), p_verb1 ],r_verb_NO_verb),   
-    seq([ p_verb1, W('and'), p_verb1 ]        ,r_verb_I_verb),
-    #ELSE, # переход к следующему уровню
-    p_verb1
-)
-
-
-# In[37]:
-
-
-def r_have_question(_h,_n1,_n2):    return StC([
+def re_U_noun_EST_noun_C_noun_I_verb(_n1_,_h_,sn,c,n,_i_,_v2_):    return StC([
     I(nodep=StC([
-        I(nodep=S('у')),
-        I(nodep=_n1,   pad='rp', npad='n' )# у Него
-    ]), pull_attrs=1 ),
-    I(nodep=S('есть',_h.attrs)),
-    I(nodep=_n2)
+        I(nodep=StC([
+            I(nodep=S('у')),
+            I(nodep=_n1_,   pad='rp', npad='n' )# у Него
+        ]), pull_attrs=1 ),
+        I(nodep=S('есть',_h_.attrs)),
+        I(nodep=StNoun([
+            I(dep=sn),
+            I(punct=S(',',c.attrs)),
+            I(dep=n)
+        ],c='mn', p='ip',o=False,r='m'))
+    ])),
+    I(nodep=S('и',_i_.attrs)),
+    I(nodep=_v2_)
 ])
-
-@debug_pp
-def p_have_question(s,p):
-    p_have = alt(W('have'),W('has'))
-    return seq([p_have,p_noun,p_noun],r_have_question)(s,p)
 
 
 # ## Фразы, предложения, текст
 
-# In[38]:
+# In[ ]:
 
+
+@debug_pp
+def p_phrase(s,p): 
+    return p_alt(s,p,
+        p_verb,    #ELSE,
+        p_noun_ip,    #ELSE,
+        p_noun_dp, #ELSE,
+        p_dop,
+        p_adj,
+        D(dict_other),
+        seq([W('yes'),W(','),p_verb],r_DA_COMMA_verb),
+        seq([W('no') ,W(','),p_verb],r_NET_COMMA_verb),
+        seq([p_noun  ,W(','),p_verb],r_noun_COMMA_verb),
+    )
 
 def r_DA_COMMA_verb(yes,comma,_v):    return StC([
     I(nodep=S('да',yes.attrs)),
@@ -855,28 +919,24 @@ def r_noun_COMMA_verb(_n,comma,_v):    return StC([
     I(nodep=_v)
 ])
 
-@debug_pp
-def p_phrase(s,p): 
-    return p_alt(s,p,
-        p_verb,    #ELSE,
-        p_noun,    #ELSE,
-        p_noun_dp, #ELSE,
-        p_adj,
-        D(dict_other),
-        seq([W('yes'),W(','),p_verb],r_DA_COMMA_verb),
-        seq([W('no') ,W(','),p_verb],r_NET_COMMA_verb),
-        seq([p_noun  ,W(','),p_verb],r_noun_COMMA_verb),
-    )
+
+# In[ ]:
+
 
 @debug_pp
 def p_question_phrase(s,p): 
     return p_have_question(s,p)
 
 
-# In[39]:
+# In[ ]:
 
 
 dict_proper={}# имена собственные
+
+
+# In[ ]:
+
+
 @debug_pp
 def p_sentence(s,p):
     first_capital = s[p]=='I' or ch_title in s[p].attrs.changers
@@ -906,8 +966,25 @@ def p_sentence(s,p):
     return rezs
 
 
-# In[40]:
+# In[ ]:
 
+
+@debug_pp
+def p_text(s,p):
+    '''или последовательность предложений или 1 фраза
+    p_text::= p_sentence* | p_phrase
+    '''
+    rez=[]
+    while p<len(s):
+        rezs=maxlen_filter(p_sentence,s,p)
+        if len(rezs)==0: break
+        p1,r1=rezs[0] # отбрасываем остальные результаты
+        p=p1
+        rez.append(I(nodep=r1))
+    if len(rez)>0:
+        return [(p,StC(rez))]
+    else:
+        return maxlen_filter(alt(p_phrase,p_question_phrase),s,p)
 
 def maxlen_filter(patt,s,p):
     '''находит самые длинные результаты, а остальные отбрасывает
@@ -933,28 +1010,10 @@ def maxlen_filter(patt,s,p):
             
     return [] if len(long_rezs)==0 else long_rezs
 
-@debug_pp
-def p_text(s,p):
-    '''или последовательность предложений или 1 фраза
-    p_text::= p_sentence* | p_phrase
-    '''
-    rez=[]
-    while p<len(s):
-        rezs=maxlen_filter(p_sentence,s,p)
-        if len(rezs)==0: break
-        p1,r1=rezs[0] # отбрасываем остальные результаты
-        p=p1
-        rez.append(I(nodep=r1))
-    if len(rez)>0:
-        return [(p,StC(rez))]
-    else:
-        return maxlen_filter(alt(p_phrase,p_question_phrase),s,p)
-        
-
 
 # ## Запуск и отладка
 
-# In[41]:
+# In[ ]:
 
 
 def _en2ru(s): # main
@@ -1009,7 +1068,7 @@ def pr_l_repr(s):
     
 
 
-# In[42]:
+# In[ ]:
 
 
 def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
@@ -1030,7 +1089,7 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
     return m
 
 
-# In[43]:
+# In[ ]:
 
 
 def _parse_pat(patt,s):
@@ -1055,7 +1114,7 @@ def d_parse_pat(patt,s):
     return r
 
 
-# In[44]:
+# In[ ]:
 
 
 def scheme(s,detailed=1):
@@ -1072,12 +1131,14 @@ def scheme(s,detailed=1):
     # парсим строку
     ParseInfo.enabled = True
     try:
-        rezs=maxlen_filter(p_text,s,0)
+        rezs=maxlen_filter(alt(p_sentence,p_phrase,p_question_phrase),s,0)
     finally:
         ParseInfo.enabled = False
         
+    print(len(rezs),'результатов')
     # анализируем каждый результат
     for end,rez in rezs:
+        print()
         # простой построчный вывод узлов результата
         if detailed==2:
             def print_rez0(rez,depth):
@@ -1317,9 +1378,8 @@ def scheme(s,detailed=1):
 # ```
 # 
 #     КОДИТЬ И ДЕБАЖИТЬ ТЕКУЩЕЕ
-#     11) сколько
-#     12) цвета и прилагательные
-#     13) где
+#     12) прилагательные, расположение
+#     13) где?
 #     14) какого цвета
 #         КОНТЕКСТ
 #     15) посмотри
@@ -1359,6 +1419,8 @@ def scheme(s,detailed=1):
 # написать везде строки документации
 # написать инструкцию как пользоваться
 # 
+# scheme('it')
+# 
 # ...
 # открывающиеся кавычки
 # 
@@ -1372,25 +1434,59 @@ def scheme(s,detailed=1):
 # отображение открывающейся кавычки (SAttrs.join)
 # ```
 
-# In[46]:
+# In[1]:
 
 
-#decline('two watches')
+#!jupyter nbconvert --to script en2ru.ipynb
 
 
-# In[47]:
-
-
-en2ru('')
-
-
-# In[48]:
+# In[ ]:
 
 
 en2ru('I see jam and one cup.')
 
 
-# In[113]:
+# In[ ]:
+
+
+#decline('two watches')
+
+
+# In[ ]:
+
+
+# you - ты/вы
+pr_l_repr(en2ru('''Have you a cat? Yes,
+we have.
+How many kittens has
+the cat?
+It has one kitten.
+How many ducks have
+you?
+We have two ducks and
+ten ducklings.'''))
+
+
+# In[ ]:
+
+
+# контексты!!!
+pr_l_repr(en2ru('''How many chickens has the hen?
+It has eleven.
+How many ducklings has the duck?
+It has eight.
+How many kittens has the cat?
+It has three.
+How many dolls has the girl?
+She has two.
+How many sticks has the boy?
+He has five.
+How many hats have I?
+You have one.
+'''))
+
+
+# In[ ]:
 
 
 import tests
@@ -1409,6 +1505,8 @@ tests.test8()
 tests.test8_1()
 tests.test9()
 tests.test10()
+tests.test11()
+tests.finalize()
 tests.TEST_ERRORS
 
 
