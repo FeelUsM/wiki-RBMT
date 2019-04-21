@@ -31,12 +31,15 @@ def test(real,expected):
 
 multiplier = 5
 
-def ttest(f,arg,expected,ddt=5):
+def ttest(f,*args):
+	expected = args[len(args)-1]
+	#del args[len(args)-1]
+	args = args[:-1]
 	ddt = len(repr(expected))
 	global N
 	try:
 		start_time = time.time()
-		test_OK = test(f(arg),expected)
+		test_OK = test(f(*args),expected)
 		dt = time.time() - start_time
 		if test_OK:
 			pass
@@ -47,7 +50,7 @@ def ttest(f,arg,expected,ddt=5):
 			LEN = 10
 			for i in range(LEN):
 				start_time = time.time()
-				f(arg)
+				f(*args)
 				average+= time.time() - start_time
 			average/=(LEN+1)
 			if print_timing : print('%d\t%d\t%d\t%f !'%(ddt,ddt*multiplier,average*1000,average*1000/ddt/multiplier))
@@ -74,7 +77,7 @@ def ttest(f,arg,expected,ddt=5):
 	if not test_OK and f==en2ru:
 		parse_system.warning_fun=warning_print
 		try:
-			scheme(arg)
+			scheme(*args)
 		finally:
 			parse_system.warning_fun=warning_hook
 
@@ -86,6 +89,7 @@ tmp_warning_fun = None
 
 TestError = None
 parse_system = None
+en_dictionary = None
 seq = None
 W = None
 SAttrs = None
@@ -93,59 +97,74 @@ SAttrs = None
 tokenize = None
 
 en2ru = None
+en2ru_with_variants = None
 decline = None
 scheme = None
 d_en2ru = None
 pr_l_repr = None
+
 p_noun = None
 p_noun1 = None
 r_noun_comma_noun = None
+dict_pronoun_ip = None
+dict_numeral = None
+rv_noun_HAVE_noun = None
 
 print_timing = None
 
-def init(_parse_system, _TestError, _seq, _W, _SAttrs,
-	_tokenize, 
-	_en2ru, _decline, _scheme, _d_en2ru, _pr_l_repr, _p_noun, _p_noun1, _r_noun_comma_noun,
+def init(_parse_system, _en_dictionary,
+	_en2ru, _en2ru_with_variants, _decline, _scheme, _d_en2ru, _pr_l_repr, 
+	_p_noun, _p_noun1, _r_noun_comma_noun, _rv_noun_HAVE_noun,
 	_multiplier,_print_timing):
 	global tmp_warning_fun
 	global parse_system
+	global en_dictionary
 	global TestError
 	global seq
 	global W
 	global SAttrs
-
 	global tokenize
 
 	global en2ru
+	global en2ru_with_variants
 	global decline
 	global scheme
 	global d_en2ru
 	global pr_l_repr
+
 	global p_noun
 	global p_noun1
 	global r_noun_comma_noun
+	global dict_pronoun_ip
+	global dict_numeral
+	global rv_noun_HAVE_noun
 
 	global multiplier
 	global print_timing
 
 	parse_system = _parse_system
+	en_dictionary = _en_dictionary
 	tmp_warning_fun = parse_system.warning_fun
 	parse_system.warning_fun=warning_hook
-	TestError = _TestError
-	seq = _seq
-	W = _W
-	SAttrs = _SAttrs
-
-	tokenize = _tokenize
+	TestError = parse_system.TestError
+	seq = parse_system.seq
+	W = parse_system.W
+	SAttrs = parse_system.SAttrs
+	tokenize = parse_system.tokenize
 
 	en2ru = _en2ru 
+	en2ru_with_variants = _en2ru_with_variants
 	decline = _decline
 	scheme = _scheme
 	d_en2ru = _d_en2ru
 	pr_l_repr = _pr_l_repr
+
 	p_noun = _p_noun
 	p_noun1 = _p_noun1
 	r_noun_comma_noun = _r_noun_comma_noun
+	dict_pronoun_ip = en_dictionary.dict_pronoun_ip
+	dict_numeral = en_dictionary.dict_numeral
+	rv_noun_HAVE_noun = _rv_noun_HAVE_noun
 
 	multiplier = _multiplier
 	print_timing = _print_timing
@@ -235,7 +254,7 @@ def test1():
 	# In[21]:
 
 
-	test(p_noun(tokenize('cat,_cat,_a cat'),0)[0][1].tostr(),'кот,_кот,_кот')
+	test(p_noun(tokenize('cat,_cat,_a cat'),0)[1][1].tostr(),'кот,_кот,_кот')
 
 
 	# In[22]:
@@ -398,7 +417,7 @@ def test3():
 	    'вижу крысу, одну крысу, крыс, двух крыс, трёх крыс, пять крыс',
 	    'творю крысой, одной крысой, крысами, двумя крысами, тремя крысами, пятью крысами',
 	    'думаю о крысе, одной крысе, крысах, двух крысах, трёх крысах, пяти крысах',
-	],8)#,20
+	])#,20
 
 
 	# In[42]:
@@ -428,7 +447,7 @@ def test4():
 	'''  A hat, a cup and a box.
 	A bat, a hen and a fox.''',
 	'''  Шляпа, чашка и ящик.
-	Летучая мышь, курица и лиса.''',8)#,260
+	Летучая мышь, курица и лиса.''')#,260
 
 
 	# In[45]:
@@ -465,7 +484,7 @@ def test4():
 	'''Я вижу
 	  свинью и курицу,
 	  собаку и ружьё,
-	  кота и шляпу.''',10)#,280
+	  кота и шляпу.''')#,280
 
 
 	# In[50]:
@@ -573,7 +592,7 @@ def test7():
 
 
 	ttest(en2ru,'I have a dog, but I have no cat.',
-	      'У меня есть собака, но у меня нет кота.',10)#,45
+	      'У меня есть собака, но у меня нет кота.')#,45
 
 
 	# In[66]:
@@ -697,13 +716,13 @@ def test8():
 
 
 	ttest(en2ru,'Say: "Seven, six, four, two, five, three, one."',
-	      'Скажи:" Семь, шесть, четыре, два, пять, три, один."',8)#,2200
+	      'Скажи:" Семь, шесть, четыре, два, пять, три, один."')#,2200
 
 
 	# In[86]:
 
 
-	ttest(en2ru,'say: say seven','скажи: скажи семь',8)#,1200
+	ttest(en2ru,'say: say seven','скажи: скажи семь')#,1200
 
 
 	# In[87]:
@@ -798,7 +817,7 @@ def test9():
 	# In[101]:
 
 
-	ttest(en2ru,'She has ball','У Неё есть мяч')
+	ttest(en2ru,'She has ball','у Неё есть мяч')
 
 
 	# In[102]:
@@ -826,7 +845,7 @@ def test9():
 	'''У этой девочки есть три куклы.
 	У этого мальчика есть два мяча.
 	У той девочки есть пять книг.
-	У того мальчика есть четыре ручки.''',17)
+	У того мальчика есть четыре ручки.''')
 
 
 	# In[105]:
@@ -839,7 +858,7 @@ def test9():
 	'''У девочки есть одно блюдо.
 	У неё есть две ложки.
 	У мальчика есть три палки.
-	У него есть пять звёзд.''',17     )
+	У него есть пять звёзд.''')
 
 
 	# In[106]:
@@ -850,7 +869,7 @@ def test9():
 	The snake is in the box.''',
 	'''Эта ягушка на бревне.
 	Та ягушка в озере.
-	Змея в ящике.''',10     )
+	Змея в ящике.''')
 
 
 	# In[107]:
@@ -861,7 +880,7 @@ def test9():
 	The doll is on the bed.''',
 	 '''Ложка в чашке.
 	Белка на бревне.
-	Кукла на кровати.''',10    )
+	Кукла на кровати.''')
 
 
 	# In[108]:
@@ -874,7 +893,7 @@ def test9():
 	'''Я люблю торты.
 	У меня есть два торта.
 	У него есть две звезды.
-	У неё есть три куклы.''',15     )
+	У неё есть три куклы.''')
 
 
 	# In[109]:
@@ -887,7 +906,7 @@ def test9():
 	 '''Кукла на кровати.
 	Змея в озере.
 	Курица на бревне.
-	Летучая мышь в шляпе.''',15)
+	Летучая мышь в шляпе.''')
 
 
 	# In[110]:
@@ -909,7 +928,7 @@ def test9():
 	'''У неё есть три курицы.
 	У меня есть четыре книги и девять тетрадей.
 	У этого мальчика есть восемь звёзд.
-	У него есть шесть палок, но у него нет ружья.''',20     )
+	У него есть шесть палок, но у него нет ружья.''')
 
 
 	# In[112]:
@@ -922,7 +941,7 @@ def test9():
 	'''Я люблю рыбу.
 	Одна змея в озере.
 	Одна ягушка на бревне.
-	Джем в вазе.''',13     )
+	Джем в вазе.''')
 
 def test10():
 	print('--- Lesson 10 ---')
@@ -1125,4 +1144,189 @@ def test11():
 
 	ttest(en2ru,'It has four legs, a long tail and it can give milk.',
 		'У него есть четыре ноги, длинный хвост и оно может давать молоко.')
+
+	ttest(en2ru_with_variants,[
+		(dict_pronoun_ip['you'],3)
+	],'''Have you a cat? Yes,
+	we have.
+	How many kittens has
+	the cat?
+	It has one kitten.
+	How many ducks have
+	you?
+	We have two ducks and
+	ten ducklings.''',
+	'''У вас есть кот? Да,
+	у нас есть.
+	Сколько у
+	кота котят?
+	У него есть один котёнок.
+	Сколько у
+	вас уток?
+	У нас есть две утки и
+	десять утят.''')
+
+	ttest(en2ru_with_variants,[
+		(dict_pronoun_ip['it'],3),
+		(rv_noun_HAVE_noun,1)
+	],'''How many chickens has the hen?
+	It has eleven.
+	How many ducklings has the duck?
+	It has eight.''',
+	'''Сколько у курицы цыплят?
+	У неё одинадцать.
+	Сколько у утки утят?
+	У неё восемь.''')
+
+	ttest(en2ru_with_variants,[
+		(dict_pronoun_ip['it'],2),
+		(rv_noun_HAVE_noun,1),
+		(dict_numeral['one'],2),
+		(dict_numeral['two'],2)
+	],'''How many kittens has the cat?
+	It has three.
+	How many dolls has the girl?
+	She has two.
+	How many sticks has the boy?
+	He has five.
+	How many hats have I?
+	You have one.
+	''',
+	'''Сколько у кота котят?
+	У него три.
+	Сколько у девочки кукл?
+	У неё две.
+	Сколько у мальчика палок?
+	У него пять.
+	Сколько у меня шляп?
+	У тебя одна.''')
+
+def test12():
+	print('--- Lesson 12 ---')
+	global N
+	N=12
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['it'],3),
+	],'''They have a horse;
+	it is black.
+	They have a pig;
+	it is big.
+	They have a goat;
+	it is white.
+	They have a cow;
+	the cow is red.
+	They have no car.
+	''',
+	'''У них есть лошадь;
+	она -- чёрная.
+	У них есть свинья;
+	она -- большая.
+	У них есть коза;
+	она -- белая.
+	У них есть корова;
+	корова -- красная.
+	У них нет автомобиля.''')
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['it'],2),
+	],'''We have four goats.
+	We have a car; it is
+	in the street.
+	We have no ducks.
+	''',
+	'''У нас есть четыре козы.
+	У нас есть автомобиль; он
+	на улице.
+	У нас нет уток.''')
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['it'],3),
+	],'''You have a ribbon;
+	it is in the box.''',
+	'''У тебя есть лента;
+	она в ящике.''')
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['it'],2),
+	],'''You have a lemon;
+	it is on the dish.
+	You have no hens.
+	''',
+	'''У тебя есть лимон;
+	он на блюде.
+	У тебя нет куриц.''')
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['it'],3),
+	],'He has one dog; it is black.',
+	'У него есть одна собака; она -- чёрная.')
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['it'],2),
+	],'''He has a hen; it has three chickens.
+	He has a ball; it is big.
+	''',
+	'''У него есть курица; у него есть три цыплёнка.
+	У него есть мяч; он -- большой.''')
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['it'],2),
+	],'''She has a kitten; it is white.''',
+	'У неё есть котёнок; он -- белый.')
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['it'],2),
+	],'''This is a box; it is big.
+	This is a rabbit; it is white.
+	This is a girl; she is big.
+	This is a boy; he is big too.
+	''',
+	'''Это ящик; он -- большой.
+	Это кролик; он -- белый.
+	Это девочка; она -- большая.
+	Это мальчик; он тоже есть большой.''')
+
+	ttest(en2ru,'''They have two kittens,
+	three squirrels, eight
+	ducklings and twelve
+	chickens.
+	''',
+	'''У них есть два котёнка,
+	три белки, восемь
+	утят и двенадцать
+	цыплят.''')
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['it'],2),
+	],'This boy has a rabbit; it is in the box.',
+	'У этого мальчика есть кролик; он в ящике.')
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['it'],3),
+	],'That girl has a doll; it is big.',
+	'У той девочки есть кукла; она -- большая.')
+
+	ttest(en2ru,'She has a ribbon; the ribbon is red.',
+	'У неё есть лента; лента -- красная.')
+
+	ttest(en2ru,'The boy has a red star.',
+	'У мальчика есть красная звезда.')
+
+	ttest(en2ru,'We have twelve hens and eleven ducks.',
+	'У нас есть двенадцать куриц и одинадцать уток.')
+
+	ttest(en2ru,'He has a red horse.',
+	'У него есть красная лошадь.')
+
+	ttest(en2ru_with_variants,[
+	    (dict_pronoun_ip['you'],3),
+	],'''How many lessons have you?
+	We have five lessons.
+	''',
+	'''Сколько у вас уроков?
+	У нас есть пять уроков.''')
+
+	ttest(en2ru,'It has four legs, a short tail and it can give milk.',
+	'У него есть четыре ноги, короткий хвост и оно может давать молоко.')
 

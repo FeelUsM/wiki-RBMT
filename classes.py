@@ -73,7 +73,7 @@ DEBUGGING_ID
 DEBUGGING_ATTRS
 '''
 
-from parse_system import SAttrs, ParseInfo, S, ch_anti_prefix
+from parse_system import SAttrs, ParseInfo, S, ch_anti_prefix, repr_id
 from copy import copy
 
 # ## Классы отображения
@@ -82,20 +82,18 @@ from copy import copy
 
 # In[27]:
 
-DEBUGGING_ID=False
-def repr_id(self):
-	global DEBUGGING_ID
-	return '<'+str(id(self))+'>' if DEBUGGING_ID else ''
-	
 DEBUGGING_ATTRS=False
 def repr_attrs(self,_n=False):
 	global DEBUGGING_ATTRS
-	return ('\n' if _n else '')+'_'+repr(self.attrs) if DEBUGGING_ATTRS else ''
+	return '-'+repr(self.attrs) if DEBUGGING_ATTRS else ''
+	# +('\n' if _n else '')
 
 def repr_talk(talk):
 	s = '[\n'
 	for tup in talk:
-		s+=repr(tup)+',\n'
+		assert len(tup)==3
+		#s+=repr(tup)+',\n'
+		s+= '('+repr(tup[0])+', '+repr(tup[1])+','+('\n' if len(tup[2]) else ' ')+repr(tup[2])+')'+',\n'
 	return s+']'
 
 def I(**args):
@@ -128,10 +126,22 @@ def set_property(tup,**kwarg): #set_property(tup,prop=val)
 	if prop in {'attrs_from_left','attrs_from_right','add_changers','pull_attrs'}:
 		tup[2][prop]=val
 	else:
-		assert hasattr(tup[1],prop)
+		assert hasattr(tup[1],prop),(tup[1],prop)
 		if hasattr(tup[1],'ext_props_setter'):
 			tup[1].ext_props_setter(tup,**kwarg)
 		else: tup[2][prop]=val
+
+'''
+спускаясь вглубь дерева 
+	применяю внешние свойства (что может вызывать изменение свойств более глубоких объектов)
+	и устанавливаю заданные атрибуты
+
+поднимаясь к корню дерева
+	подтягиваю префикс
+
+
+'''
+
 
 def pull_deferred(tup):
 	'''функция pull_deferred(tup)'''
@@ -139,9 +149,11 @@ def pull_deferred(tup):
 	# применяю внешние свойства
 	for prop,val in tup[2].items():
 		if prop=='attrs_from_left':
-			SAttrs._to_right(val,tup[1])
+			tup[1].attrs.from_left(val)
+			#SAttrs._to_right(val,tup[1])
 		elif prop=='attrs_from_right':
-			SAttrs._to_left(tup[1],val)
+			tup[1].attrs.from_right(val)
+			#SAttrs._to_left(tup[1],val)
 		elif prop=='add_changers':
 			tup[1].attrs.changers|=val
 		elif prop=='pull_attrs':
@@ -157,14 +169,17 @@ def pull_deferred(tup):
 	if pull_attrs_no!=None:
 		assert hasattr(tup[1],'talk') and tup[1].attrs.pre=='',\
 			(hasattr(tup[1],'talk') , tup[1].attrs.pre=='')
-		tup[1].attrs = tup[1].talk[pull_attrs_no][1].attrs
-		tup[1].talk[pull_attrs_no][1].attrs = SAttrs()
-#		tup[1].attrs.pre=tup[1].talk[pull_attrs_no][1].attrs.pre
-#		tup[1].talk[pull_attrs_no][1].attrs.pre=''
+#		tup[1].attrs = tup[1].talk[pull_attrs_no][1].attrs
+#		tup[1].talk[pull_attrs_no][1].attrs = SAttrs()
+		tup[1].attrs.pre=tup[1].talk[pull_attrs_no][1].attrs.pre
+		tup[1].talk[pull_attrs_no][1].attrs.pre=''
+		if ch_anti_prefix in tup[1].talk[pull_attrs_no][1].attrs.changers:
+			tup[1].attrs.changers |= {ch_anti_prefix}
+			tup[1].talk[pull_attrs_no][1].attrs.changers -= {ch_anti_prefix}
 #		tup[1].attrs.changers=tup[1].talk[pull_attrs_no][1].attrs.changers
 #		tup[1].talk[pull_attrs_no][1].attrs.changers=set()
-#		tup[1].attrs.tags=tup[1].talk[pull_attrs_no][1].attrs.tags
-#		tup[1].talk[pull_attrs_no][1].attrs.tags=set()
+		tup[1].attrs.tags=tup[1].talk[pull_attrs_no][1].attrs.tags
+		tup[1].talk[pull_attrs_no][1].attrs.tags=set()
 		
 
 # In[28]:
@@ -191,7 +206,7 @@ class Struct:
 		if attrs==None:
 			self.attrs=SAttrs()
 		elif type(attrs)==list:
-			raise RuntimrError('pulling attrs does not supported')
+			raise RuntimeError('pulling attrs does not supported')
 	#            self.attrs=SAttrs()
 			self.attrs=SAttrs(pre=attrs[0][1].attrs.pre)
 			attrs[0][1].attrs.pre=''
@@ -211,7 +226,7 @@ class Struct:
 
 	def pull_deferred(self):
 		if not hasattr(self,'talk'): return
-		# во свех потомках вызываем pukk_deferred
+		# во свех потомках вызываем pull_deferred
 		for tup in self.talk:
 			pull_deferred(tup)
 		# подтягиваем префикс
@@ -266,7 +281,7 @@ class StC(Struct): # Container
 		self.talk_checker()
 		
 	def __repr__(self):
-		return 'StContainer'+repr_id(self)+'('+            repr_talk(self.talk) +')'+repr_attrs(self,False)
+		return 'StContainer'+repr_id(self)+repr_attrs(self,False)+'('+            repr_talk(self.talk) +')'
 
 	def __str__(self):
 		return self.attrs.change( self.attrs.join(i[1] for i in self.talk) )
@@ -466,8 +481,9 @@ class StVerb(Struct):
 						set_property(i,asp=val)
 
 	def __repr__(self):
-		return 'StVerb'+repr_id(self)+'('+(repr_talk(self.talk) if self.word==None else repr(self.word)+','\
-			+repr(self.oasp))+','+ 'asp='+repr(self.asp)+','+ 'form='+repr(self.form)+','+ 'chis='+repr(self.chis)+','+            'pers='+repr(self.pers)+')'+repr_attrs(self,self.word!=None)
+		return 'StVerb'+repr_id(self)+repr_attrs(self,self.word!=None)+'('+\
+			(repr_talk(self.talk) if self.word==None else repr(self.word)+','\
+			+repr(self.oasp))+','+ 'asp='+repr(self.asp)+','+ 'form='+repr(self.form)+','+ 'chis='+repr(self.chis)+','+            'pers='+repr(self.pers)+')'
 
 	def __str__(self):
 		return self.attrs.change(
@@ -559,8 +575,16 @@ class StDeclinable(Struct):
 				if i[0]=='dep' or i[0]=='maindep' :
 					set_property(i,pad=val)
 				
+	npad=property()
+	@npad.getter
+	def npad(self):
+		return ''
+	@npad.setter
+	def npad(self,val):
+		pass
+		
 	def post_repr(self):
-		return 'o='+repr(self.odush)+',r='+repr(self.rod)+ ',c='+repr(self.chis)+',p='+repr(self.pad)+')'+repr_attrs(self,self.word!=None)
+		return 'o='+repr(self.odush)+',r='+repr(self.rod)+ ',c='+repr(self.chis)+',p='+repr(self.pad)+')'
 	def __repr__(self):
 		raise NotImplementedError('virtual function')
 
@@ -595,7 +619,7 @@ class StNoun(StDeclinable):
 		'nomer'  : lambda x:_types_assert(x,StNum),
 		'punct'  :           types_assert(S)
 	}
-	__slots__=['_chis','och']
+	__slots__=['_chis','_rod','och']
 	def __init__(self,word=None,och=0,o=None,r=None,c=None,p=None):
 		if type(word)==list:
 			assert och==0 , 'Noun-och must be in leaf, och='+repr(och)
@@ -636,16 +660,18 @@ class StNoun(StDeclinable):
 					if i[0]=='dep' or i[0]=='maindep' :
 						set_property(i,chis=val)
 
-	npad=property()
-	@npad.getter
-	def npad(self):
-		return ''
-	@npad.setter
-	def npad(self,val):
-		pass
+	rod=property()
+	@rod.getter
+	def rod(self):
+		return self._rod
+	@rod.setter
+	def rod(self,val):
+		if not hasattr(self,'_rod'): # for constructor
+			self._rod=val
 		
 	def __repr__(self):
-		return 'StNoun'+repr_id(self)+'('+   (repr_talk(self.talk) if self.word==None   else repr(self.word)+','+repr(self.och))+','+            self.post_repr()
+		return 'StNoun'+repr_id(self)+repr_attrs(self,self.word!=None)+'('+\
+		   (repr_talk(self.talk) if self.word==None   else repr(self.word)+','+repr(self.och))+','+            self.post_repr()
 
 	show_map=show_noun_map
 
@@ -737,7 +763,8 @@ class StNum(StDeclinable):
 						raise RuntimeError()
 
 	def __repr__(self):
-		return 'StNum'+repr_id(self)+'('+            (repr_talk(self.talk) if self.word==None                  else repr(self.word))+','+            repr(self.quantity)+','+            self.post_repr()
+		return 'StNum'+repr_id(self)+repr_attrs(self,self.word!=None)+'('+\
+			(repr_talk(self.talk) if self.word==None else repr(self.word))+','+ repr(self.quantity)+','+  self.post_repr()
 
 	show_map=show_num_map
 
@@ -764,7 +791,8 @@ class StAdj(StDeclinable):
 		StDeclinable.__init__(self,word,o,r,c,p)
 
 	def __repr__(self):
-		return 'StAdj'+repr_id(self)+'('+            (repr_talk(self.talk) if self.word==None                  else repr(self.word))+','+            self.post_repr()
+		return 'StAdj'+repr_id(self)+repr_attrs(self,self.word!=None)+'('+\
+			(repr_talk(self.talk) if self.word==None else repr(self.word))+','+ self.post_repr()
 	
 	show_map=show_adj_map
 	

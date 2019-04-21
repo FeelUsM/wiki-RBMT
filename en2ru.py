@@ -145,79 +145,88 @@ p_noun
 ''';
 
 
-# ## import
-
 # In[ ]:
 
 
 import parse_system
-from parse_system import S, SAttrs, ParseInfo, tokenizer, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open, ch_prefix, ch_anti_prefix,                        seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals
+from parse_system import S, SAttrs, ParseInfo, tokenizer, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open, ch_prefix, ch_anti_prefix,                        seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals, global_cache
 import classes
 from classes import StC, StNum, StNoun, StVerb, I
 import ru_dictionary
 from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2
 import en_dictionary
-from en_dictionary import dict_adj, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb_simple, dict_verb_komu, r_adj_noun, dict_other,                        add_ennoun2, add_ennoun1
+from en_dictionary import dict_adj, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb_simple, dict_verb_komu, r_adj_noun, dict_other,                        add_ennoun2, add_ennoun1, add_dict_variant,                         add_variant, remove_variant, get_variant, select_variant, variants
 from importlib import reload
-
-
-# In[ ]:
-
-
-if 0:
-    parse_system = reload(parse_system)
-    S            = parse_system.S
-    SAttrs       = parse_system.SAttrs
-    ParseInfo    = parse_system.ParseInfo
-    tokenizer    = parse_system.tokenizer
-    tokenize     = parse_system.tokenize
-    ch_title     = parse_system.ch_title
-    ch_sentence  = parse_system.ch_sentence
-    ch_anti_sentence = parse_system.ch_anti_sentence
-    ch_open      = parse_system.ch_open
-    ch_prefix    = parse_system.ch_prefix
-    ch_anti_prefix = parse_system.ch_anti_prefix
-    seq          = parse_system.seq
-    alt          = parse_system.alt
-    p_alt        = parse_system.p_alt
-    ELSE         = parse_system.ELSE
-    W            = parse_system.W
-    D            = parse_system.D
-    warning      = parse_system.warning
-    debug_pp     = parse_system.debug_pp
-    reset_globals = parse_system.reset_globals
-if 0:
-    classes = reload(classes)
-    StC    = classes.StC
-    StNum  = classes.StNum
-    StNoun = classes.StNoun
-    StVerb = classes.StVerb
-    I      = classes.I
-if 0:
-    ru_dictionary = reload(ru_dictionary)
-    ruwords     = ru_dictionary.ruwords
-    CW          = ru_dictionary.CW
-    add_runoun2 = ru_dictionary.add_runoun2
-    add_skl2    = ru_dictionary.add_skl2
-    make_skl2   = ru_dictionary.make_skl2
-if 0:
-    en_dictionary = reload(en_dictionary)
-    dict_adj        = en_dictionary.dict_adj
-    dict_noun       = en_dictionary.dict_noun
-    dict_pronoun_ip = en_dictionary.dict_pronoun_ip
-    dict_pronoun_dp = en_dictionary.dict_pronoun_dp
-    dict_numeral    = en_dictionary.dict_numeral
-    dict_verb_simple= en_dictionary.dict_verb_simple
-    dict_verb_komu  = en_dictionary.dict_verb_komu
-    r_adj_noun      = en_dictionary.r_adj_noun
-    dict_other      = en_dictionary.dict_other
-    add_ennoun2     = en_dictionary.add_ennoun2
 
 
 # # Паттерны и правила: Составные
 
 # ## FAQ
 
+# паттерн - функция, которая принимает s,p(токенизированную строку и позицию в ней)   
+# и возвращает список результатов, а именно список пар (позиция окончания разбора, результат)  
+# токены - объекты типа S - нормализованные (т.е. в нижнем регистре) строки с дополнительными атрибутами, а именно префикс из пробельных символов, модификаторы, восстанавливающие исходный регистр слова, тэги, в которые обёрнуто это слово (тэги пока не реализованы)  
+# если `f` - паттерн, то `f(s,p)` - его вызов, или его результат  
+# длиной результата будем называть разность позиции окончания разбора и стартовой позиции.
+# 
+# Терминальные паттерны:  
+# `W('строка')` - считывает 1 токен, который должен совпадать со сторокой, возвращает его в непреобразованном виде, а именно объект класса S
+# 
+# `D(dict_smth)` - считывает 1 токен, ищет его в словаре `dict_smth`, и если находит, возвращает то, что ему сопоставлено.  
+# список доступных словарей можно посмотреть в en_dictionary.py
+# 
+# Нетерминальные паттрны:  
+# `alt(patt1,patt2,ELSE,patt3,patt4)` - список альтернатив, объединяет результаты паттернов. `ELSE` - ключевое слово-разделитель. Паттрены слева от ELSE являются исключениями паттернов справа, регулярных паттернов. Исключения могут отсутствовать, в этом случае `ELSE` указывать не нужно. Если ни один из регулярных паттернов не разобран, паттерны-исключения парсится не будут. Результаты паттернов исключений замещают результаты регулярных паттернов, но только той же самой длины прочтения. Если результат исключения не может заместить ни один из регулярных результатов, генерируется предупреждение.  
+# `p_alt(s,p,patt1,patt2,ELSE,patt3,patt4)` эквивалентен `alt(patt1,patt2,ELSE,patt3,patt4)(s,p)`
+# 
+# `seq([patt1,patt2,patt3],rule)`(где `def rule(rez1,rez2,rez3)`) - последовательность паттернов. Генерируются все возможные комбинации результатов, и каждая последовательность передается в правило, и из этих результатов составляется окончательный результат.  
+# Если нужно применить правило к результату одного паттерна, то для этого его надо поместить в последовательность из дного этого паттерна `seq([patt1],rule)` (где `rule(rez1)`)
+# 
+# Правила:  
+# правило получает результаты последовательно разобранных паттернов, и формирует из них единый объект, возможно предварительно проведя некоторые проверки, и сообщив их результаты warning-ом  
+# 
+# объект должен быть класса (или подкласса Struct)  
+# вот типичный синтаксис:  
+# ```
+# return StSmth([
+#     I(tag = rez1),
+#     I(tag = rez2),
+#     I(tag = rez3),
+# ],struct_params...)
+# ```
+# -- это структура, состоящая из последовательности rez1, rez2, rez3  
+# доступные типы структур, а также их синтаксис (`tag`, `struct_params`) можно посмотреть в classes.py  
+# `tag` задает тип взаимодействия между родительской и дочерней структурой
+# 
+# входные результаты можно указывать в любом порядке  
+# можно менять их параметры: `I(dep = rez1, param1=new_val_1, param2 = new_val_2...)`  
+# можно менять их атрибуты:  
+# *    добавлять атрибуты с более правого объекта `I(dep = rez1, attrs_from_right=rez2.attrs)`  
+# *    добавлять атрибуты с более левого объекта `I(dep = rez2, attrs_from_left=rez1.attrs)` 
+# 
+# можно использовать фиксированные слова `I(nodep = S('строка', rez3.attrs))`, при этом снабжая (или не снабжая) их атрибутами одного из входных результатов.  
+# можно использовать фиксированные объекты из словаря `I(dep = CW('кошка',rez3))`, при этом снабжая (или не снабжая) их атрибутами одного из входных результатов (в данном случае это rez3).  
+# не обязательно все входящие результаты должны присутствовать в итоговом объекте. Чтобы их атрибуты не потерялись, их атрибуты можно добавлять к другим результатам, как показано выше.
+# 
+# Может быть так, что чтруктура конструируется из нескольких фиксированных слов и одного результата. В этом случае мы часто хотим атрибуты этого результата распространить на всю структуру. Для этого в параметры структуры нужно добавить `pull_attrs=N`, где `N` - номер этого результата (нумерация с 0).
+# Например
+# ```
+# I(nodep=StC([
+#         I(nodep=S('у')),
+#         I(nodep=_n1_,   pad='rp', npad='n' )# у Него
+# ]), pull_attrs=1 )
+# ```
+# Если указать `pull_attrs=1`, то '__Kate__' будет переведено как '__у Кати__'  
+# Если не указать `pull_attrs=1`, то '__Kate__' будет переведено как 'у __Кати__'
+# 
+# Если требуется вернуть всего лишь один входной результат, изменив его параметры, он всё равно должен быть обёрнут в новую структуру
+# 
+# Ну и, само собой, можно создавать структуры внутри которых содержатся структуры.
+# 
+# ------
+# можно менять параметры входных объектов, но т.к. объекты кэшируются, их нельзя изменять, но можно указать, какие параметры будут изменены перед преобразованием объекта в строку, но для этого объект должен быть помещен в 
+# 
+# 
 # -Когда в правилах использовать S а когда один из классов Struct ?
 # 
 # -S используется для неизменяемых узлов-листьев. Во всех остальных случаях используется один из классов Struct
@@ -226,9 +235,15 @@ if 0:
 # значение pull_attrs задается равным исходной структуры в расширенной
 # 
 # attrs_from_left/attrs_from_right - если в правиле один из аргументов пропадает, то его атрибуты желательно добавить к другому аргументу. 
-# Синтаксис `I(tag=remain_arg, ... , attrs_from_left=lost_arg)`
+# Синтаксис `I(tag=remain_arg, ... , attrs_from_left=lost_arg.attrs)`
+# 
+# 
 
-# ## Исключения
+# In[ ]:
+
+
+W('cat')(tokenize('cat'),0)
+
 
 # ## Other
 
@@ -270,10 +285,10 @@ ELSE,
 
 # исключения
 def r_A_noun(_a,_n): return StNoun([
-    I(maindep=_n,         attrs_from_left=_a)
+    I(maindep=_n,         attrs_from_left=_a.attrs)
 ])
 def r_THE_noun(_a,_n): return StNoun([
-    I(maindep=_n,         attrs_from_left=_a)
+    I(maindep=_n,         attrs_from_left=_a.attrs)
 ])
 
 def r_GOOD_MORNING(_g,_m):  return r_adj_noun(
@@ -288,6 +303,7 @@ def r_GOOD_MORNING(_g,_m):  return r_adj_noun(
 @debug_pp
 def p_noun3(s,p): return p_alt(s,p,
     p_adj_noun3, #ELSE, # переход к следующему уровню
+    p_adj, #ELSE, # переход к следующему уровню
     p_numeral,
     D(dict_noun)
 )
@@ -413,16 +429,54 @@ def r_noun_dp(_n): return StNoun([
 ])
 
 def r_TO_noun_dp(_t,_n): return StNoun([
-    I(maindep=_n,         pad='dp', attrs_from_left=_t)
+    I(maindep=_n,         pad='dp', attrs_from_left=_t.attrs)
 ])
 
 
 # In[ ]:
 
 
-# одно дополнение
+# на (определенной) улице
+@debug_pp
+def pe_IN_THE_STREET(s,p): return p_alt(s,p,
+    seq([W('in'), W('the'), W('street') ],r_NA_X_ULITSE),
+)
+def r_NA_X_ULITSE(v,_a,_U): return StC([
+    I(nodep=S('на',v.attrs)),
+    I(nodep=CW('улица',_U),pad='pp')
+])
+
+
+# In[ ]:
+
+
+# на какой-то улице
+@debug_pp
+def pe_IN_adj_STREET(s,p): return p_alt(s,p,
+    pe_IN_THE_STREET,
+    ELSE,
+    seq([W('in'), p_adj, W('street') ],r_NA_adj_ULITSE),
+)
+def r_NA_adj_ULITSE(v,_a,_U): return StC([
+    I(nodep=S('на',v.attrs)),
+    I(nodep = StNoun([
+        I(dep=_a,
+            rod='g',
+            chis='ed',
+            pad='ip'),
+        I(maindep=CW('улица',_U))
+    ]),pad='pp')
+])
+
+
+# In[ ]:
+
+
+# где
 @debug_pp
 def p_where(s,p): return p_alt(s,p,
+    pe_IN_adj_STREET,
+    ELSE,
     seq([W('in'), p_dop_noun ],r_V_noun_pp),
     seq([W('on'), p_dop_noun ],r_NA_noun_pp),
 )
@@ -448,7 +502,7 @@ def p_dop(s,p): return p_alt(s,p,
     p_where
 )
 def r_X_noun_dp(x,n): return StNoun([
-    I(maindep=n,  pad='dp',         attrs_from_left=x)
+    I(maindep=n,  pad='dp',         attrs_from_left=x.attrs)
 ])
 def r_IZ_noun(iz,n): return StNoun([
     I(nodep=S('из',iz.attrs)),
@@ -480,12 +534,17 @@ def r_seq_dops(d1,d2): return StC([
 # In[ ]:
 
 
+px_HAVE_HAS = alt( W('have'), W('has') )
+
+
+# In[ ]:
+
+
 @debug_pp
 def p_have_question(s,p):
-    p_have = alt(W('have'),W('has'))
     return p_alt(s,p,
-        seq([p_have,p_noun_ip,p_noun],r_have_question),
-        seq([W('how'), W('many'), p_noun, p_have, p_noun_ip], [2,r_SKOLKO_noun_U_noun,r_SKOLKO_U_noun_noun])
+        seq([px_HAVE_HAS,p_noun_ip,p_noun],r_have_question),
+        seq([W('how'), W('many'), p_noun, px_HAVE_HAS, p_noun_ip], rv_HOW_MANY_noun_HAVE_noun)
     )
 
 def r_have_question(_h,_n1,_n2):    return StC([
@@ -497,17 +556,18 @@ def r_have_question(_h,_n1,_n2):    return StC([
     I(nodep=_n2)
 ])
 def r_SKOLKO_noun_U_noun(how,many,_n1,have,_n2):  return StC([
-    I(nodep=S('сколько',how.attrs), attrs_from_right=many),
+    I(nodep=S('сколько',how.attrs), attrs_from_right=many.attrs),
     I(nodep=_n1, pad='rp'),
     I(nodep=S('у')),
     I(nodep=_n2,   pad='rp', npad='n' )# у Него
 ])
 def r_SKOLKO_U_noun_noun(how,many,_n1,have,_n2):  return StC([
-    I(nodep=S('сколько',how.attrs), attrs_from_right=many),
+    I(nodep=S('сколько',how.attrs), attrs_from_right=many.attrs),
     I(nodep=S('у')),
     I(nodep=_n2,   pad='rp', npad='n' ),# у Него
     I(nodep=_n1, pad='rp'),
 ])
+rv_HOW_MANY_noun_HAVE_noun = [2,r_SKOLKO_noun_U_noun,r_SKOLKO_U_noun_noun]
 
 
 # In[ ]:
@@ -515,10 +575,9 @@ def r_SKOLKO_U_noun_noun(how,many,_n1,have,_n2):  return StC([
 
 @debug_pp
 def pe_noun_HAVE_noun(s,p):
-    p_HAVE_HAS = alt( W('have'), W('has') )
     return p_alt(s,p,
-        seq([ p_noun_ip, p_HAVE_HAS,          p_noun ],r_U_noun_EST_noun),
-        seq([ p_noun_ip, p_HAVE_HAS, W('no'), p_noun ],r_U_noun_NET_noun)
+        seq([ p_noun_ip, px_HAVE_HAS,          p_noun ],rv_noun_HAVE_noun),
+        seq([ p_noun_ip, px_HAVE_HAS, W('no'), p_noun ],r_U_noun_NET_noun)
 #        seq([ p_noun, p_HAVE_HAS,          p_pronoun_dp ],r_noun_EST_U_noun),
 #        seq([ p_noun, p_HAVE_HAS, W('no'), p_pronoun_dp ],r_noun_NET_U_noun)
     )
@@ -530,6 +589,14 @@ def r_U_noun_EST_noun(_n1_,_h_,_n2_):    return StC([
     I(nodep=S('есть',_h_.attrs)),
     I(nodep=_n2_)
 ])
+def r_U_noun_noun(_n1_,_h_,_n2_):    return StC([
+    I(nodep=StC([
+        I(nodep=S('у')),
+        I(nodep=_n1_,   pad='rp', npad='n' )# у Него
+    ]), pull_attrs=1, attrs_from_right = _h_.attrs ),
+    I(nodep=_n2_)
+])
+rv_noun_HAVE_noun = [2,r_U_noun_noun, r_U_noun_EST_noun]
 
 def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
     I(nodep=StC([
@@ -544,7 +611,6 @@ def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
 # In[ ]:
 
 
-px_HAVE_HAS = alt( W('have'), W('has') )
 @debug_pp
 def pe_noun_HAVE(s,p):
     return p_alt(s,p,
@@ -574,13 +640,12 @@ def r_U_noun_NET(_n1_,_h_,_no_):    return StC([
 
 
 @debug_pp
-def p_HAVE(s,p): 
-    p_have = alt(W('have'),W('has'))
+def p_HAVE_noun(s,p): 
     return p_alt(s,p,
-        seq([p_have,          p_noun], r_IMET_noun_vp),
-        seq([p_have, W('no'), p_noun], r_NE_IMET_noun_vp),
-        seq([p_have],r_IMET),
-        seq([p_have,alt(W('no'),W('not'))],r_NE_IMET)
+        seq([px_HAVE_HAS,          p_noun], r_IMET_noun_vp),
+        seq([px_HAVE_HAS, W('no'), p_noun], r_NE_IMET_noun_vp),
+        seq([px_HAVE_HAS],r_IMET),
+        seq([px_HAVE_HAS,alt(W('no'),W('not'))],r_NE_IMET)
     )
 def r_NE_IMET_noun_vp(_v,no,_n): return StVerb([
     I(nodep=S('не',no.attrs)),
@@ -607,12 +672,23 @@ def r_NE_IMET(_v,no): return StVerb([
 
 @debug_pp
 def pe_noun_TOBE_where(s,p): return p_alt(s,p,
+    seq([W('this'),p_TOBE,p_where],re_ETO_X_where),
+    seq([W('that'),p_TOBE,p_where],re_TO_X_where),
+    ELSE,
     seq([p_noun_ip,p_TOBE,p_where],r_noun_X_where)
 )
 
 def r_noun_X_where(_n,x,_w): return StC([
     I(nodep=_n),
-    I(nodep=_w, attrs_from_left=x)
+    I(nodep=_w, attrs_from_left=x.attrs)
+])
+def re_ETO_X_where(_n,x,_w): return StC([
+    I(nodep=CW('этот',_n), rod='s'),
+    I(nodep=_w, attrs_from_left=x.attrs)
+])
+def re_TO_X_where(_n,x,_w): return StC([
+    I(nodep=CW('тот',_n, rod='s')),
+    I(nodep=_w, attrs_from_left=x.attrs)
 ])
 
 
@@ -620,7 +696,33 @@ def r_noun_X_where(_n,x,_w): return StC([
 
 
 @debug_pp
-def p_TOBE_(s,p): return p_alt(s,p,
+def pe_noun_TOBE_noun(s,p): return p_alt(s,p,
+    seq([W('this'),p_TOBE,p_noun],re_ETO_X_noun),
+    seq([W('that'),p_TOBE,p_noun],re_TO_X_noun),
+    ELSE,
+    seq([p_noun_ip,p_TOBE,p_noun],r_noun_X_noun)
+)
+
+def r_noun_X_noun(_n1,_tobe,_n2): return StC([
+    I(nodep=_n1),
+    I(nodep=S('--',_tobe.attrs)),
+    I(nodep=_n2, rod=_n1.rod)
+])
+def re_ETO_X_noun(_n1,_tobe,_n2): return StC([
+    I(nodep=CW('этот',_n1), rod='s'),
+    I(nodep=_n2, attrs_from_left = _tobe.attrs)
+])
+def re_TO_X_noun(_n1,_tobe,_n2): return StC([
+    I(nodep=CW('тот',_n1), rod='s'),
+    I(nodep=_n2, attrs_from_left = _tobe.attrs)
+])
+
+
+# In[ ]:
+
+
+@debug_pp
+def p_TOBE(s,p): return p_alt(s,p,
     seq([W('be')],r_EST),
     seq([W('am')],r_EST),
     seq([W('is')],r_EST),
@@ -635,11 +737,10 @@ def r_EST(_v): return StVerb([
 
 
 @debug_pp
-def p_TOBE(s,p): return p_alt(s,p,
-    seq([p_TOBE_, p_noun], 
-          [1, r_EST_noun_ip, r_JAVLYATSA_noun_tp]),
+def p_TOBE_noun(s,p): return p_alt(s,p,
+    seq([p_TOBE, p_noun], rv_TOBE_noun),
 #    seq([p_tobe, W('no'), alt(p_noun,D(dict_pronoun_dp))], r_NE_IMET_noun_vp),
-    p_TOBE_
+    p_TOBE
 )
 def r_EST_noun_ip(_v,_n): return StVerb([
     I(maindep=CW('есть (быть)',_v)),
@@ -649,6 +750,7 @@ def r_JAVLYATSA_noun_tp(_v,_n): return StVerb([
     I(maindep=CW('являться',_v)),
     I(tp=_n,   pad='tp')
 ])
+rv_TOBE_noun = [1, r_EST_noun_ip, r_JAVLYATSA_noun_tp]
 
 
 # ## Глагол с дополнениями
@@ -760,8 +862,8 @@ def p_verb3_simple(s,p): return p_alt(s,p,
 def p_verb3_1(s,p): return p_alt(s,p,
     p_verb3_simple,
     p_verb3_komu_chto,
-    p_HAVE,
-    p_TOBE,
+    p_HAVE_noun,
+    p_TOBE_noun,
 )
 
 
@@ -790,6 +892,7 @@ def r_CAN_verb(c,v): return StVerb([
 def p_noun_verb1(s,p): return p_alt(s,p,
     pe_noun_HAVE_noun,
     pe_noun_HAVE,
+    pe_noun_TOBE_noun,
 ELSE,
     pe_noun_TOBE_where,
     seq([ p_noun_ip , p_verb3 ],r_noun_verb),
@@ -815,10 +918,10 @@ def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
 def p_verb1(s,p): return p_alt(s,p,
     p_noun_verb1,
     seq([ W('to'), p_verb3 ],r_to_verb),   #ELSE, # переход к следующему уровню
-    seq([ p_verb3 ],[1,r_povel_verb_ed,r_povel_verb_mn])
+    seq([ p_verb3 ],rv_rule_povel_verb)
 )
 def r_to_verb(_t,_v): return StVerb([
-    I(maindep=_v,         form='neopr', attrs_from_left=_t)
+    I(maindep=_v,         form='neopr', attrs_from_left=_t.attrs)
 ])
 
 def r_povel_verb_ed(_v): return StVerb([
@@ -827,6 +930,7 @@ def r_povel_verb_ed(_v): return StVerb([
 def r_povel_verb_mn(_v): return StVerb([
     I(maindep=_v, asp='sov', form='povel',chis='mn') # asp='sov',
 ])
+rv_rule_povel_verb = [1,r_povel_verb_ed,r_povel_verb_mn]
 
 
 # In[ ]:
@@ -893,7 +997,6 @@ def p_phrase(s,p):
         p_noun_ip,    #ELSE,
         p_noun_dp, #ELSE,
         p_dop,
-        p_adj,
         D(dict_other),
         seq([W('yes'),W(','),p_verb],r_DA_COMMA_verb),
         seq([W('no') ,W(','),p_verb],r_NET_COMMA_verb),
@@ -955,7 +1058,7 @@ def p_sentence(s,p):
     s[p].attrs.changers |= {ch_anti_prefix}
     try:
         rezs=p_alt(s,p,
-            seq([p_phrase,alt(W('.'),W('!'))],r_sentence),
+            seq([p_phrase,alt(W('.'),W('!'),W(';'))],r_sentence),
             seq([p_question_phrase,W('?')],r_sentence)
         )
     finally:# не работает, т.к. всё закешировалось
@@ -1066,6 +1169,20 @@ def pr_l_repr(s):
     """печатает строку в тройных кавычках"""
     print("'''"+s+"'''")
     
+
+
+# In[ ]:
+
+
+def en2ru_with_variants(variants,s):
+    saves = {}
+    for k,v in variants:
+        saves[id(k)]=get_variant(k)
+        select_variant(k,v)
+    s = en2ru(s)
+    for k,v in variants:
+        select_variant(k,saves[id(k)])
+    return s
 
 
 # In[ ]:
@@ -1373,57 +1490,102 @@ def scheme(s,detailed=1):
            
 
 
-# # Тесты
+# # todo
+
+# ## составляем основную грамматику
 
 # ```
+# выбираем варианты вручную
+# пока в одном тексте не начнут требоваться разные варианты одного правила
 # 
-#     КОДИТЬ И ДЕБАЖИТЬ ТЕКУЩЕЕ
-#     12) прилагательные, расположение
-#     13) где?
-#     14) какого цвета
-#         КОНТЕКСТ
-#     15) посмотри
+# КОДИТЬ И ДЕБАЖИТЬ ТЕКУЩЕЕ
+# 12) прилагательные, расположение
+# 13) где?
+# 14) какого цвета?
+# 15) посмотри
+# 16) что у тебя есть?
+# 17) что это за <животное>?
+# 18) Polly's quail
+# 19) как тебя зовут?
+# 20) 
+# 21) сколько тебе лет?
+# 22) take, give...
+# 23) can
+# 24) may, must
+# 25) must
+# 26) there is
+# 27) is there?
+# 28)
+# 29) когда? тогда
+# 30) рифма
+# 31) сравнительны прилагательные
+# 32) другая рифма
+# 33) скороговорка
+# 34) 
+# 35)
+# 36)
+# 37)
+# 38) мой, твой
+# 39)
+# стандартные фразы
+# 3 рассказа
 # 
-# автовыбор склонений/спряжений для существительных с одним числом, прилагательных и глаголов
-# регламентировать использование attrs-ов в правилах и только потом приступать к контекстам
+# автовыбор склонений/спряжений прилагательных и глаголов
 # сделать устранение конфликтов исключений
 # 
-# на потом: 
-# 	задание глобального контекста (задание дефолтных правил)
-# 	выбор паттернов и правил в зависимости от времени 
-# 
-# работа с деревом вглубь:
-# 	просмотр вглубь возможен
-# 	
-# 	у каждого узла ссылка на правило и его аргументы
-# 	в узлах дерева поля 
-# 		context_dep
-# 			True - узел зависит от контекста
-# 				ссылка на правило, также принимат контекст
-# 			False - узел не зависит от контекста
-# 		contect_dep_srcs - массив номеров - 
-# 			какие аргументы правила зависят от контекста (или их потомки зависят от контекста)
-# 			т.е. какие аргументы правила требую ремейка в случае изменения контекста
-# 			
-# 		context(может отсутствовать) - словарь (строка, ссылка на узел), который является контекстом
-# 			- устанавливается в правилах
-# 	функция context_remake(node,context)
 # 
 # два рыжих кота
 # вижу двух рыжих котов
 # вижу два горячих утюга
 # два пирожных
+# ```
+
+# ## придумываем способ выборов вариантов (контекстных)
+
+# ```
 # 
+# git-ветка с исключениями
+#     исключения на несколько предложений
+# git-ветка с нейросетью
+#     научится...
+# git-ветка с другим жестким алгоритмом
+#     придумать...
+# 
+#     работа с деревом вглубь:
+#         просмотр вглубь возможен
+# 
+#         у каждого узла ссылка на правило и его аргументы
+#         в узлах дерева поля 
+#             context_dep
+#                 True - узел зависит от контекста
+#                     ссылка на правило, также принимат контекст
+#                 False - узел не зависит от контекста
+#             contect_dep_srcs - массив номеров - 
+#                 какие аргументы правила зависят от контекста (или их потомки зависят от контекста)
+#                 т.е. какие аргументы правила требую ремейка в случае изменения контекста
+# 
+#             context(может отсутствовать) - словарь (строка, ссылка на узел), который является контекстом
+#                 - устанавливается в правилах
+#         функция context_remake(node,context)
+# 
+# статистика использования паттернов
+# статистика повторяющихся структур в тестах (разделить тесты на несвязанные предложения)
+# ```
+
+# ## __ по ходу дела по мере необходимости улучшаем гуй, в jupyter notebook-е
+# виджетами и прочим  
+# а также добавляем возможность переводить html и tex
+#     
+
+# ## делаем web-GUI на javascript-е
+# 
+# выбор паттернов и правил в зависимости от времени 
+
 # watch, двое, трое, пятеро
-# 
-# написать везде строки документации
-# написать инструкцию как пользоваться
 # 
 # scheme('it')
 # 
 # ...
-# открывающиеся кавычки
-# 
 # для больших текстов p_sentence будет делать срез со своей позции до конца
 #     - чтобы обновить кэши ф-ций
 # 
@@ -1432,12 +1594,13 @@ def scheme(s,detailed=1):
 # 
 # атрибуты слов: (теги)
 # отображение открывающейся кавычки (SAttrs.join)
-# ```
 
-# In[1]:
+# # Тесты
+
+# In[ ]:
 
 
-#!jupyter nbconvert --to script en2ru.ipynb
+get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
 
 
 # In[ ]:
@@ -1455,34 +1618,11 @@ en2ru('I see jam and one cup.')
 # In[ ]:
 
 
-# you - ты/вы
-pr_l_repr(en2ru('''Have you a cat? Yes,
-we have.
-How many kittens has
-the cat?
-It has one kitten.
-How many ducks have
-you?
-We have two ducks and
-ten ducklings.'''))
-
-
-# In[ ]:
-
-
-# контексты!!!
-pr_l_repr(en2ru('''How many chickens has the hen?
-It has eleven.
-How many ducklings has the duck?
-It has eight.
-How many kittens has the cat?
-It has three.
-How many dolls has the girl?
-She has two.
-How many sticks has the boy?
-He has five.
-How many hats have I?
-You have one.
+get_ipython().getoutput('!')
+pr_l_repr(en2ru_with_variants([
+    (dict_pronoun_ip['it'],3),
+],'''She has a hat; it is white too.
+She has a ribbon; it is red.
 '''))
 
 
@@ -1491,9 +1631,9 @@ You have one.
 
 import tests
 tests = reload(tests)
-tests.init(parse_system,parse_system.TestError,seq,W,SAttrs,
-           tokenize,
-           en2ru,decline,scheme,d_en2ru,pr_l_repr,p_noun,p_noun1,r_noun_comma_noun,
+tests.init(parse_system,en_dictionary,
+           en2ru,en2ru_with_variants,decline,scheme,d_en2ru,pr_l_repr,
+           p_noun,p_noun1,r_noun_comma_noun,rv_noun_HAVE_noun,
           1,False)
 tests.test1()
 tests.test2()
@@ -1506,6 +1646,7 @@ tests.test8_1()
 tests.test9()
 tests.test10()
 tests.test11()
+tests.test12()
 tests.finalize()
 tests.TEST_ERRORS
 

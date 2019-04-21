@@ -22,7 +22,7 @@ dict_verb_s
 
 функции его пополнения...
 '''
-from parse_system import S
+from parse_system import S, warning
 from classes import I,StNoun
 from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2, add_runoun1
 
@@ -32,62 +32,122 @@ rd.VERBOSE_ADDS=False
 
 
 def add_dict_variant(dic,enw,ruw,reset=False):
-	if enw in dic and not reset:
+	'''добавляет вариант к переводу (как в виде списка так и в виде прямого перевода) и устанавливает указатель на него
+
+	если reset==True - предварительно удалит все предыдущие варианты
+	'''
+	if enw in dic and not reset:                                         
 		if type(dic[enw])==list:
 			for w in dic[enw]:
-				assert w!=ruw, 'добавляем уже имеющееся слово'
+				if w==ruw:
+					warning('добавляем уже имеющееся слово')
+					return False
 			dic[enw].append(ruw)
-			dic[enw][0]=len(dic[enw]) # 
+			dic[enw][0]=len(dic[enw])-1 # 
 		else:
 			assert dic[enw]!=ruw, 'добавляем уже имеющееся слово'
 			tmp=dic[enw]
 			dic[enw]=[2,tmp,ruw]
 	else:
-		dic[enw]=ruw
+		dic[enw]=[1,ruw]
 	if rd.VERBOSE_ADDS:
 		print('в',dic['__name__'],'добавлено',enw)
 
-def remove_dict_variant(dic,enw,ruw):
-	if enw not in dic: return
-	if type(dic[enw])==list:
-		if len(dic[enw])>3:
-			for i in range(1,len(dic[enw])):
-				if dic[enw][i]==ruw:
-					del dic[enw][i]
-					if dic[enw][0]>=i:
-						dic[enw][0]-=1
-					break
-		else:
-			if dic[enw][1]==ruw:
-				dic[enw]=dic[enw][2]
-			elif dic[enw][2]==ruw:
-				dic[enw]=dic[enw][1]
+def add_variant(x,ruw,reset=False):
+	'''добавляет вариант к переводу (только в виде списка) и устанавливает указатель на него
+
+	если reset==True - предварительно удалит все предыдущие варианты
+	'''
+	assert type(x)==list
+	if not reset:                                         
+		for w in x:
+			if w==ruw:
+				warning('добавляем уже имеющееся слово')
+				return False
+		x.append(ruw)
+		x[0]=len(x)-1 # 
 	else:
-		if dic[enw]==ruw:
-			del dic[enw]
-	
+		x=[1,ruw]
+
+def remove_variant(x,n):
+	'''удаляет вариант (из списка) и по возможности не меняет указатель варианта
+
+	проверяет, чтобы остался хотябы 1 вариант
+	'''
+	assert type(x)==list and len(x)>2
+	del x[n]
+	if x[0]>=n: # если указатель варианта указывает на удаляемое слово, будет выбран предыдущий вариант
+		x[0]-=1 # иначе указатель продолжиит указывать на прежнее слово
+
+def get_variant(x):
+    '''возвращает дефолтный вариант
+    
+    если вариантов нет - возвращает None
+    '''
+    if type(x)!=list:
+        return 0
+    else:
+        return x[0]
+
+def select_variant(x,n):
+    '''устанавливает дефолтный вариант в группе правил
+    
+    если это сделать невозможно - ничего не меняет
+    '''
+    if n==None: 
+        warning("can't select variant 'None'")
+        return False
+    assert type(n)==int and n>=0
+    if type(x)!=list and n>1:
+        warning("can't select variant from only one ")
+        return False
+    elif n>=len(x): 
+        warning('number out of range')
+        return False
+    else:
+        if n==0: n=1
+        x[0]=n
+        return True
+
+def variants(x):
+    '''печатает список вариантов'''
+    if type(x)!=list:
+        print('only one variant')
+    else:
+        print(len(x)-1,'varians, selected number',x[0])
+        for i in range(1,len(x)):
+            if callable(x[i]):
+                if i==x[0]: print(x[i].__name__,'<---')
+                else:       print(x[i].__name__)
+            else:
+                if i==x[0]: print(x[i],'<---')
+                else:       print(x[i])
+    return x
+
 # ## Noun ----------------------------
 
 
 dict_noun={'__name__':'dict_noun'}
-def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,reset=False):
-	# add_runoun2 обновляет ruwords[ruw/mn]
-	# а add_dict_variant просто добавляет еще один вариант
-	# по этому если старый вариант уже был, его надо сначала удалить из dict_noun
-	# иначе в dict_noun остануться оба варианта: и старый и новый
+def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,skl=None,sense=None,reset=False):
+	''' add_runoun2 обновляет ruwords[ruw/mn]
+
+	а add_dict_variant просто добавляет еще один вариант
+	по этому если старый вариант уже был, его надо сначала удалить из dict_noun
+	иначе в dict_noun остануться оба варианта: и старый и новый'''
 	if ruw   in ruwords: remove_dict_variant(dict_noun,enw,  ruwords[ruw]  )
 	if ruwmn in ruwords: remove_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
-	if add_runoun2(ruw,ruwmn,r,o):
+	if add_runoun2(ruw,ruwmn,r,o,skl,sense):
 		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 		add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
 	
-def add_ennoun1(enw,ruw,c,r,o,reset=False):
-	# add_runoun2 обновляет ruwords[ruw/mn]
-	# а add_dict_variant просто добавляет еще один вариант
-	# по этому если старый вариант уже был, его надо сначала удалить из dict_noun
-	# иначе в dict_noun остануться оба варианта: и старый и новый
+def add_ennoun1(enw,ruw,c,r,o,skl=None,sense=None,reset=False):
+	''' add_runoun1 обновляет ruwords[ruw]
+
+	а add_dict_variant просто добавляет еще один вариант
+	по этому если старый вариант уже был, его надо сначала удалить из dict_noun
+	иначе в dict_noun остануться оба варианта: и старый и новый'''
 	if ruw   in ruwords: remove_dict_variant(dict_noun,enw,  ruwords[ruw]  )
-	if add_runoun1(ruw,c,r,o):
+	if add_runoun1(ruw,c,r,o,skl,sense):
 		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 	
 def ____Noun():
@@ -186,6 +246,29 @@ def ____Noun():
 	add_ennoun2('tail'     ,'tails'     ,"хвост"   ,"хвосты"    ,'m',False)
 	add_ennoun1('milk'                  ,"молоко"  ,'ed'        ,'s',False)
 
+	add_skl2('m',True,make_skl2(
+		'конь'   ,'кони',
+		'коня'   ,'коней',
+		'коню'   ,'коням',
+		'коня'   ,'коней',
+		'конём'  ,'конями',
+		'коне'   ,'конях'))
+	add_ennoun2('horse'    ,'horses'    ,"конь"    ,"кони"      ,'m',True)
+	add_ennoun2('horse'    ,'horses'    ,"лошадь"  ,"лошади"    ,'g',True,skl=8)
+	add_skl2('m',True,make_skl2(
+		'козёл'   ,'козлы',
+		'козла'   ,'козлов',
+		'козлу'   ,'козлам',
+		'козла'   ,'козлов',
+		'козлом'  ,'козлами',
+		'козле'   ,'козлах',))
+	add_ennoun2('goat'     ,'goats'     ,"козёл"   ,"козлы"     ,'m',True)
+	add_ennoun2('goat'     ,'goats'     ,"коза"    ,"козы"      ,'g',True)
+	add_ennoun2('car'      ,'cars'      ,"машина"  ,"машины"    ,'g',False)
+	add_ennoun2('car'      ,'cars'      ,"автомобиль","автомобили",'m',False)
+	add_ennoun2('street'   ,'streets'   ,"улица"   ,"улицы"     ,'g',False)
+	add_ennoun2('ribbon'   ,'ribbons'   ,"лента"   ,"ленты"     ,'g',False)
+	add_ennoun2('lemon'    ,'lemons'    ,"лимон"   ,"лимоны"    ,'m',False)
 
 	#add_runoun('часы (предмет)',None,False,'m','mn','час','ы','ов','ам','ы','ами','ах')
 	#dict_noun['watch']= ruwords['часы (предмет)']
@@ -232,14 +315,21 @@ def ____Pronoun():
 	dict_pronoun_ip['we']=  ruwords["мы"]
 	dict_pronoun_dp['us']=  ruwords["мы"]
 
-	dict_pronoun_ip['he']=  ruwords["он"]
-	dict_pronoun_dp['him']= ruwords["он"]
 	dict_pronoun_ip['it']=  ruwords["оно"]
 	dict_pronoun_dp['it']=  ruwords["оно"]
+	dict_pronoun_ip['he']=  ruwords["он"]
+	dict_pronoun_dp['him']= ruwords["он"]
 	dict_pronoun_ip['she']= ruwords["она"]
 	dict_pronoun_dp['her']= ruwords["она"]
 	dict_pronoun_ip['they']= ruwords["они"]
 	dict_pronoun_dp['them']= ruwords["они"]
+
+	it = dict_pronoun_ip['it']
+	tmp = get_variant(it)
+	add_dict_variant(dict_pronoun_ip,'it',dict_pronoun_ip['he'])
+	it = dict_pronoun_ip['it']
+	add_variant(it,dict_pronoun_ip['she'])
+	select_variant(it,tmp)
 
 ____Pronoun()
 
@@ -262,6 +352,12 @@ def ____Adj():
 	dict_adj['long']= ruwords["длинный"]
 	dict_adj['good']=ruwords["хороший"]
 
+	dict_adj['black']=ruwords["чёрный"]
+	dict_adj['big']=ruwords["большой"]
+	dict_adj['white']=ruwords["белый"]
+	dict_adj['red']=ruwords["красный"]
+	dict_adj['short']=ruwords["короткий"]
+
 	dict_adj['this']=ruwords["этот"]
 	dict_adj['that']=ruwords["тот"]
 
@@ -276,8 +372,8 @@ ____Adj()
 dict_numeral={'__name__':'dict_numeral'}
 def ____Numeral():
 
-	dict_numeral['one']=       ruwords['один']
-	dict_numeral['two']=       ruwords['два']
+	dict_numeral['one']=       [1,ruwords['один'],ruwords['одна'],ruwords['одно']]
+	dict_numeral['two']=       [1,ruwords['два'],ruwords['две']]
 	dict_numeral['three']=     ruwords['три']
 	dict_numeral['four']=      ruwords['четыре']
 	dict_numeral['many']=      ruwords['много']
@@ -352,6 +448,7 @@ def ____Other():
 	dict_other['and']=S('и')
 	dict_other['but']=S('но')
 	dict_other['to']=S('к')
+	dict_other['too']=S('тоже')
 	dict_other['.']=S('.')
 	dict_other[',']=S(',')
 	dict_other['!']=S('!')
