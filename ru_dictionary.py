@@ -148,7 +148,8 @@ skl_noun={
 			# частн. случ. след. и след.
 		},
 		{   'ed':('а' ,'и' ,'е'  ,'у' ,'ой'  ,'е'  ),#белка, утка
-			'mn':('ки','ок','кам','ок','ками','ках')
+			'mn':('ки','ок','кам','ок','ками','ках'),
+			'suffix':[('лк','л'),('тк','т')]
 			# частн. случ. след.
 		},
 		{   'ed':('а' ,'и' ,'е'  ,'у'  ,'ой' ,'е' ),#собака
@@ -318,12 +319,24 @@ def auto1_skl_noun2(word,wordmn,r,o):
 	if len(set2)>0:
 		return set2
 	else:
+		print_delimeter = False
 		if len(set11)>0 and VERBOSE_ADDS:
+			print_delimeter = True
 			print('из-за уточняющих suffix отбрасываются следующие склонения',set11)
 			for i in set11:
 				print(skl[i]['suffix'])
 				decline_show_noun2(word, wordmn, r,o,i)
-		return auto2_skl_noun2(r,o,set1-set11)
+		tmp = set1-set11
+		tmp1 = auto2_skl_noun2(r,o,tmp)
+		if len(tmp-tmp1)>0 and VERBOSE_ADDS:
+			print_delimeter = True
+			print('отбрасываются следующие более частные склонения',tmp-tmp1)
+			for i in tmp-tmp1:
+				print(i,':')
+				decline_show_noun2(word, wordmn, r,o,i)
+		if print_delimeter:
+			print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+		return tmp1
 
 def auto2_skl_noun1(c,r,o,set1):
 	'''находит и возвращает более частное склонение (склонения)
@@ -389,12 +402,25 @@ def auto1_skl_noun1(word,c,r,o):
 	if len(set2)>0:
 		return same_skl_filter(c,r,o,set2)
 	else:
+		print_delimeter = False
 		if len(set11)>0 and VERBOSE_ADDS:
+			print_delimeter = True
 			print('из-за уточняющих suffix отбрасываются следующие склонения',same_skl_filter(c,r,o,set11))
 			for i in same_skl_filter(c,r,o,set11):
 				print(skl[i]['suffix'])
 				decline_show_noun1(word, c, r,o,i)
-		return auto2_skl_noun1(c,r,o,same_skl_filter(c,r,o,set1-set11))
+		tmp = same_skl_filter(c,r,o,set1-set11)
+		tmp1 = auto2_skl_noun1(c,r,o,tmp)
+		if len(tmp-tmp1)>0 and VERBOSE_ADDS:
+			print_delimeter = True
+			print('отбрасываются следующие более частные склонения',tmp-tmp1)
+			for i in tmp-tmp1:
+				print(i,':')
+				decline_show_noun1(word, c, r,o,i)
+		if print_delimeter:
+			print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+		return tmp1
+		#return auto2_skl_noun1(c,r,o,same_skl_filter(c,r,o,set1-set11))
 
 # In[5]:
 

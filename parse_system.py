@@ -370,7 +370,12 @@ def D(d):
 		if p<len(s) and s[p] in d:
 			if type(d[s[p]])==list:
 				# номер дефолтного варианта находится на 0й позиции. 0===1
-				r = d[s[p]][d[s[p]][0]] if d[s[p]][0]>=1 else d[s[p]][1]
+				if d[s[p]][0]:
+					if ParseInfo.enabled:
+						warning(d['__name__'],s[p],'отключен')
+					return 0
+				else:
+					r = d[s[p]][d[s[p]][0]]
 			else: r = d[s[p]]
 			tmp=deepcopy(r)
 			tmp.attrs=deepcopy(s[p].attrs)

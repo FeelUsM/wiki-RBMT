@@ -36,7 +36,7 @@ def add_dict_variant(dic,enw,ruw,reset=False):
 
 	если reset==True - предварительно удалит все предыдущие варианты
 	'''
-	if enw in dic and not reset:                                         
+	if enw in dic and not reset:										 
 		if type(dic[enw])==list:
 			for w in dic[enw]:
 				if w==ruw:
@@ -59,7 +59,7 @@ def add_variant(x,ruw,reset=False):
 	если reset==True - предварительно удалит все предыдущие варианты
 	'''
 	assert type(x)==list
-	if not reset:                                         
+	if not reset:										 
 		for w in x:
 			if w==ruw:
 				warning('добавляем уже имеющееся слово')
@@ -74,58 +74,86 @@ def remove_variant(x,n):
 
 	проверяет, чтобы остался хотябы 1 вариант
 	'''
-	assert type(x)==list and len(x)>2
+	assert type(x)==list and len(x)>=2
+	if type(n)==str:
+		assert n in ruwords, ('такой строки нет в ruwords',n)
+		n = ruwords[n]
+	if type(n)!=int:
+		assert n in x, ("такого объекта нет в списке вариантов", n , x)
+		for i in range(1,len(x)):
+			if x[i]==n:
+				n=i
+				break
+	assert n>0
 	del x[n]
-	if x[0]>=n: # если указатель варианта указывает на удаляемое слово, будет выбран предыдущий вариант
+	if n>1 and x[0]>=n: # если указатель варианта указывает на удаляемое слово, будет выбран предыдущий вариант
 		x[0]-=1 # иначе указатель продолжиит указывать на прежнее слово
+		# но если был выбран 1й или 0й вариант, то он останется прежним
+	if x[0]>=len(x):
+		x[0]=len(x)-1
 
 def get_variant(x):
-    '''возвращает дефолтный вариант
-    
-    если вариантов нет - возвращает None
-    '''
-    if type(x)!=list:
-        return 0
-    else:
-        return x[0]
+	'''возвращает дефолтный вариант
+	
+	если вариантов нет - возвращает None
+	'''
+	if type(x)!=list:
+		return 0
+	else:
+		return x[0]
 
 def select_variant(x,n):
-    '''устанавливает дефолтный вариант в группе правил
-    
-    если это сделать невозможно - ничего не меняет
-    '''
-    if n==None: 
-        warning("can't select variant 'None'")
-        return False
-    assert type(n)==int and n>=0
-    if type(x)!=list and n>1:
-        warning("can't select variant from only one ")
-        return False
-    elif n>=len(x): 
-        warning('number out of range')
-        return False
-    else:
-        if n==0: n=1
-        x[0]=n
-        return True
+	'''устанавливает дефолтный вариант в группе правил
+	
+	если это сделать невозможно - ничего не меняет
+	'''
+	if n==None: 
+		warning("can't select variant 'None'")
+		return False
+	assert type(x)==list and len(x)>0
+	if type(n)==str:
+		assert n in ruwords, ('такой строки нет в ruwords',n)
+		n = ruwords[n]
+	if type(n)!=int:
+		assert n in x, ("такого объекта нет в списке вариантов", n , x)
+		for i in range(1,len(x)):
+			if x[i]==n:
+				n=i
+				break
+	assert type(n)==int and n>=0
+	if type(x)!=list and n>1:
+		warning("can't select variant from only one ")
+		return False
+	elif n>=len(x): 
+		warning('number out of range')
+		return False
+	else:
+		if n==0: n=1
+		x[0]=n
+		return True
 
 def variants(x):
-    '''печатает список вариантов'''
-    if type(x)!=list:
-        print('only one variant')
-    else:
-        print(len(x)-1,'varians, selected number',x[0])
-        for i in range(1,len(x)):
-            if callable(x[i]):
-                if i==x[0]: print(x[i].__name__,'<---')
-                else:       print(x[i].__name__)
-            else:
-                if i==x[0]: print(x[i],'<---')
-                else:       print(x[i])
-    return x
+	'''печатает список вариантов'''
+	if type(x)!=list:
+		print('only one variant')
+	else:
+		print(len(x)-1,'varians, selected number',x[0])
+		for i in range(1,len(x)):
+			if callable(x[i]):
+				if i==x[0]: print(x[i].__name__,'<---')
+				else:	   print(x[i].__name__)
+			else:
+				if i==x[0]: print(x[i],'<---')
+				else:	   print(x[i])
+	return x
 
 # ## Noun ----------------------------
 
+def first_index(iterable,pred):
+	for i in range(len(iterable)):
+		if pred(iterable[i]):
+			return i
+	return None
 
 dict_noun={'__name__':'dict_noun'}
 def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,skl=None,sense=None,reset=False):
@@ -134,8 +162,10 @@ def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,skl=None,sense=None,reset=False):
 	а add_dict_variant просто добавляет еще один вариант
 	по этому если старый вариант уже был, его надо сначала удалить из dict_noun
 	иначе в dict_noun остануться оба варианта: и старый и новый'''
-	if ruw   in ruwords: remove_dict_variant(dict_noun,enw,  ruwords[ruw]  )
-	if ruwmn in ruwords: remove_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
+	if ruw   in ruwords and type(dict_noun[enw])==list and ruwords[ruw] in dict_noun[enw]: 
+		remove_variant(dict_noun[enw],  ruwords[ruw]  )
+	if ruwmn in ruwords and type(dict_noun[enwmn])==list and ruwords[ruwmn] in dict_noun[enwmn]: 
+		remove_variant(dict_noun[enwmn],ruwords[ruwmn])
 	if add_runoun2(ruw,ruwmn,r,o,skl,sense):
 		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 		add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
@@ -152,39 +182,39 @@ def add_ennoun1(enw,ruw,c,r,o,skl=None,sense=None,reset=False):
 	
 def ____Noun():
 	
-	add_ennoun2('cat'     ,'cats'      ,"кошка"   ,"кошки"     ,'g',True)
-	add_ennoun2('cat'     ,'cats'      ,"кот"     ,"коты"      ,'m',True)
+	add_ennoun2('cat'	 ,'cats'	  ,"кошка"   ,"кошки"	 ,'g',True)
+	add_ennoun2('cat'	 ,'cats'	  ,"кот"	 ,"коты"	  ,'m',True)
 	#bat - составное - в конце
-	add_ennoun2('rat'     ,'rats'      ,"мышь"    ,"мыши"      ,'g',True)
-	add_ennoun2('rat'     ,'rats'      ,"крыса"   ,"крысы"     ,'g',True)
-	add_ennoun2('lesson'  ,'lessons'   ,"урок"    ,"уроки"     ,'m',False)
+	add_ennoun2('rat'	 ,'rats'	  ,"мышь"	,"мыши"	  ,'g',True)
+	add_ennoun2('rat'	 ,'rats'	  ,"крыса"   ,"крысы"	 ,'g',True)
+	add_ennoun2('lesson'  ,'lessons'   ,"урок"	,"уроки"	 ,'m',False)
 	
-	add_ennoun2('cap'     ,'caps'      ,"шапка"   ,"шапки"     ,'g',False)
-	add_ennoun2('cap'     ,'caps'      ,"кепка"   ,"кепки"     ,'g',False)
-	add_ennoun2('pen'     ,'pens'      ,"ручка"   ,"ручки"     ,'g',False)
-	add_ennoun2('hat'     ,'hats'      ,"шляпа"   ,"шляпы"     ,'g',False)
-	add_ennoun2('hen'     ,'hens'      ,"курица"  ,"курицы"    ,'g',True)
+	add_ennoun2('cap'	 ,'caps'	  ,"шапка"   ,"шапки"	 ,'g',False)
+	add_ennoun2('cap'	 ,'caps'	  ,"кепка"   ,"кепки"	 ,'g',False)
+	add_ennoun2('pen'	 ,'pens'	  ,"ручка"   ,"ручки"	 ,'g',False)
+	add_ennoun2('hat'	 ,'hats'	  ,"шляпа"   ,"шляпы"	 ,'g',False)
+	add_ennoun2('hen'	 ,'hens'	  ,"курица"  ,"курицы"	,'g',True)
 
-	add_ennoun2('dog'     ,'dogs'      ,"собака"  ,"собаки"    ,'g',True)
-	add_ennoun2('pig'     ,'pigs'      ,"свинья"  ,"свиньи"    ,'g',True)
-	add_ennoun2('gun'     ,'guns'      ,"ружьё"   ,"ружья"     ,'s',False)
-	add_ennoun2('cup'     ,'cups'      ,"чашка"   ,"чашки"     ,'g',False)
+	add_ennoun2('dog'	 ,'dogs'	  ,"собака"  ,"собаки"	,'g',True)
+	add_ennoun2('pig'	 ,'pigs'	  ,"свинья"  ,"свиньи"	,'g',True)
+	add_ennoun2('gun'	 ,'guns'	  ,"ружьё"   ,"ружья"	 ,'s',False)
+	add_ennoun2('cup'	 ,'cups'	  ,"чашка"   ,"чашки"	 ,'g',False)
 	
-	add_ennoun2('box'     ,'boxes'     ,"коробка" ,"коробки"   ,'g',False)
-	add_ennoun2('box'     ,'boxes'     ,"ящик"    ,"ящики"     ,'m',False)
-	add_ennoun2('jam'     ,'jams'      ,"варенье" ,"варенья"   ,'s',False)
-	add_ennoun2('jam'     ,'jams'      ,"джем"    ,"джемы"     ,'m',False)
-	add_ennoun2('bed'     ,'beds'      ,"кровать" ,"кровати"   ,'g',False)
-	add_ennoun2('fox'     ,'foxes'     ,"лиса"    ,"лисы"      ,'g',True)
+	add_ennoun2('box'	 ,'boxes'	 ,"коробка" ,"коробки"   ,'g',False)
+	add_ennoun2('box'	 ,'boxes'	 ,"ящик"	,"ящики"	 ,'m',False)
+	add_ennoun2('jam'	 ,'jams'	  ,"варенье" ,"варенья"   ,'s',False)
+	add_ennoun2('jam'	 ,'jams'	  ,"джем"	,"джемы"	 ,'m',False)
+	add_ennoun2('bed'	 ,'beds'	  ,"кровать" ,"кровати"   ,'g',False)
+	add_ennoun2('fox'	 ,'foxes'	 ,"лиса"	,"лисы"	  ,'g',True)
 	
-	add_ennoun2('kitten'  ,'kittens'   ,"котёнок" ,"котята"    ,'m',True)
-	add_ennoun2('vase'    ,'vases'     ,"ваза"    ,"вазы"      ,'g',False)
-	add_ennoun2('star'    ,'stars'     ,"звезда"  ,"звёзды"    ,'g',False)
-	add_ennoun2('lamp'    ,'lamps'     ,"лампа"   ,"лампы"     ,'g',False)
+	add_ennoun2('kitten'  ,'kittens'   ,"котёнок" ,"котята"	,'m',True)
+	add_ennoun2('vase'	,'vases'	 ,"ваза"	,"вазы"	  ,'g',False)
+	add_ennoun2('star'	,'stars'	 ,"звезда"  ,"звёзды"	,'g',False)
+	add_ennoun2('lamp'	,'lamps'	 ,"лампа"   ,"лампы"	 ,'g',False)
 
-	add_ennoun2('squirrel','squirrels' ,"белка"   ,"белки"     ,'g',True)
-	add_ennoun2('wolf'    ,'wolfs'     ,"волк"    ,"волки"     ,'m',True)
-	add_ennoun2('zebra'   ,'zebras'    ,"зебра"   ,"зебры"     ,'g',True)
+	add_ennoun2('squirrel','squirrels' ,"белка"   ,"белки"	 ,'g',True)
+	add_ennoun2('wolf'	,'wolfs'	 ,"волк"	,"волки"	 ,'m',True)
+	add_ennoun2('zebra'   ,'zebras'	,"зебра"   ,"зебры"	 ,'g',True)
 	add_skl2('m',True,make_skl2(
 		'парень'  ,'парни',
 		'парня'   ,'парней',
@@ -192,32 +222,32 @@ def ____Noun():
 		'парня'   ,'парней',
 		'парнем'  ,'парнями',
 		'парне'   ,'парнях'))
-	add_ennoun2('boy'     ,'boys'      ,"парень"  ,"парни"     ,'m',True)
-	add_ennoun2('boy'     ,'boys'      ,"мальчик" ,"мальчики"  ,'m',True)
+	add_ennoun2('boy'	 ,'boys'	  ,"парень"  ,"парни"	 ,'m',True)
+	add_ennoun2('boy'	 ,'boys'	  ,"мальчик" ,"мальчики"  ,'m',True)
 
 	add_ennoun2('copy-book','copy-books',"тетрадь","тетради"   ,'g',False)
-	add_ennoun2('book'    ,'books'     ,"книга"   ,"книги"     ,'g',False)
-	add_ennoun2('spoon'   ,'spoons'    ,"ложка"   ,"ложки"     ,'g',False)
-	add_ennoun2('morning' ,'mornings'  ,"утро"    ,"утра"      ,'s',False)
-                                       
+	add_ennoun2('book'	,'books'	 ,"книга"   ,"книги"	 ,'g',False)
+	add_ennoun2('spoon'   ,'spoons'	,"ложка"   ,"ложки"	 ,'g',False)
+	add_ennoun2('morning' ,'mornings'  ,"утро"	,"утра"	  ,'s',False)
+									   
 	add_ennoun2('pistol'  ,'pistols'   ,"пистолет","пистолеты" ,'m',False)
-	add_ennoun2('ball'    ,'balls'     ,"мяч"     ,"мячи"      ,'m',False)
-	add_ennoun2('stick'   ,'sticks'    ,"палка"   ,"палки"     ,'g',False)
-	add_ennoun2('word'    ,'words'     ,"слово"   ,"слова"     ,'s',False)
-                                       
-	add_ennoun2('girl'    ,'girls'     ,"девочка" ,"девочки"   ,'g',True)
-	add_ennoun2('dish'    ,'dishes'    ,"блюдо"   ,"блюда"     ,'s',False)
-	add_ennoun2('fish'    ,'fishes'    ,"рыба"    ,"рыбы"      ,'g',True)
-                                       
-	add_ennoun2('child'   ,'children'  ,"ребёнок" ,"дети"      ,'m',True)
+	add_ennoun2('ball'	,'balls'	 ,"мяч"	 ,"мячи"	  ,'m',False)
+	add_ennoun2('stick'   ,'sticks'	,"палка"   ,"палки"	 ,'g',False)
+	add_ennoun2('word'	,'words'	 ,"слово"   ,"слова"	 ,'s',False)
+									   
+	add_ennoun2('girl'	,'girls'	 ,"девочка" ,"девочки"   ,'g',True)
+	add_ennoun2('dish'	,'dishes'	,"блюдо"   ,"блюда"	 ,'s',False)
+	add_ennoun2('fish'	,'fishes'	,"рыба"	,"рыбы"	  ,'g',True)
+									   
+	add_ennoun2('child'   ,'children'  ,"ребёнок" ,"дети"	  ,'m',True)
 	add_ennoun2('information','informations',"информация","информации",'g',False)
 
-	add_ennoun2('doll'    ,'dolls'     ,"кукла"   ,"куклы"     ,'g',False)
-	add_ennoun2('frog'    ,'frogs'     ,"ягушка"  ,"лягушки"   ,'g',True)
-	add_ennoun2('log'     ,'logs'      ,"бревно"  ,"брёвна"    ,'s',False)
-	add_ennoun2('lake'    ,'lakes'     ,"озеро"   ,"озёра"     ,'s',False)
-	add_ennoun2('snake'   ,'snakes'    ,"змея"    ,"змеи"      ,'g',True)
-	add_ennoun2('cake'    ,'cakes'     ,"торт"    ,"торты"     ,'m',False)
+	add_ennoun2('doll'	,'dolls'	 ,"кукла"   ,"куклы"	 ,'g',False)
+	add_ennoun2('frog'	,'frogs'	 ,"ягушка"  ,"лягушки"   ,'g',True)
+	add_ennoun2('log'	 ,'logs'	  ,"бревно"  ,"брёвна"	,'s',False)
+	add_ennoun2('lake'	,'lakes'	 ,"озеро"   ,"озёра"	 ,'s',False)
+	add_ennoun2('snake'   ,'snakes'	,"змея"	,"змеи"	  ,'g',True)
+	add_ennoun2('cake'	,'cakes'	 ,"торт"	,"торты"	 ,'m',False)
 	#add_skl2('s',False,make_skl2(
 	#'пирожное'   ,'пирожные',
 	#'пирожного'  ,'пирожных',
@@ -225,26 +255,26 @@ def ____Noun():
 	#'пирожное'   ,'пирожные',
 	#'пирожным'   ,'пирожными',
 	#'пирожном'   ,'пирожных'
-	#))                     #cakes
-	#add_ennoun2('cake'    ,'cakes'     ,"пирожное","пирожные"  ,'s',False)
+	#))					 #cakes
+	#add_ennoun2('cake'	,'cakes'	 ,"пирожное","пирожные"  ,'s',False)
 
 	add_ennoun2('chicken'  ,'chickens'  ,"цыплёнок","цыплята"   ,'m',True)
 	add_skl2('m',True,make_skl2(
-		'заяц'    ,'зайцы',
+		'заяц'	,'зайцы',
 		'зайца'   ,'зайцев',
 		'зайцу'   ,'зайцам',
 		'зайца'   ,'зайцев',
 		'зайцем'  ,'зайцами',
 		'зайце'   ,'зайцах'))
-	add_ennoun2('rabbit'   ,'rabbits'   ,"заяц"    ,"зайцы"     ,'m',True)
+	add_ennoun2('rabbit'   ,'rabbits'   ,"заяц"	,"зайцы"	 ,'m',True)
 	add_ennoun2('rabbit'   ,'rabbits'   ,"кролик"  ,"кролики"   ,'m',True)
 
-	add_ennoun2('duck'     ,'ducks'     ,"утка"    ,"утки"      ,'g',True)
-	add_ennoun2('duckling' ,'ducklings' ,"утёнок"  ,"утята"     ,'m',True)
-	add_ennoun2('cow'      ,'cows'      ,"корова"  ,"коровы"    ,'g',True)
-	add_ennoun2('leg'      ,'legs'      ,"нога"    ,"ноги"      ,'g',False)
-	add_ennoun2('tail'     ,'tails'     ,"хвост"   ,"хвосты"    ,'m',False)
-	add_ennoun1('milk'                  ,"молоко"  ,'ed'        ,'s',False)
+	add_ennoun2('duck'	 ,'ducks'	 ,"утка"	,"утки"	  ,'g',True)
+	add_ennoun2('duckling' ,'ducklings' ,"утёнок"  ,"утята"	 ,'m',True)
+	add_ennoun2('cow'	  ,'cows'	  ,"корова"  ,"коровы"	,'g',True)
+	add_ennoun2('leg'	  ,'legs'	  ,"нога"	,"ноги"	  ,'g',False)
+	add_ennoun2('tail'	 ,'tails'	 ,"хвост"   ,"хвосты"	,'m',False)
+	add_ennoun1('milk'				  ,"молоко"  ,'ed'		,'s',False)
 
 	add_skl2('m',True,make_skl2(
 		'конь'   ,'кони',
@@ -253,8 +283,8 @@ def ____Noun():
 		'коня'   ,'коней',
 		'конём'  ,'конями',
 		'коне'   ,'конях'))
-	add_ennoun2('horse'    ,'horses'    ,"конь"    ,"кони"      ,'m',True)
-	add_ennoun2('horse'    ,'horses'    ,"лошадь"  ,"лошади"    ,'g',True,skl=8)
+	add_ennoun2('horse'	,'horses'	,"конь"	,"кони"	  ,'m',True)
+	add_ennoun2('horse'	,'horses'	,"лошадь"  ,"лошади"	,'g',True,skl=8)
 	add_skl2('m',True,make_skl2(
 		'козёл'   ,'козлы',
 		'козла'   ,'козлов',
@@ -262,13 +292,13 @@ def ____Noun():
 		'козла'   ,'козлов',
 		'козлом'  ,'козлами',
 		'козле'   ,'козлах',))
-	add_ennoun2('goat'     ,'goats'     ,"козёл"   ,"козлы"     ,'m',True)
-	add_ennoun2('goat'     ,'goats'     ,"коза"    ,"козы"      ,'g',True)
-	add_ennoun2('car'      ,'cars'      ,"машина"  ,"машины"    ,'g',False)
-	add_ennoun2('car'      ,'cars'      ,"автомобиль","автомобили",'m',False)
-	add_ennoun2('street'   ,'streets'   ,"улица"   ,"улицы"     ,'g',False)
-	add_ennoun2('ribbon'   ,'ribbons'   ,"лента"   ,"ленты"     ,'g',False)
-	add_ennoun2('lemon'    ,'lemons'    ,"лимон"   ,"лимоны"    ,'m',False)
+	add_ennoun2('goat'	 ,'goats'	 ,"козёл"   ,"козлы"	 ,'m',True)
+	add_ennoun2('goat'	 ,'goats'	 ,"коза"	,"козы"	  ,'g',True)
+	add_ennoun2('car'	  ,'cars'	  ,"машина"  ,"машины"	,'g',False)
+	add_ennoun2('car'	  ,'cars'	  ,"автомобиль","автомобили",'m',False)
+	add_ennoun2('street'   ,'streets'   ,"улица"   ,"улицы"	 ,'g',False)
+	add_ennoun2('ribbon'   ,'ribbons'   ,"лента"   ,"ленты"	 ,'g',False)
+	add_ennoun2('lemon'	,'lemons'	,"лимон"   ,"лимоны"	,'m',False)
 
 	#add_runoun('часы (предмет)',None,False,'m','mn','час','ы','ов','ам','ы','ами','ах')
 	#dict_noun['watch']= ruwords['часы (предмет)']
@@ -372,19 +402,19 @@ ____Adj()
 dict_numeral={'__name__':'dict_numeral'}
 def ____Numeral():
 
-	dict_numeral['one']=       [1,ruwords['один'],ruwords['одна'],ruwords['одно']]
-	dict_numeral['two']=       [1,ruwords['два'],ruwords['две']]
-	dict_numeral['three']=     ruwords['три']
-	dict_numeral['four']=      ruwords['четыре']
-	dict_numeral['many']=      ruwords['много']
-	dict_numeral['five']=      ruwords['пять']
-	dict_numeral['six']=       ruwords['шесть']
-	dict_numeral['seven']=     ruwords['семь']
-	dict_numeral['eight']=     ruwords['восемь']
-	dict_numeral['nine']=      ruwords['девять']
-	dict_numeral['ten']=       ruwords['десять']
+	dict_numeral['one']=	   [1,ruwords['один'],ruwords['одна'],ruwords['одно']]
+	dict_numeral['two']=	   [1,ruwords['два'],ruwords['две']]
+	dict_numeral['three']=	 ruwords['три']
+	dict_numeral['four']=	  ruwords['четыре']
+	dict_numeral['many']=	  ruwords['много']
+	dict_numeral['five']=	  ruwords['пять']
+	dict_numeral['six']=	   ruwords['шесть']
+	dict_numeral['seven']=	 ruwords['семь']
+	dict_numeral['eight']=	 ruwords['восемь']
+	dict_numeral['nine']=	  ruwords['девять']
+	dict_numeral['ten']=	   ruwords['десять']
 	dict_numeral['eleven']=   ruwords['одинадцать']
-	dict_numeral['twelve']=    ruwords['двенадцать']
+	dict_numeral['twelve']=	ruwords['двенадцать']
 	dict_numeral['thirteen']=  ruwords['тринадцать']
 	dict_numeral['fourteen']=  ruwords['четырнадцать']
 	dict_numeral['fifteen']=   ruwords['пятнадцать']
@@ -392,7 +422,7 @@ def ____Numeral():
 	dict_numeral['seventeen']= ruwords['семнадцать']
 	dict_numeral['eighteen']=  ruwords['восемнадцать']
 	dict_numeral['nineteen']=  ruwords['девятнадцать']
-	dict_numeral['twenty']=    ruwords['двадцать']
+	dict_numeral['twenty']=	ruwords['двадцать']
 
 ____Numeral()
 
@@ -462,13 +492,13 @@ ____Other()
 
 
 def r_adj_noun(_a_,_n_): 
-    return StNoun([
-        I(dep=_a_,
-            rod=_n_.rod,
-            chis=_n_.chis,
-            pad=_n_.pad),
-        I(maindep=_n_)
-    ])
+	return StNoun([
+		I(dep=_a_,
+			rod=_n_.rod,
+			chis=_n_.chis,
+			pad=_n_.pad),
+		I(maindep=_n_)
+	])
 
 
 

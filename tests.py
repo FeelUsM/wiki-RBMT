@@ -1094,7 +1094,7 @@ def test11():
 	He has eleven.
 	''',
 	'''У нас есть одна корова.
-	Сколько у тебя собаок?
+	Сколько у тебя собак?
 	У меня есть две собаки.
 	Сколько у этого мальчика книг?
 	У него есть одинадцать.''')
@@ -1146,7 +1146,7 @@ def test11():
 		'У него есть четыре ноги, длинный хвост и оно может давать молоко.')
 
 	ttest(en2ru_with_variants,[
-		(dict_pronoun_ip['you'],3)
+		(dict_pronoun_ip['you'],"вы")
 	],'''Have you a cat? Yes,
 	we have.
 	How many kittens has
@@ -1167,8 +1167,8 @@ def test11():
 	десять утят.''')
 
 	ttest(en2ru_with_variants,[
-		(dict_pronoun_ip['it'],3),
-		(rv_noun_HAVE_noun,1)
+		(dict_pronoun_ip['it'],"она"),
+		(rv_noun_HAVE_noun,1) # не контекст
 	],'''How many chickens has the hen?
 	It has eleven.
 	How many ducklings has the duck?
@@ -1179,10 +1179,10 @@ def test11():
 	У неё восемь.''')
 
 	ttest(en2ru_with_variants,[
-		(dict_pronoun_ip['it'],2),
-		(rv_noun_HAVE_noun,1),
-		(dict_numeral['one'],2),
-		(dict_numeral['two'],2)
+		(dict_pronoun_ip['it'],"он"),
+		(rv_noun_HAVE_noun,1), # не контекст
+		(dict_numeral['one'],"одна"),
+		(dict_numeral['two'],"две")
 	],'''How many kittens has the cat?
 	It has three.
 	How many dolls has the girl?
@@ -1207,7 +1207,7 @@ def test12():
 	N=12
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],3),
+	    (dict_pronoun_ip['it'],"она"),
 	],'''They have a horse;
 	it is black.
 	They have a pig;
@@ -1229,7 +1229,7 @@ def test12():
 	У них нет автомобиля.''')
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],2),
+	    (dict_pronoun_ip['it'],"он"),
 	],'''We have four goats.
 	We have a car; it is
 	in the street.
@@ -1241,14 +1241,14 @@ def test12():
 	У нас нет уток.''')
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],3),
+	    (dict_pronoun_ip['it'],"она"),
 	],'''You have a ribbon;
 	it is in the box.''',
 	'''У тебя есть лента;
 	она в ящике.''')
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],2),
+	    (dict_pronoun_ip['it'],"он"),
 	],'''You have a lemon;
 	it is on the dish.
 	You have no hens.
@@ -1258,12 +1258,12 @@ def test12():
 	У тебя нет куриц.''')
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],3),
+	    (dict_pronoun_ip['it'],"она"),
 	],'He has one dog; it is black.',
 	'У него есть одна собака; она -- чёрная.')
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],2),
+	    (dict_pronoun_ip['it'],"он"),
 	],'''He has a hen; it has three chickens.
 	He has a ball; it is big.
 	''',
@@ -1271,12 +1271,12 @@ def test12():
 	У него есть мяч; он -- большой.''')
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],2),
+	    (dict_pronoun_ip['it'],"он"),
 	],'''She has a kitten; it is white.''',
 	'У неё есть котёнок; он -- белый.')
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],2),
+	    (dict_pronoun_ip['it'],"он"),
 	],'''This is a box; it is big.
 	This is a rabbit; it is white.
 	This is a girl; she is big.
@@ -1298,12 +1298,12 @@ def test12():
 	цыплят.''')
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],2),
+	    (dict_pronoun_ip['it'],"он"),
 	],'This boy has a rabbit; it is in the box.',
 	'У этого мальчика есть кролик; он в ящике.')
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],3),
+	    (dict_pronoun_ip['it'],"она"),
 	],'That girl has a doll; it is big.',
 	'У той девочки есть кукла; она -- большая.')
 
@@ -1320,7 +1320,7 @@ def test12():
 	'У него есть красная лошадь.')
 
 	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['you'],3),
+	    (dict_pronoun_ip['you'],"вы"),
 	],'''How many lessons have you?
 	We have five lessons.
 	''',
