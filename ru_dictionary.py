@@ -37,7 +37,7 @@ from classes import StNoun, StAdj, StProNoun, StNum, StVerb, \
 from copy import deepcopy
 					
 def CW(ru,en=None):
-	'''полность копирует структуру из русского словаря 
+	'''полностью копирует структуру из русского словаря 
 
 	и атрибуты полностью копирует с английского слова или создает новые
 	'''

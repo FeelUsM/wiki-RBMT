@@ -45,11 +45,8 @@ from copy import deepcopy, copy
 import sys
 import re
 
-
+#------------------------------------------------------------
 # # Общее
-
-# In[2]:
-
 
 class TextError(ValueError):
 	pass
@@ -57,9 +54,6 @@ class ParseError(ValueError):
 	pass
 class TestError(ValueError):
 	pass
-
-
-# In[*]:
 
 
 def default_warning(s): 
@@ -76,18 +70,11 @@ def repr_id(self):
 	global DEBUGGING_ID
 	return '<'+str(id(self))+'>' if DEBUGGING_ID else ''
 
-# # Паттерны парсинга
-
-# In[3]:
-
-
-# In[4]:
-
 
 PUNCT_CHARS=".,:;?!'\""
 
 
-# In[9]:
+# # функции-changer-ы, которые могут быть применены к строке при выводе
 
 def ch_title(s):
 	"""делает заглавными первые буквы в словах"""
@@ -115,16 +102,19 @@ def ch_none(s):
 def ch_open(s): # для открывающихся кавычек
 	return s
 
-# In[5]:
-
+# # основные низкоуровневые классы
 
 class SAttrs:
 	"""Атрибуты строки: 'pre','changers','tags'
-	pre - префикс, который добавится перед строкой перед выводом
-	changers - функции-changer-ы, которые будут применены к строке перед выводом
+	pre - префикс, который добавится перед строкой при выводе
+	changers - функции-changer-ы, которые будут применены к строке при выводе
 	tags - not implemented
 	"""
 	__slots__=['pre','changers','tags']
+	#.pre - строка - вместо начальных пробелов
+	#.tags - множество пар строк - объединяется
+	#.changers - множество функций - объединяется
+
 	def __init__(self,pre='',changers=None,tags=None):
 		if changers==None: changers=set()
 		if tags==None: tags=set()
@@ -201,20 +191,18 @@ class SAttrs:
 class ParseInfo:
 	"""система отладки для scheme
 	инф-а добавляется в результат (в S и в Struct) в функциях D() и debug_pp()
+	информация о том, как был получен данный узел
 
 	p_start - начало
 	p_end - конец
 	rule_group - rule_group
-	patterns - массив имен паттернов, которые возвращали этот узел корневым
+	patterns - массив _имен_ паттернов, которые возвращали этот узел корневым
 	"""
 	enabled = False
 	__slots__=['p_start','p_end','rule_group','patterns']
 
-# In[6]:
-
-
 class S(str):
-	"""строка с атрибутом"""
+	"""строка с атрибутом и ParseInfo"""
 	__slots__=['attrs','parse_info']
 	def __new__(cls,s,attrs=None):
 		return str.__new__(cls,s)
@@ -229,12 +217,111 @@ class S(str):
 	def tostr(self):
 		return str(self)
 
-#.pre - строка - вместо начальных пробелов
-#.tags - множество пар строк - объединяется
-#.changers - множество функций - объединяется
+class RuleVars(list):
+	__slots__=['can_be_disabled','link']
+	def __init__(self,x,can_be_disabled=False,link=None):
+		self.can_be_disabled = can_be_disabled
+		self.link = link
+		if type(x)==list or isinstance(x,RuleVars):
+			assert len(x)>0
+			if type(x[0])==int: # инициализируем от списка с числом
+				assert len(x)>1
+				assert x[0]<len(x)
+				for e in x:
+					list.append(self,e)
+			else: # инициализируем от списка без числа
+				list.append(self,1)
+				for e in x:
+					list.append(self,e)
+		else: # инициализируем от единственного объекта
+			list.append(self,1)
+			list.append(self,x)
+	def append(self,ruw,reset=False):
+		'''добавляет вариант к переводу (только в виде списка) и устанавливает указатель на него
+
+		если reset==True - предварительно удалит все предыдущие варианты
+		'''
+		if not reset:
+			for w in self:
+				if w==ruw:
+					warning('добавляем уже имеющееся слово')
+					return False
+			list.append(self,ruw)
+			self[0]=len(self)-1 # 
+		else:
+			del self[2:]
+			self[0]=1
+			self[1]=ruw
+			#self=[1,ruw]
+
+	def remove(self,n):
+		'''удаляет вариант (из списка) и по возможности не меняет указатель варианта
+
+		проверяет, чтобы остался хотябы 1 вариант
+		'''
+		assert len(self)>=2
+		if type(n)!=int: # удаляем конкретный объект
+			assert n in self, ("такого объекта нет в списке вариантов", n , self)
+			for i in range(1,len(self)):
+				if self[i]==n:
+					n=i
+					break
+		assert n>0
+		del self[n]
+		if n>1 and self[0]>=n: # если указатель варианта указывает на удаляемое слово, будет выбран предыдущий вариант
+			self[0]-=1 # иначе указатель продолжиит указывать на прежнее слово
+			# но если был выбран 1й или 0й вариант, то он останется прежним
+		if self[0]>=len(self):
+			self[0]=len(self)-1
+
+	def default(self):
+		'''возвращает дефолтный вариант
+		
+		если вариантов нет - возвращает None
+		'''
+		return self[0]
+
+	def select(self,n):
+		'''устанавливает дефолтный вариант в группе правил
+		
+		если это сделать невозможно - ничего не меняет
+		'''
+		if n==None: 
+			warning("can't select variant 'None'")
+			return False
+		assert len(self)>0
+		if type(n)!=int:
+			assert n in self, ("такого объекта нет в списке вариантов", n , self)
+			for i in range(1,len(self)):
+				if self[i]==n:
+					n=i
+					break
+		assert type(n)==int and n>=0
+		if n>=len(self): 
+			warning('number out of range')
+			return False
+		elif n==0 and not self.can_be_disabled:
+			warning('can not be disabled')
+			return False
+		else:
+			self[0]=n
+			return True
+
+	def print(self):
+		'''печатает список вариантов'''
+		print(len(self)-1,'varians, selected number',self[0])
+		for i in range(1,len(self)):
+			if callable(self[i]):
+				if i==self[0]: print(self[i].__name__,'<---')
+				else:	   print(self[i].__name__)
+			else:
+				if i==self[0]: print(self[i],'<---')
+				else:	   print(self[i])
+		return self
 
 
-# In[8]:
+#------------------------------------------------------------
+# # Паттерны парсинга
 
 
 # 'word'
@@ -270,9 +357,7 @@ def sp_word(str,pos):
 	return [(pos1,s)]
 
 
-# In[10]:
-
-
+# [`PUNCT_CHARS`]
 def sp_punct(str,pos):
 	pos1=pos
 	if pos1<len(str) and str[pos1] in PUNCT_CHARS : # по одному символу, ... - добавим потом
@@ -316,13 +401,14 @@ def sp_spcs(str,pos):
 
 
 def tokenizer(s):
+	'''разбивает строку на токены (класса S)'''
 	pos=0
 	pre=''
 	while pos<len(s):
-		tmp=sp_spcs(s,pos)
-		if len(tmp)>0:
-			(pos,pre)=tmp[0]
-			if pre==' ': pre=''
+		tmp=sp_spcs(s,pos) 
+		if len(tmp)>0:			# если пробелы
+			(pos,pre)=tmp[0]    # запоминаем их и всё
+			if pre==' ': pre='' # обычные пробелы не учитываются
 			continue
 		tmp=sp_word(s,pos)
 		if len(tmp)>0:
@@ -336,7 +422,7 @@ def tokenizer(s):
 			foryield.attrs.pre=pre; pre=''
 			yield foryield
 			continue
-		raise TextError("can't tokenize: "+                        repr(s[max(0,pos-10):pos])+' - '+repr(s[pos:min(len(s),pos+10)]))
+		raise TextError("can't tokenize: "+ repr(s[max(0,pos-10):pos])+' - '+repr(s[pos:min(len(s),pos+10)]))
 
 
 # In[14]:
@@ -345,6 +431,7 @@ def tokenizer(s):
 def tokenize(s) : return [i for i in tokenizer(s)]
 
 
+#------------------------------------------------------------
 # In[15]:
 
 
@@ -368,12 +455,12 @@ def D(d):
 	assert type(d)==dict , (type(d),d, id(d))
 	def p_from_dict(s,p):
 		if p<len(s) and s[p] in d:
-			if type(d[s[p]])==list:
-				# номер дефолтного варианта находится на 0й позиции. 0===1
-				if d[s[p]][0]:
-					if ParseInfo.enabled:
-						warning(d['__name__'],s[p],'отключен')
-					return 0
+			if type(d[s[p]])==list or type(d[s[p]])==RuleVars:
+				# номер дефолтного варианта находится на 0й позиции.
+				# 0 означает что все варианты отключены
+				if d[s[p]][0]==0:
+					warning(d['__name__']+' '+s[p]+' отключен')
+					return [(p+1,[d[s[p]]])]
 				else:
 					r = d[s[p]][d[s[p]][0]]
 			else: r = d[s[p]]
@@ -431,6 +518,10 @@ def p_alt(s,p,*args):
 		i+=1
 	if len(e_rezs)==0: 
 		return r_rezs          #если результатов (исключений) нет, возвращаем регулярные, всё
+							# выключенные исключения
+	disabled_e_rezs = [(p1,r1) for p1,r1 in e_rezs if r1==0 or isinstance(r1,RuleVars)]
+	disabled_e_ends = {p1 for p1,r1 in disabled_e_rezs}### длины результатов выключенных исключений
+	e_rezs = [(p1,r1) for p1,r1 in e_rezs if not (r1==0 or isinstance(r1,RuleVars)) ]
 	e_ends = {p1 for p1,r1 in e_rezs}### длины результатов исключений
 		
 	wrong_ends = e_ends - r_ends#защита от коротких/длинных исключений
@@ -438,31 +529,28 @@ def p_alt(s,p,*args):
 		for p1,r1 in e_rezs:
 			if p1 in wrong_ends:
 				warning('WRONG_EXCEPTION ('+str(p)+':'+str(p1)+'): '+str(r1))
-		e_rezs = [(p1,r1) for p1,r1 in e_rezs if p1 not in wrong_ends]
-		
+		e_rezs = [(p1,r1) for p1,r1 in e_rezs if p1 not in wrong_ends]	
 	remain_ends = r_ends - e_ends#регулярные результаты, для которых нет исключений
-	notexc_ends = set()
-	for p1,r1 in e_rezs:
-		if r1==0:               #??? а где такие результаты возникают???
-			notexc_ends|={p1}
-	remain_ends|=notexc_ends
 
-	if ParseInfo.enabled and len(notexc_ends)>0:
-		for p1,r1 in r_ends:
-			if p1 in notexc_ends:
-				if not hasattr(r1.parse_info,'patterns'):
-					r1.parse_info.patterns = []
-				r1.parse_info.patterns.append('__ELSE__')
 	def else_adder(r):
+		'''в исключения добавляем __ELSE__'''
 		if not hasattr(r.parse_info,'patterns'):
 			r.parse_info.patterns = []
 		r.parse_info.patterns.append('__ELSE__')
 		return r
+	def zero_adder(p,r):
+		'''в регулярные результаты для которых есть отключенные исключения добавляем эти исключения'''
+		if p in disabled_e_ends:
+			if not hasattr(r.parse_info,'patterns'):
+				r.parse_info.patterns = []
+			for p2,r2 in disabled_e_rezs:
+				r.parse_info.patterns.append(r2)
+		return r
 	if ParseInfo.enabled:
-		return [(p1,else_adder(r1)) for p1,r1 in e_rezs if r1!=0]+\
-			[(p1,r1) for p1,r1 in r_rezs if p1 in remain_ends]#добавляем регулярные результаты
+		return [(p1,else_adder(r1)) for p1,r1 in e_rezs]+\
+			[(p1,zero_adder(p1,r1)) for p1,r1 in r_rezs if p1 in remain_ends]#добавляем регулярные результаты
 	else:
-		return [(p1,r1) for p1,r1 in e_rezs if r1!=0]+\
+		return [(p1,r1) for p1,r1 in e_rezs]+\
 			[(p1,r1) for p1,r1 in r_rezs if p1 in remain_ends]#добавляем регулярные результаты
 	return
 #	old p_alt:
@@ -498,10 +586,11 @@ def sp_seq(str,pos,patterns):
 def seq(patterns,rule_group):#,numbrs=None
 	#numbers = range(len(patterns)) if numbrs==None else numbrs
 	def null_handler(*args):
-		'''возвращает 0, а alt когда видит на месте результата 0 заменяет его на регулярные результаты
+		'''возвращает rule_group, а alt когда видит на месте результата rule_group, 
+		заменяет его на регулярные результаты
 		'''
-		return 0
-	if type(rule_group)==list:
+		return rule_group # 0
+	if type(rule_group)==list or type(rule_group)==RuleVars:
 		rule = null_handler if rule_group[0]==0 else rule_group[rule_group[0]]
 	else:
 		rule = rule_group

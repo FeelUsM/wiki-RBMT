@@ -22,7 +22,7 @@ dict_verb_s
 
 функции его пополнения...
 '''
-from parse_system import S, warning
+from parse_system import S, warning, RuleVars
 from classes import I,StNoun
 from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2, add_runoun1
 
@@ -36,116 +36,14 @@ def add_dict_variant(dic,enw,ruw,reset=False):
 
 	если reset==True - предварительно удалит все предыдущие варианты
 	'''
-	if enw in dic and not reset:										 
-		if type(dic[enw])==list:
-			for w in dic[enw]:
-				if w==ruw:
-					warning('добавляем уже имеющееся слово')
-					return False
-			dic[enw].append(ruw)
-			dic[enw][0]=len(dic[enw])-1 # 
-		else:
-			assert dic[enw]!=ruw, 'добавляем уже имеющееся слово'
-			tmp=dic[enw]
-			dic[enw]=[2,tmp,ruw]
+	if enw in dic and not reset:
+		if type(dic[enw])!=RuleVars:
+			dic[enw] = RuleVars(dic[enw])
+		dic[enw].append(ruw)
 	else:
-		dic[enw]=[1,ruw]
+		dic[enw]=RuleVars(ruw)
 	if rd.VERBOSE_ADDS:
 		print('в',dic['__name__'],'добавлено',enw)
-
-def add_variant(x,ruw,reset=False):
-	'''добавляет вариант к переводу (только в виде списка) и устанавливает указатель на него
-
-	если reset==True - предварительно удалит все предыдущие варианты
-	'''
-	assert type(x)==list
-	if not reset:										 
-		for w in x:
-			if w==ruw:
-				warning('добавляем уже имеющееся слово')
-				return False
-		x.append(ruw)
-		x[0]=len(x)-1 # 
-	else:
-		x=[1,ruw]
-
-def remove_variant(x,n):
-	'''удаляет вариант (из списка) и по возможности не меняет указатель варианта
-
-	проверяет, чтобы остался хотябы 1 вариант
-	'''
-	assert type(x)==list and len(x)>=2
-	if type(n)==str:
-		assert n in ruwords, ('такой строки нет в ruwords',n)
-		n = ruwords[n]
-	if type(n)!=int:
-		assert n in x, ("такого объекта нет в списке вариантов", n , x)
-		for i in range(1,len(x)):
-			if x[i]==n:
-				n=i
-				break
-	assert n>0
-	del x[n]
-	if n>1 and x[0]>=n: # если указатель варианта указывает на удаляемое слово, будет выбран предыдущий вариант
-		x[0]-=1 # иначе указатель продолжиит указывать на прежнее слово
-		# но если был выбран 1й или 0й вариант, то он останется прежним
-	if x[0]>=len(x):
-		x[0]=len(x)-1
-
-def get_variant(x):
-	'''возвращает дефолтный вариант
-	
-	если вариантов нет - возвращает None
-	'''
-	if type(x)!=list:
-		return 0
-	else:
-		return x[0]
-
-def select_variant(x,n):
-	'''устанавливает дефолтный вариант в группе правил
-	
-	если это сделать невозможно - ничего не меняет
-	'''
-	if n==None: 
-		warning("can't select variant 'None'")
-		return False
-	assert type(x)==list and len(x)>0
-	if type(n)==str:
-		assert n in ruwords, ('такой строки нет в ruwords',n)
-		n = ruwords[n]
-	if type(n)!=int:
-		assert n in x, ("такого объекта нет в списке вариантов", n , x)
-		for i in range(1,len(x)):
-			if x[i]==n:
-				n=i
-				break
-	assert type(n)==int and n>=0
-	if type(x)!=list and n>1:
-		warning("can't select variant from only one ")
-		return False
-	elif n>=len(x): 
-		warning('number out of range')
-		return False
-	else:
-		if n==0: n=1
-		x[0]=n
-		return True
-
-def variants(x):
-	'''печатает список вариантов'''
-	if type(x)!=list:
-		print('only one variant')
-	else:
-		print(len(x)-1,'varians, selected number',x[0])
-		for i in range(1,len(x)):
-			if callable(x[i]):
-				if i==x[0]: print(x[i].__name__,'<---')
-				else:	   print(x[i].__name__)
-			else:
-				if i==x[0]: print(x[i],'<---')
-				else:	   print(x[i])
-	return x
 
 # ## Noun ----------------------------
 
@@ -163,9 +61,9 @@ def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,skl=None,sense=None,reset=False):
 	по этому если старый вариант уже был, его надо сначала удалить из dict_noun
 	иначе в dict_noun остануться оба варианта: и старый и новый'''
 	if ruw   in ruwords and type(dict_noun[enw])==list and ruwords[ruw] in dict_noun[enw]: 
-		remove_variant(dict_noun[enw],  ruwords[ruw]  )
+		dict_noun[enw].remove( ruwords[ruw]  )
 	if ruwmn in ruwords and type(dict_noun[enwmn])==list and ruwords[ruwmn] in dict_noun[enwmn]: 
-		remove_variant(dict_noun[enwmn],ruwords[ruwmn])
+		dict_noun[enwmn].remove(ruwords[ruwmn])
 	if add_runoun2(ruw,ruwmn,r,o,skl,sense):
 		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 		add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
@@ -187,7 +85,7 @@ def ____Noun():
 	#bat - составное - в конце
 	add_ennoun2('rat'	 ,'rats'	  ,"мышь"	,"мыши"	  ,'g',True)
 	add_ennoun2('rat'	 ,'rats'	  ,"крыса"   ,"крысы"	 ,'g',True)
-	add_ennoun2('lesson'  ,'lessons'   ,"урок"	,"уроки"	 ,'m',False)
+	add_ennoun2('lesson' ,'lessons'   ,"урок"	,"уроки"	 ,'m',False)
 	
 	add_ennoun2('cap'	 ,'caps'	  ,"шапка"   ,"шапки"	 ,'g',False)
 	add_ennoun2('cap'	 ,'caps'	  ,"кепка"   ,"кепки"	 ,'g',False)
@@ -207,14 +105,14 @@ def ____Noun():
 	add_ennoun2('bed'	 ,'beds'	  ,"кровать" ,"кровати"   ,'g',False)
 	add_ennoun2('fox'	 ,'foxes'	 ,"лиса"	,"лисы"	  ,'g',True)
 	
-	add_ennoun2('kitten'  ,'kittens'   ,"котёнок" ,"котята"	,'m',True)
-	add_ennoun2('vase'	,'vases'	 ,"ваза"	,"вазы"	  ,'g',False)
-	add_ennoun2('star'	,'stars'	 ,"звезда"  ,"звёзды"	,'g',False)
-	add_ennoun2('lamp'	,'lamps'	 ,"лампа"   ,"лампы"	 ,'g',False)
+	add_ennoun2('kitten' ,'kittens'   ,"котёнок" ,"котята"	,'m',True)
+	add_ennoun2('vase'	 ,'vases'	 ,"ваза"	,"вазы"	  ,'g',False)
+	add_ennoun2('star'	 ,'stars'	 ,"звезда"  ,"звёзды"	,'g',False)
+	add_ennoun2('lamp'	 ,'lamps'	 ,"лампа"   ,"лампы"	 ,'g',False)
 
 	add_ennoun2('squirrel','squirrels' ,"белка"   ,"белки"	 ,'g',True)
-	add_ennoun2('wolf'	,'wolfs'	 ,"волк"	,"волки"	 ,'m',True)
-	add_ennoun2('zebra'   ,'zebras'	,"зебра"   ,"зебры"	 ,'g',True)
+	add_ennoun2('wolf'	 ,'wolfs'	 ,"волк"	,"волки"	 ,'m',True)
+	add_ennoun2('zebra'  ,'zebras'	,"зебра"   ,"зебры"	 ,'g',True)
 	add_skl2('m',True,make_skl2(
 		'парень'  ,'парни',
 		'парня'   ,'парней',
@@ -226,28 +124,28 @@ def ____Noun():
 	add_ennoun2('boy'	 ,'boys'	  ,"мальчик" ,"мальчики"  ,'m',True)
 
 	add_ennoun2('copy-book','copy-books',"тетрадь","тетради"   ,'g',False)
-	add_ennoun2('book'	,'books'	 ,"книга"   ,"книги"	 ,'g',False)
-	add_ennoun2('spoon'   ,'spoons'	,"ложка"   ,"ложки"	 ,'g',False)
-	add_ennoun2('morning' ,'mornings'  ,"утро"	,"утра"	  ,'s',False)
+	add_ennoun2('book'	 ,'books'	 ,"книга"   ,"книги"	 ,'g',False)
+	add_ennoun2('spoon'  ,'spoons'	,"ложка"   ,"ложки"	 ,'g',False)
+	add_ennoun2('morning','mornings'  ,"утро"	,"утра"	  ,'s',False)
 									   
-	add_ennoun2('pistol'  ,'pistols'   ,"пистолет","пистолеты" ,'m',False)
-	add_ennoun2('ball'	,'balls'	 ,"мяч"	 ,"мячи"	  ,'m',False)
-	add_ennoun2('stick'   ,'sticks'	,"палка"   ,"палки"	 ,'g',False)
-	add_ennoun2('word'	,'words'	 ,"слово"   ,"слова"	 ,'s',False)
+	add_ennoun2('pistol' ,'pistols'   ,"пистолет","пистолеты" ,'m',False)
+	add_ennoun2('ball'	 ,'balls'	 ,"мяч"	 ,"мячи"	  ,'m',False)
+	add_ennoun2('stick'  ,'sticks'	,"палка"   ,"палки"	 ,'g',False)
+	add_ennoun2('word'	 ,'words'	 ,"слово"   ,"слова"	 ,'s',False)
 									   
-	add_ennoun2('girl'	,'girls'	 ,"девочка" ,"девочки"   ,'g',True)
-	add_ennoun2('dish'	,'dishes'	,"блюдо"   ,"блюда"	 ,'s',False)
-	add_ennoun2('fish'	,'fishes'	,"рыба"	,"рыбы"	  ,'g',True)
+	add_ennoun2('girl'	 ,'girls'	 ,"девочка" ,"девочки"   ,'g',True)
+	add_ennoun2('dish'	 ,'dishes'	,"блюдо"   ,"блюда"	 ,'s',False)
+	add_ennoun2('fish'	 ,'fishes'	,"рыба"	,"рыбы"	  ,'g',True)
 									   
-	add_ennoun2('child'   ,'children'  ,"ребёнок" ,"дети"	  ,'m',True)
+	add_ennoun2('child'  ,'children'  ,"ребёнок" ,"дети"	  ,'m',True)
 	add_ennoun2('information','informations',"информация","информации",'g',False)
 
-	add_ennoun2('doll'	,'dolls'	 ,"кукла"   ,"куклы"	 ,'g',False)
-	add_ennoun2('frog'	,'frogs'	 ,"ягушка"  ,"лягушки"   ,'g',True)
+	add_ennoun2('doll'	 ,'dolls'	 ,"кукла"   ,"куклы"	 ,'g',False)
+	add_ennoun2('frog'	 ,'frogs'	 ,"ягушка"  ,"лягушки"   ,'g',True)
 	add_ennoun2('log'	 ,'logs'	  ,"бревно"  ,"брёвна"	,'s',False)
-	add_ennoun2('lake'	,'lakes'	 ,"озеро"   ,"озёра"	 ,'s',False)
-	add_ennoun2('snake'   ,'snakes'	,"змея"	,"змеи"	  ,'g',True)
-	add_ennoun2('cake'	,'cakes'	 ,"торт"	,"торты"	 ,'m',False)
+	add_ennoun2('lake'	 ,'lakes'	 ,"озеро"   ,"озёра"	 ,'s',False)
+	add_ennoun2('snake'  ,'snakes'	,"змея"	,"змеи"	  ,'g',True)
+	add_ennoun2('cake'	 ,'cakes'	 ,"торт"	,"торты"	 ,'m',False)
 	#add_skl2('s',False,make_skl2(
 	#'пирожное'   ,'пирожные',
 	#'пирожного'  ,'пирожных',
@@ -269,11 +167,11 @@ def ____Noun():
 	add_ennoun2('rabbit'   ,'rabbits'   ,"заяц"	,"зайцы"	 ,'m',True)
 	add_ennoun2('rabbit'   ,'rabbits'   ,"кролик"  ,"кролики"   ,'m',True)
 
-	add_ennoun2('duck'	 ,'ducks'	 ,"утка"	,"утки"	  ,'g',True)
-	add_ennoun2('duckling' ,'ducklings' ,"утёнок"  ,"утята"	 ,'m',True)
+	add_ennoun2('duck'	  ,'ducks'	 ,"утка"	,"утки"	  ,'g',True)
+	add_ennoun2('duckling','ducklings' ,"утёнок"  ,"утята"	 ,'m',True)
 	add_ennoun2('cow'	  ,'cows'	  ,"корова"  ,"коровы"	,'g',True)
 	add_ennoun2('leg'	  ,'legs'	  ,"нога"	,"ноги"	  ,'g',False)
-	add_ennoun2('tail'	 ,'tails'	 ,"хвост"   ,"хвосты"	,'m',False)
+	add_ennoun2('tail'	  ,'tails'	 ,"хвост"   ,"хвосты"	,'m',False)
 	add_ennoun1('milk'				  ,"молоко"  ,'ed'		,'s',False)
 
 	add_skl2('m',True,make_skl2(
@@ -337,10 +235,10 @@ dict_pronoun_ip={'__name__':'dict_pronoun_ip'}
 dict_pronoun_dp={'__name__':'dict_pronoun_dp'}
 def ____Pronoun():
 
-	dict_pronoun_ip['I']=   [0, ruwords["я (муж)"],  ruwords["я (жен)"] ]
-	dict_pronoun_dp['me']=  [0, ruwords["я (муж)"],  ruwords["я (жен)"] ]
-	dict_pronoun_ip['you']= [0, ruwords["ты (муж)"], ruwords["ты (жен)"],  ruwords["вы"] ]
-	dict_pronoun_dp['you']= [0, ruwords["ты (муж)"], ruwords["ты (жен)"],  ruwords["вы"] ]
+	dict_pronoun_ip['I']=   RuleVars([1, ruwords["я (муж)"],  ruwords["я (жен)"] ])
+	dict_pronoun_dp['me']=  RuleVars([1, ruwords["я (муж)"],  ruwords["я (жен)"] ])
+	dict_pronoun_ip['you']= RuleVars([1, ruwords["ты (муж)"], ruwords["ты (жен)"],  ruwords["вы"] ])
+	dict_pronoun_dp['you']= RuleVars([1, ruwords["ты (муж)"], ruwords["ты (жен)"],  ruwords["вы"] ])
 
 	dict_pronoun_ip['we']=  ruwords["мы"]
 	dict_pronoun_dp['us']=  ruwords["мы"]
@@ -355,11 +253,12 @@ def ____Pronoun():
 	dict_pronoun_dp['them']= ruwords["они"]
 
 	it = dict_pronoun_ip['it']
-	tmp = get_variant(it)
+	tmp = 1 # it.default()
 	add_dict_variant(dict_pronoun_ip,'it',dict_pronoun_ip['he'])
 	it = dict_pronoun_ip['it']
-	add_variant(it,dict_pronoun_ip['she'])
-	select_variant(it,tmp)
+	it.append(dict_pronoun_ip['she'])
+	it.select(tmp)
+	print(it.default())
 
 ____Pronoun()
 
@@ -402,8 +301,8 @@ ____Adj()
 dict_numeral={'__name__':'dict_numeral'}
 def ____Numeral():
 
-	dict_numeral['one']=	   [1,ruwords['один'],ruwords['одна'],ruwords['одно']]
-	dict_numeral['two']=	   [1,ruwords['два'],ruwords['две']]
+	dict_numeral['one']=	   RuleVars([1,ruwords['один'],ruwords['одна'],ruwords['одно']])
+	dict_numeral['two']=	   RuleVars([1,ruwords['два'],ruwords['две']])
 	dict_numeral['three']=	 ruwords['три']
 	dict_numeral['four']=	  ruwords['четыре']
 	dict_numeral['many']=	  ruwords['много']
