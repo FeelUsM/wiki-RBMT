@@ -196,10 +196,32 @@ class ParseInfo:
 	p_start - начало
 	p_end - конец
 	rule_group - rule_group
-	patterns - массив _имен_ паттернов, которые возвращали этот узел корневым
+	patterns - массив паттернов (и не только), которые возвращали этот узел корневым
+		dict - словарь, см. d['__name__']
+		function - fun.__name__
+		'__ELSE__' - означает, что было исключение
+		RuleVars - означает, что могло быть исключение, но оно было отключено
 	"""
 	enabled = False
 	__slots__=['p_start','p_end','rule_group','patterns']
+	def patterns2str(self):
+		str_p=[]
+		for patt in self.patterns:
+			if type(patt)==dict:
+				str_p.append(patt['__name__'])
+			elif callable(patt):
+				str_p.append(patt.__name__)
+			elif type(patt)==RuleVars:
+				assert patt[0]==0
+				if patt.link:
+					str_p.append(patt.link)
+				else:
+					str_p.append('?')
+
+			else:
+				assert patt=='__ELSE__'
+				str_p.append(patt)
+		return str_p
 
 class S(str):
 	"""строка с атрибутом и ParseInfo"""
@@ -467,7 +489,7 @@ def D(d):
 			tmp=deepcopy(r)
 			tmp.attrs=deepcopy(s[p].attrs)
 			if ParseInfo.enabled:
-				tmp.parse_info.patterns = [d['__name__']]
+				tmp.parse_info.patterns = [d]
 				tmp.parse_info.p_start = p
 				tmp.parse_info.p_end = p+1
 				tmp.parse_info.rule_group = d[s[p]]
@@ -605,6 +627,14 @@ def seq(patterns,rule_group):#,numbrs=None
 
 global_cache=dict()
 def debug_pp(fun):
+	'''функция-обертка для нетерминалов
+
+	занимается:
+	кэшированием
+	детектированием зацикливаний
+	if DEBUGGING: отладочный вывод процесса разбора
+	if ParseInfo.enabled: добавляет fun в patterns
+	'''
 	s_point=[] # когда изменяется s - означает, что нужно сбросить кэш
 	cache={}
 	global gloabal_cache
@@ -660,7 +690,7 @@ def debug_pp(fun):
 				if not hasattr(r1.parse_info,'patterns'):
 					r1.parse_info.patterns = []
 				patt = copy(r1.parse_info.patterns)
-				patt.append(fun.__name__)
+				patt.append(fun)
 				r1.parse_info.patterns = patt
 				return r1
 			rezs = [(p1,info_adder(p1,r1)) for p1,r1 in rezs]
