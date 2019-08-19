@@ -344,8 +344,8 @@ def ____Verb():
 	
 	dict_verb_komu['give']=  ruwords['давать']
 	dict_verb_komu['gives']= ruwords['давать']
-	dict_verb_komu['show']=  [ 2, ruwords['показать'], ruwords['показывать'] ]
-	dict_verb_komu['shows']= [ 2, ruwords['показать'], ruwords['показывать'] ]
+	dict_verb_komu['show']=  RuleVars([ 2, ruwords['показать'], ruwords['показывать'] ])
+	dict_verb_komu['shows']= RuleVars([ 2, ruwords['показать'], ruwords['показывать'] ])
 	dict_verb_komu['say']=   ruwords['говорить']
 	dict_verb_komu['says']=  ruwords['говорить']
 

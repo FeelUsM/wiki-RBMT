@@ -32,7 +32,7 @@ def test(real,expected):
 multiplier = 5
 
 def ttest(f,*args):
-	expected = args[len(args)-1]
+	expected = args[-1]
 	#del args[len(args)-1]
 	args = args[:-1]
 	ddt = len(repr(expected))
@@ -113,7 +113,7 @@ rv_noun_HAVE_noun = None
 print_timing = None
 
 def init(_parse_system, _en_dictionary,
-	_en2ru, _en2ru_with_variants, _decline, _scheme, _d_en2ru, _pr_l_repr, 
+	_en2ru, _with_variants, _decline, _scheme, _d_en2ru, _pr_l_repr, 
 	_p_noun, _p_noun1, _r_noun_comma_noun, _rv_noun_HAVE_noun,
 	_multiplier,_print_timing):
 	global tmp_warning_fun
@@ -153,7 +153,7 @@ def init(_parse_system, _en_dictionary,
 	tokenize = parse_system.tokenize
 
 	en2ru = _en2ru 
-	en2ru_with_variants = _en2ru_with_variants
+	en2ru_with_variants = lambda v,s : _with_variants(v,en2ru,s)
 	decline = _decline
 	scheme = _scheme
 	d_en2ru = _d_en2ru

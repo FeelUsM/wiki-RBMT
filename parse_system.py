@@ -341,9 +341,17 @@ class RuleVars(list):
 				else:	   print(self[i])
 		return self
 
+class RuleContext(RuleVars):
+	pass
 
+class Global:
+	pass
+gl = Global()
+gl.current_s = []
+gl.sentence_points = []
+gl.rules4reset = {}
 #------------------------------------------------------------
-# # Паттерны парсинга
+# # Токенизация
 
 
 # 'word'
@@ -454,7 +462,7 @@ def tokenize(s) : return [i for i in tokenizer(s)]
 
 
 #------------------------------------------------------------
-# In[15]:
+# # парсинг
 
 
 #объекты из словаря и паттернов копируются (полностью), потом из них строится дерево
@@ -477,22 +485,40 @@ def D(d):
 	assert type(d)==dict , (type(d),d, id(d))
 	def p_from_dict(s,p):
 		if p<len(s) and s[p] in d:
-			if type(d[s[p]])==list or type(d[s[p]])==RuleVars:
+			rule_group = d[s[p]]
+			assert type(rule_group)!=list, rule_group
+			if type(rule_group)==RuleContext:
+				# [no,(rule_group,[(s_pos,test)])]
+				# test(s,p,s_p)
+				assert rule_group[0]!=0
+				global gl
+				if id(rule_group) not in gl.rules4reset:
+					gl.rules4reset[id(rule_group)]=(rule_group, rule_group[0])
+				go_break = False
+				for k in range(1,len(rule_group)):
+					for n,test in rule_group[k][1]:
+						if test(s,p,gl.sentence_points[-n-1]):
+							rule_group[0]=k
+							r = rule_group[rule_group[0]]
+							go_break = True
+							break
+					if go_break: break
+			elif type(rule_group)==RuleVars:
 				# номер дефолтного варианта находится на 0й позиции.
 				# 0 означает что все варианты отключены
-				if d[s[p]][0]==0:
+				if rule_group[0]==0:
 					warning(d['__name__']+' '+s[p]+' отключен')
-					return [(p+1,[d[s[p]]])]
+					return [(p+1,[rule_group])]
 				else:
-					r = d[s[p]][d[s[p]][0]]
-			else: r = d[s[p]]
+					r = rule_group[rule_group[0]]
+			else: r = rule_group
 			tmp=deepcopy(r)
 			tmp.attrs=deepcopy(s[p].attrs)
 			if ParseInfo.enabled:
 				tmp.parse_info.patterns = [d]
 				tmp.parse_info.p_start = p
 				tmp.parse_info.p_end = p+1
-				tmp.parse_info.rule_group = d[s[p]]
+				tmp.parse_info.rule_group = rule_group
 			return [(p+1,tmp)]
 		else:
 			return []
@@ -612,7 +638,24 @@ def seq(patterns,rule_group):#,numbrs=None
 		заменяет его на регулярные результаты
 		'''
 		return rule_group # 0
-	if type(rule_group)==list or type(rule_group)==RuleVars:
+	assert type(rule_group)!=list, rule_group
+	if type(rule_group)==RuleContext:
+		# [no,(rule,[(s_pos,test)])]
+		# test(s,p,s_p)
+		assert rule_group[0]!=0
+		global gl
+		if id(rule_group) not in gl.rules4reset:
+			gl.rules4reset[rid(ule_group)] = (rule_group, rule_group[0])
+		go_break = False
+		for k in range(1,len(rule_group)):
+			for n,test in rule_group[k][1]:
+				if test(s,p,gl.sentence_points[-n-1]):
+					rule_group[0]=k
+					rule = rule_group[rule_group[0]]
+					go_break = True
+					break
+			if go_break: break
+	elif type(rule_group)==RuleVars:
 		rule = null_handler if rule_group[0]==0 else rule_group[rule_group[0]]
 	else:
 		rule = rule_group
