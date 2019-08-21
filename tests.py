@@ -30,6 +30,7 @@ def test(real,expected):
 # In[4]:
 
 multiplier = 5
+warning_catched = False
 
 def ttest(f,*args):
 	expected = args[-1]
@@ -41,6 +42,11 @@ def ttest(f,*args):
 		start_time = time.time()
 		test_OK = test(f(*args),expected)
 		dt = time.time() - start_time
+		global warning_catched
+		if warning_catched:
+			warning_catched = False
+			print(expected)
+			print('---')
 		if test_OK:
 			pass
 			#print('OK')
@@ -63,28 +69,19 @@ def ttest(f,*args):
 		else:
 			if print_timing : print('%d\t%d\t%d\t%f  '%(ddt,ddt*multiplier,dt     *1000,dt*    1000/ddt/multiplier))
 	except BaseException as err:
-		if isinstance(err,TestError):
-			print('WARNING CATCHED')
-			TEST_ERRORS.append({'N':N,'type':'warning','expected':expected,
-								'warning':err})
-			test_OK = False
-		else:
-			print('EXCEPTION CATCHED')
-			TEST_ERRORS.append({'N':N,'type':'exception','expected':expected,
-								'error':err})
-			test_OK = True # не надо снова
-		print(err)
+		print('EXCEPTION CATCHED')
+		TEST_ERRORS.append({'N':N,'type':'exception','expected':expected,
+							'error':err})
+		test_OK = True # не надо снова
+		#print(err)
 	if not test_OK and f==en2ru:
-		parse_system.warning_fun=warning_print
-		try:
-			scheme(*args)
-		finally:
-			parse_system.warning_fun=warning_hook
+		scheme(*args)
 
 def warning_hook(s):
-	raise TestError(s)
-def warning_print(s):
-	print(s,file=sys.stderr)
+	print('WARNING:',s)
+	global warning_catched
+	warning_catched = True
+
 tmp_warning_fun = None
 
 TestError = None
@@ -1167,7 +1164,6 @@ def test11():
 	десять утят.''')
 
 	ttest(en2ru_with_variants,[
-		(dict_pronoun_ip['it'],"она"),
 		(rv_noun_HAVE_noun,1) # не контекст
 	],'''How many chickens has the hen?
 	It has eleven.
@@ -1179,7 +1175,6 @@ def test11():
 	У неё восемь.''')
 
 	ttest(en2ru_with_variants,[
-		(dict_pronoun_ip['it'],"он"),
 		(rv_noun_HAVE_noun,1), # не контекст
 		(dict_numeral['one'],"одна"),
 		(dict_numeral['two'],"две")
@@ -1206,9 +1201,7 @@ def test12():
 	global N
 	N=12
 
-	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],"она"),
-	],'''They have a horse;
+	ttest(en2ru,'''They have a horse;
 	it is black.
 	They have a pig;
 	it is big.
@@ -1228,9 +1221,7 @@ def test12():
 	корова -- красная.
 	У них нет автомобиля.''')
 
-	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],"он"),
-	],'''We have four goats.
+	ttest(en2ru,'''We have four goats.
 	We have a car; it is
 	in the street.
 	We have no ducks.
@@ -1240,16 +1231,12 @@ def test12():
 	на улице.
 	У нас нет уток.''')
 
-	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],"она"),
-	],'''You have a ribbon;
+	ttest(en2ru,'''You have a ribbon;
 	it is in the box.''',
 	'''У тебя есть лента;
 	она в ящике.''')
 
-	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],"он"),
-	],'''You have a lemon;
+	ttest(en2ru,'''You have a lemon;
 	it is on the dish.
 	You have no hens.
 	''',
@@ -1257,27 +1244,19 @@ def test12():
 	он на блюде.
 	У тебя нет куриц.''')
 
-	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],"она"),
-	],'He has one dog; it is black.',
+	ttest(en2ru,'He has one dog; it is black.',
 	'У него есть одна собака; она -- чёрная.')
 
-	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],"он"),
-	],'''He has a hen; it has three chickens.
+	ttest(en2ru,'''He has a hen; it has three chickens.
 	He has a ball; it is big.
 	''',
 	'''У него есть курица; у него есть три цыплёнка.
 	У него есть мяч; он -- большой.''')
 
-	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],"он"),
-	],'''She has a kitten; it is white.''',
+	ttest(en2ru,'''She has a kitten; it is white.''',
 	'У неё есть котёнок; он -- белый.')
 
-	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],"он"),
-	],'''This is a box; it is big.
+	ttest(en2ru,'''This is a box; it is big.
 	This is a rabbit; it is white.
 	This is a girl; she is big.
 	This is a boy; he is big too.
@@ -1297,14 +1276,10 @@ def test12():
 	утят и двенадцать
 	цыплят.''')
 
-	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],"он"),
-	],'This boy has a rabbit; it is in the box.',
+	ttest(en2ru,'This boy has a rabbit; it is in the box.',
 	'У этого мальчика есть кролик; он в ящике.')
 
-	ttest(en2ru_with_variants,[
-	    (dict_pronoun_ip['it'],"она"),
-	],'That girl has a doll; it is big.',
+	ttest(en2ru,'That girl has a doll; it is big.',
 	'У той девочки есть кукла; она -- большая.')
 
 	ttest(en2ru,'She has a ribbon; the ribbon is red.',

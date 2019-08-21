@@ -72,9 +72,14 @@ pull_deferred - функция, применяющая внешние свойс
 DEBUGGING_ID
 DEBUGGING_ATTRS
 '''
-
-from parse_system import SAttrs, ParseInfo, S, ch_anti_prefix, repr_id
+import parse_system
+from parse_system import SAttrs, ParseInfo, S, ch_anti_prefix, repr_id, ContextInfo
 from copy import copy
+
+def tmp_rez_checker(rez):
+	assert isinstance(rez,Struct) or type(rez)==S, rez
+	return rez
+parse_system.rez_checker = tmp_rez_checker
 
 # ## Классы отображения
 
@@ -200,9 +205,10 @@ class Struct:
 		перед (между) узлами, у которых attrs.pre=='' при выводе вставляются пробелы
 		по этому перед выводом pre из 0го дочернего узла должно быть перемещено в узел выше
 	'''
-	__slots__=['attrs','parse_info','talk']
+	__slots__=['attrs','talk','parse_info','context_info']
 	def __init__(self,attrs=None):
 		self.parse_info = ParseInfo()
+		self.context_info = ContextInfo()
 		if attrs==None:
 			self.attrs=SAttrs()
 		elif type(attrs)==list:

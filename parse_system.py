@@ -225,12 +225,13 @@ class ParseInfo:
 
 class S(str):
 	"""строка с атрибутом и ParseInfo"""
-	__slots__=['attrs','parse_info']
+	__slots__=['attrs','parse_info','context_info']
 	def __new__(cls,s,attrs=None):
 		return str.__new__(cls,s)
 	def __init__(self,s,attrs=None):
 		self.attrs = attrs if attrs!=None else SAttrs()
 		self.parse_info = ParseInfo()
+		self.context_info = ContextInfo()
 		
 	def __repr__(self):
 		return 'S'+repr_id(self)+'('+str.__repr__(self)+','+repr(self.attrs)+')'
@@ -342,14 +343,80 @@ class RuleVars(list):
 		return self
 
 class RuleContext(RuleVars):
-	pass
+	def __init__(self,x,can_be_disabled=False,link=None):
+		RuleVars.__init__(self,x,can_be_disabled,link)
+		assert self[0]!=0
+		for i in range(1,len(self)):
+			assert len(self[i])==2
+			for p in self[i][1]:
+				assert len(p)==2
+				assert p[0]>=-5 and p[0]<=0
+	def remove(self,n):
+		'''удаляет вариант (из списка) и по возможности не меняет указатель варианта
 
-class Global:
-	pass
-gl = Global()
-gl.current_s = []
-gl.sentence_points = []
-gl.rules4reset = {}
+		проверяет, чтобы остался хотябы 1 вариант
+		'''
+		assert len(self)>=2
+		if type(n)!=int: # удаляем конкретный объект
+			#assert n in self, ("такого объекта нет в списке вариантов", n , self)
+			for i in range(1,len(self)):
+				if self[i][0]==n:
+					n=i
+					break
+			else:
+				raise AssertionError("такого объекта нет в списке вариантов", n , self)
+		assert n>0
+		del self[n]
+		if n>1 and self[0]>=n: # если указатель варианта указывает на удаляемое слово, будет выбран предыдущий вариант
+			self[0]-=1 # иначе указатель продолжиит указывать на прежнее слово
+			# но если был выбран 1й или 0й вариант, то он останется прежним
+		if self[0]>=len(self):
+			self[0]=len(self)-1
+
+	def select(self,n):
+		'''устанавливает дефолтный вариант в группе правил
+		
+		если это сделать невозможно - ничего не меняет
+		'''
+		if n==None: 
+			warning("can't select variant 'None'")
+			return False
+		assert len(self)>0
+		if type(n)!=int:
+			#assert n in self, ("такого объекта нет в списке вариантов", n , self)
+			for i in range(1,len(self)):
+				if self[i][0]==n:
+					n=i
+					break
+			else:
+				raise AssertionError("такого объекта нет в списке вариантов", n , self)
+		assert type(n)==int and n>=0
+		if n>=len(self): 
+			warning('number out of range')
+			return False
+		elif n==0 and not self.can_be_disabled:
+			warning('can not be disabled')
+			return False
+		else:
+			self[0]=n
+			return True
+
+
+class ContextInfo:
+	'''
+	context - у 1го результата ссылдка на RuleContext, у остальных None
+	pos - позиция, на которой возник контекст - чтобы узнать номер текущего предложения
+	rule - правило, по которому получен данный узел
+	args - список аргументов, из которых получен данный узел
+	first_context - список пар (ссылка на 1й результат, номер в args)
+		1й результат сам на себя не ссылается
+	'''
+	__slots__ = ['context','pos','rule','args','first_context']
+	def __init__(self):
+		self.context = None
+		self.first_context = []
+		self.args = None
+
 #------------------------------------------------------------
 # # Токенизация
 
@@ -464,6 +531,7 @@ def tokenize(s) : return [i for i in tokenizer(s)]
 #------------------------------------------------------------
 # # парсинг
 
+def rez_checker(rez): return rez # переопределяется в classes.py
 
 #объекты из словаря и паттернов копируются (полностью), потом из них строится дерево
 
@@ -481,6 +549,9 @@ def D(d):
 
 	полностью копирует структуру из словаря 
 	и атрибуты полностью копирует из строки
+
+	нарушение rez_checker():
+	если группа правил выключена - возвращает группу правил
 	'''
 	assert type(d)==dict , (type(d),d, id(d))
 	def p_from_dict(s,p):
@@ -488,37 +559,26 @@ def D(d):
 			rule_group = d[s[p]]
 			assert type(rule_group)!=list, rule_group
 			if type(rule_group)==RuleContext:
-				# [no,(rule_group,[(s_pos,test)])]
-				# test(s,p,s_p)
-				assert rule_group[0]!=0
-				global gl
-				if id(rule_group) not in gl.rules4reset:
-					gl.rules4reset[id(rule_group)]=(rule_group, rule_group[0])
-				go_break = False
-				for k in range(1,len(rule_group)):
-					for n,test in rule_group[k][1]:
-						if test(s,p,gl.sentence_points[-n-1]):
-							rule_group[0]=k
-							r = rule_group[rule_group[0]]
-							go_break = True
-							break
-					if go_break: break
+				r = rule_group[rule_group[0]][0]
 			elif type(rule_group)==RuleVars:
 				# номер дефолтного варианта находится на 0й позиции.
 				# 0 означает что все варианты отключены
 				if rule_group[0]==0:
 					warning(d['__name__']+' '+s[p]+' отключен')
-					return [(p+1,[rule_group])]
+					return [(p+1,rule_group)]
 				else:
 					r = rule_group[rule_group[0]]
 			else: r = rule_group
-			tmp=deepcopy(r)
+			tmp=deepcopy(rez_checker(r))
 			tmp.attrs=deepcopy(s[p].attrs)
 			if ParseInfo.enabled:
 				tmp.parse_info.patterns = [d]
 				tmp.parse_info.p_start = p
 				tmp.parse_info.p_end = p+1
 				tmp.parse_info.rule_group = rule_group
+			if type(rule_group)==RuleContext:
+				tmp.context_info.context = rule_group
+				tmp.context_info.pos = p
 			return [(p+1,tmp)]
 		else:
 			return []
@@ -529,19 +589,16 @@ def p_alt(s,p,*args):
 	'''альтернативы и исключения
 	
 		идем по аргументам до 1го ELSE
-		если ELSE нет - парсим все аргументы и всё
-		парсим все аргументы после ELSE
+		если ELSE нет - парсим все аргументы. и всё.
+		парсим все аргументы после ELSE (регулярные)
 			assert ELSE больше не встречается
 		если результатов нет (регулярных), то всё
-		парсим все аргументы с начала до ELSE
+		парсим все аргументы с начала до ELSE (исключения)
 		если результатов (исключений) нет, возвращаем регулярные, всё
-		если есть хоть один результат со значением 0
-			удаляем все результаты со значением 0
-			добавляем регулярные результаты
-		всё
-		
+
+		отделяем выключенные исключения
 		+защита от коротких/длинных исключений:
-		исключение длины r замещает регулярный текст длины r
+		всё, ответ состоит из исключений и регулярных результатов, для которых исключения выключены
 	'''
 	for i in range(len(args)): #идем по аргументам до 1го ELSE
 		if args[i]==ELSE:
@@ -550,13 +607,14 @@ def p_alt(s,p,*args):
 		rezs=[]
 		for patt in args:
 			rezs+=patt(s,p)
-		return rezs
+		return [(p1,rez_checker(r1)) for p1,r1 in rezs]
 	i+=1
 	r_rezs=[]                  #парсим все аргументы после ELSE
 	while i<len(args):
 		assert args[i]!=ELSE   #    assert ELSE больше не встречается
 		r_rezs+=args[i](s,p)
 		i+=1
+	r_rezs = [(p1,rez_checker(r1)) for p1,r1 in r_rezs]
 	if len(r_rezs)==0: return []#если результатов нет (регулярных), то всё
 	r_ends = {p1 for p1,r1 in r_rezs}### длины регулярных результатов
 	i=0
@@ -566,10 +624,11 @@ def p_alt(s,p,*args):
 		i+=1
 	if len(e_rezs)==0: 
 		return r_rezs          #если результатов (исключений) нет, возвращаем регулярные, всё
+
 							# выключенные исключения
-	disabled_e_rezs = [(p1,r1) for p1,r1 in e_rezs if r1==0 or isinstance(r1,RuleVars)]
+	disabled_e_rezs = [(p1,r1) for p1,r1 in e_rezs if type(r1)==RuleVars]
 	disabled_e_ends = {p1 for p1,r1 in disabled_e_rezs}### длины результатов выключенных исключений
-	e_rezs = [(p1,r1) for p1,r1 in e_rezs if not (r1==0 or isinstance(r1,RuleVars)) ]
+	e_rezs = [(p1,rez_checker(r1)) for p1,r1 in e_rezs if type(r1)!=RuleVars ]
 	e_ends = {p1 for p1,r1 in e_rezs}### длины результатов исключений
 		
 	wrong_ends = e_ends - r_ends#защита от коротких/длинных исключений
@@ -643,18 +702,7 @@ def seq(patterns,rule_group):#,numbrs=None
 		# [no,(rule,[(s_pos,test)])]
 		# test(s,p,s_p)
 		assert rule_group[0]!=0
-		global gl
-		if id(rule_group) not in gl.rules4reset:
-			gl.rules4reset[rid(ule_group)] = (rule_group, rule_group[0])
-		go_break = False
-		for k in range(1,len(rule_group)):
-			for n,test in rule_group[k][1]:
-				if test(s,p,gl.sentence_points[-n-1]):
-					rule_group[0]=k
-					rule = rule_group[rule_group[0]]
-					go_break = True
-					break
-			if go_break: break
+		rule = rule_group[rule_group[0]][0]
 	elif type(rule_group)==RuleVars:
 		rule = null_handler if rule_group[0]==0 else rule_group[rule_group[0]]
 	else:
@@ -662,10 +710,32 @@ def seq(patterns,rule_group):#,numbrs=None
 	def rule_group_adder(r):
 		r.parse_info.rule_group = rule_group
 		return r
+	def context_adder(rule,rezs,pos):
+		nonlocal rule_group
+		first_context = []
+		for i in range(len(rezs)):
+			rez = rezs[i]
+			for first,n in rez.context_info.first_context:
+				first_context.append((first,i))
+			if rez.context_info.context:
+				first_context.append((rez,i))
+		context = rule_group if type(rule_group)==RuleContext else None
+		rez = rule(*rezs)
+		if rule!=rule_group:
+			rez = rez_checker(rez)
+		if len(first_context)>0:
+			rez.context_info.first_context = first_context
+			rez.context_info.rule = rule
+			rez.context_info.args = rezs
+		if context:
+			rez.context_info.context = context
+			rez.context_info.pos = pos
+			rez.context_info.args = rezs
+		return rez
 	def p_seq_info(s,p):
-		return [(pos,rule_group_adder(rule(*rez))) for pos,rez in sp_seq(s,p,patterns)]
+		return [(pos,rule_group_adder(context_adder(rule,rez,p))) for pos,rez in sp_seq(s,p,patterns)]
 	def p_seq(s,p):
-		return [(pos,                 rule(*rez) ) for pos,rez in sp_seq(s,p,patterns)]
+		return [(pos,                 context_adder(rule,rez,p) ) for pos,rez in sp_seq(s,p,patterns)]
 	return p_seq_info if ParseInfo.enabled else p_seq
 
 global_cache=dict()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
 # # Зачем всё это?
@@ -10,50 +10,58 @@
 # Автоматизированный перевод дает где-то 15-20% автоматизации. Помимо словарей, глоссариев и прочей справочной информации, самая продвинутая (известная мне) технология - это память переводов, когда человек вручную переводит предложения, а система запоминает эти переводы, и если встречается предложение, которое было переведено раньше (или _похожее_ на него), его перевод подставляется автоматически. Но какова вероятность встретить в тексте 2 одинаковых предложения, если в них больше трёх слов?
 # 
 # Целью данного переводчика является автоматизация 90%. Не 100 и не 20. А также мгновенное вступление изменений в силу. Ну и возможность залезть в код.
+# 
+# -----
+# 
+# Любая система перевода состоит из двух аспектов:
+# * используемые структуры данных и алгоритмы
+# * способ заполнения базы данных
+# 
+# Есть следующие способы заполнения базы данных:
+# * статистический: у статистического перевода и у нейросетевого
+# * ручной: у перевода основанного на пправилах и у памяти переводов
+# 
+# Какими бы умными ни были нейросетевые системы, системы с ручным заполнением базы данных всегда будут оставаться актуальными.
 
 # # Основной принцип
 
 # ```
 # p_паттерн парсит текст (str, pos), 
 #     вызывая другие паттерны, возвращающие древовидные структуры
-#     эти древовидные структуры передает одному из правил
-#         (остальные вызовы правил закомментированы 
-#             - в рамках одного текста каждый паттерн имеет ровно 1 смысл)
+#     эти древовидные структуры передает одному из правил, сопоставленных данному паттерну
 #     и возвращает (pos, результат этого правила), помещенный в массив
 #     
-#     /*пока на ошибках парсинга концентрировать не будем*/
-#     если ничего не удалось распарсить, ???возвращаемый массив будет пустым???
+#     если ничего не удалось распарсить, возвращаемый массив будет пустым
 #     если удалось распарсить несколько вариантов - в массиве будет насколько вариантов
-#         сначала парсятся все исключения
-#         потом парсятся все обычные варианты (если нет исключений)
+#         сначала парсятся все обычные варианты
+#         и если есть хоть один обычный результат, 
+#             то парсятся все исключения
+#             в массиве результатов исключения замещают результаты, если их длины совпадают
 # ```
 # 
 # ```
 # r_правило получает список древовидных структур
 #     обрабатывает их по определенному правилу
+#         т.е. меняет параметры аргументов
 #     возвращает древовидную структуру
+#         т.е. создает структуру, содержащую в себе аргументы
+#     если в группе правил все правила отключены, то результатом будет 0 или ссылка на эту группу правил
+#     отключать все правила допустимо только в исключениях
 # ```
 # 
 # ```
-# древовидная структура - map, со следующими ключами
-#     type: 'noun'/'adj'/'verb'/'num'/... - определяем через isinstance()
+# древовидная структура - объект определенного класса, соответствующего части речи, который содержит
 #     постоянные параметры (для сущ.: род, число)
 #     переменные параметры (для сущ.: падеж)
+#         при изменении этих параметров автоматически менются параметры дочерних древовидных структур
 #     talk: массив древовидных структур
-#         или пар (тип, слово), где тип - main/punct/other
+#         или пар (тип, структура), где тип - main/dep/other
+#     и др.
 # ```
 # 
 # ```
 # str(древовидная структура)
 #     превращает древовидную структуру в строку
-# ```
-# 
-# ```
-# для каждого типа элемента древовидной структуры будет map
-#     где каждой строке (для сущ. - слово в и.п.) будет соответствовать
-#         структура данных, которая вместе в переменными параметрами передается в 
-#         sh_функция для этого типа элемента древовидной структуры
-#             которая будет возвращать слово в соотв. форме (для сущ. в соотв. падеже)
 # ```
 
 # # Что с этим делать дальше
@@ -68,12 +76,16 @@
 # Но в конечном итоге таких результатов должно быть немного.
 # Ситуация, когда получаются одинаковые результаты явлется нежелательной.
 # 
+# Уточним терминологию:
+# нетерминал - набор альтернатив паттернов
+# паттерн - последовательность терминалов/нетерминалов
+# 
 # В дальнейшем предполагается, что будет центральная грамматика, 
 # а у ее правил пользователи будут создавать исключения и расширения.
-# Фишка в том, что приредактировании грамматики этим способом 
+# Фишка в том, что при редактировании грамматики этим способом 
 #     поведение грамматики для уже имеющихся тестов/текстов не изменится.
 # Возможно периодически для оптимизации грамматики будет требоваться полная ее переработка,
-# но чисто математическая и довольно вычислительно-сложная задача.
+# но чисто математическая (т.е. не требующая тестов/текстов) и довольно вычислительно-сложная задача.
 # Впрочем и без оптимизации производительность ухудшается не сильно.
 # 
 # Паттерн A является исключением паттерна B, если 
@@ -84,16 +96,33 @@
 # Если А распарсилось неудачно, то результатом станосится результат B,
 # а если удачно - то результат B отбрасывается и результатом станосится результат A.
 # 
-# Паттерн C является расширением паттерна B, если
-# ...
+# т.к. исключения являются обычными нетерминалами, то внутри них тоже можно делать исключения
+# 
+# Расширения просто добавляются в список альтернатив.
+# Можно было бы просто в нетерминалы добавлять новые альтернативы, 
+# но это может привести к появлению разных вариантов разбора.
+# В этих случаях можно было бы создавать исклчения, разрешающие неоднозначность,
+# но чтобы всё происходило автоматически для уже переведенных текстов
+# надо чтобы результат помечался датой, которая является максимумом 
+#     из дат результатов (которые разобрал паттерн-последовательность) и даты создания этого паттерна.
+# Если в альтернативу попадают результаты одинаковой длины, то 
+#     новые отбрасываются и остается только старый.
 # 
 # В дальнейшем предполагается возможность каждый паттерн связывать с 
 # набором правил, а точнее с одним правилом из заданного набора.
-# А также возможность эти наборы пополнять.
+# А также возможность эти наборы пополнять и легко менять вариант перевода.
 # Одним из правил перевода исключения будет вариант, когда
 # результат исключения отбрасывается а результатом становится 
 # результат правила регулярного паттерна.
-# Это дает возможность не сломать уже имеющийся перевод из-за добавления исключений к грамматике.
+# Это дает возможность отключать исключения, т.к. они всё же вносят изменения в регулярный перевод.
+# 
+# Семантически возникают разные варианты использования наборов правил:
+# - смысловой
+#     в этом случае как правило смысл паттерна не меняется на протяжении всего текста
+# - указательный (контекстный): it, this, that, you
+#     ...
+# - эстетический
+#     его решать лучше за счет более крупных исключений (?)
 # 
 # Вопрос дефолтного связывания паттернов с правилами допускает множество решений
 # и остается открытым.
@@ -102,8 +131,6 @@
 # а также менять связи паттернов с правилами для своего текста, сохранять эти связи,
 # и применять к другим текстам.
 # 
-# паттерн - набор альтернатив
-# альтернатива - последовательность, с которой связан набор правил
 # набор правил - набор правил + номер дефолтного правила
 # 		или просто правило
 # 
@@ -121,7 +148,7 @@
 # * tests.ipynb - тесты уже имеющихся переводов
 # * utils.ipynb - прочее
 
-# In[ ]:
+# In[1]:
 
 
 '''англо-русский переводчик, основанный на правилах, с простым добавлением паттернов и правил
@@ -145,18 +172,22 @@ p_noun
 ''';
 
 
-# In[ ]:
+# In[2]:
 
 
 import parse_system
-from parse_system import S, SAttrs, ParseInfo, tokenizer, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open, ch_prefix, ch_anti_prefix,                        seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals, global_cache
+from parse_system import S, SAttrs, ParseInfo, tokenizer, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open, ch_prefix, ch_anti_prefix,                        seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals, global_cache,                         RuleVars, RuleContext
+
 import classes
 from classes import StC, StNum, StNoun, StVerb, I
+
 import ru_dictionary
 from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2
+
 import en_dictionary
-from en_dictionary import dict_adj, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb_simple, dict_verb_komu, r_adj_noun, dict_other,                        add_ennoun2, add_ennoun1, add_dict_variant,                         add_variant, remove_variant, get_variant, select_variant, variants
+from en_dictionary import dict_adj, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb_simple, dict_verb_komu, r_adj_noun, dict_other,                        add_ennoun2, add_ennoun1, add_dict_variant
 from importlib import reload
+from copy import copy, deepcopy
 
 
 # # Паттерны и правила: Составные
@@ -239,15 +270,28 @@ from importlib import reload
 # 
 # 
 
-# In[ ]:
+# In[3]:
 
 
 W('cat')(tokenize('cat'),0)
 
 
+# ## en_dictionary
+
+# ###### dict_noun
+# ###### dict_pronoun_ip
+# ###### dict_pronoun_dp
+# ###### dict_adj
+# ###### dict_numeral
+# ###### dict_verb_simple
+# ###### dict_verb_komu
+# 
+
 # ## Other
 
-# In[ ]:
+# ###### p_numeral
+
+# In[4]:
 
 
 @debug_pp
@@ -255,7 +299,9 @@ def p_numeral(s,p):
     return D(dict_numeral)(s,p)
 
 
-# In[ ]:
+# ###### p_adj
+
+# In[5]:
 
 
 #2->
@@ -266,7 +312,9 @@ def p_adj(s,p):
 
 # ## Noun-like
 
-# In[ ]:
+# ###### p_adj_noun3
+
+# In[6]:
 
 
 @debug_pp
@@ -280,7 +328,7 @@ ELSE,
 # r_adj_noun определен в en_dictionary.py
 
 
-# In[ ]:
+# In[7]:
 
 
 # исключения
@@ -297,7 +345,9 @@ def r_GOOD_MORNING(_g,_m):  return r_adj_noun(
 )
 
 
-# In[ ]:
+# ###### p_noun3
+
+# In[8]:
 
 
 @debug_pp
@@ -309,7 +359,9 @@ def p_noun3(s,p): return p_alt(s,p,
 )
 
 
-# In[ ]:
+# ###### p_noun2_1
+
+# In[9]:
 
 
 @debug_pp
@@ -323,7 +375,10 @@ def r_noun_dops(n,d): return StNoun([
 ])
 
 
-# In[ ]:
+# ###### p_noun2
+# ###### p_dop_noun2
+
+# In[10]:
 
 
 @debug_pp
@@ -342,7 +397,11 @@ def r_noun_numeral(n,num): return StNoun([
 ])
 
 
-# In[ ]:
+# ###### p_noun1
+# ###### p_dop_noun1
+# ###### p_noun1_ip
+
+# In[11]:
 
 
 @debug_pp
@@ -372,7 +431,11 @@ def r_numeral_noun(num,n):
     ],quantity=num.quantity)
 
 
-# In[ ]:
+# ###### p_noun
+# ###### p_dop_noun
+# ###### p_noun_ip
+
+# In[12]:
 
 
 @debug_pp
@@ -416,7 +479,9 @@ def r_noun_comma_noun(sn,c,n):    return StNoun([
 
 # ## Существительные в разных формах
 
-# In[ ]:
+# ###### p_noun_dp
+
+# In[13]:
 
 
 @debug_pp
@@ -433,7 +498,9 @@ def r_TO_noun_dp(_t,_n): return StNoun([
 ])
 
 
-# In[ ]:
+# ###### pe_IN_THE_STREET
+
+# In[14]:
 
 
 # на (определенной) улице
@@ -447,7 +514,9 @@ def r_NA_X_ULITSE(v,_a,_U): return StC([
 ])
 
 
-# In[ ]:
+# ###### pe_IN_adj_STREET
+
+# In[15]:
 
 
 # на какой-то улице
@@ -469,7 +538,9 @@ def r_NA_adj_ULITSE(v,_a,_U): return StC([
 ])
 
 
-# In[ ]:
+# ###### p_where
+
+# In[16]:
 
 
 # где
@@ -490,7 +561,9 @@ def r_NA_noun_pp(v,_n): return StC([
 ])
 
 
-# In[ ]:
+# ###### p_dop
+
+# In[17]:
 
 
 # одно дополнение
@@ -514,7 +587,9 @@ def r_S_noun_tp(s,n): return StNoun([
 ])
 
 
-# In[ ]:
+# ###### p_dops
+
+# In[18]:
 
 
 # последовательность дополнений
@@ -531,13 +606,15 @@ def r_seq_dops(d1,d2): return StC([
 
 # ## have/has
 
-# In[ ]:
+# In[19]:
 
 
 px_HAVE_HAS = alt( W('have'), W('has') )
 
 
-# In[ ]:
+# ###### p_have_question
+
+# In[20]:
 
 
 @debug_pp
@@ -567,10 +644,12 @@ def r_SKOLKO_U_noun_noun(how,many,_n1,have,_n2):  return StC([
     I(nodep=_n2,   pad='rp', npad='n' ),# у Него
     I(nodep=_n1, pad='rp'),
 ])
-rv_HOW_MANY_noun_HAVE_noun = [2,r_SKOLKO_noun_U_noun,r_SKOLKO_U_noun_noun]
+rv_HOW_MANY_noun_HAVE_noun = RuleVars([2,r_SKOLKO_noun_U_noun,r_SKOLKO_U_noun_noun])
 
 
-# In[ ]:
+# ###### pe_noun_HAVE_noun
+
+# In[21]:
 
 
 @debug_pp
@@ -596,7 +675,7 @@ def r_U_noun_noun(_n1_,_h_,_n2_):    return StC([
     ]), pull_attrs=1, attrs_from_right = _h_.attrs ),
     I(nodep=_n2_)
 ])
-rv_noun_HAVE_noun = [2,r_U_noun_noun, r_U_noun_EST_noun]
+rv_noun_HAVE_noun = RuleVars([2,r_U_noun_noun, r_U_noun_EST_noun])
 
 def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
     I(nodep=StC([
@@ -608,7 +687,9 @@ def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
 ])
 
 
-# In[ ]:
+# ###### pe_noun_HAVE
+
+# In[22]:
 
 
 @debug_pp
@@ -636,7 +717,9 @@ def r_U_noun_NET(_n1_,_h_,_no_):    return StC([
 ])
 
 
-# In[ ]:
+# ###### p_HAVE_noun
+
+# In[23]:
 
 
 @debug_pp
@@ -667,7 +750,9 @@ def r_NE_IMET(_v,no): return StVerb([
 
 # ## to_be
 
-# In[ ]:
+# ###### pe_noun_TOBE_where
+
+# In[24]:
 
 
 @debug_pp
@@ -692,7 +777,9 @@ def re_TO_X_where(_n,x,_w): return StC([
 ])
 
 
-# In[ ]:
+# ###### pe_noun_TOBE_noun
+
+# In[25]:
 
 
 @debug_pp
@@ -718,7 +805,9 @@ def re_TO_X_noun(_n1,_tobe,_n2): return StC([
 ])
 
 
-# In[ ]:
+# ###### p_TOBE
+
+# In[26]:
 
 
 @debug_pp
@@ -733,7 +822,9 @@ def r_EST(_v): return StVerb([
 ])
 
 
-# In[ ]:
+# ###### p_TOBE_noun
+
+# In[27]:
 
 
 @debug_pp
@@ -750,12 +841,12 @@ def r_JAVLYATSA_noun_tp(_v,_n): return StVerb([
     I(maindep=CW('являться',_v)),
     I(tp=_n,   pad='tp')
 ])
-rv_TOBE_noun = [1, r_EST_noun_ip, r_JAVLYATSA_noun_tp]
+rv_TOBE_noun = RuleVars([1, r_EST_noun_ip, r_JAVLYATSA_noun_tp])
 
 
 # ## Глагол с дополнениями
 
-# In[ ]:
+# In[28]:
 
 
 # разделяемые правила
@@ -769,7 +860,9 @@ def r_verb_noun_dp(_v,_p): return StVerb([
 ])
 
 
-# In[ ]:
+# ###### p_verb3_komu
+
+# In[29]:
 
 
 # сделать кому-то
@@ -781,7 +874,9 @@ def p_verb3_komu(s,p): return p_alt(s,p,
 # r_verb_noun_dp - разделяемое
 
 
-# In[ ]:
+# ###### p_verb3_komu_chto
+
+# In[30]:
 
 
 # сделать кому-то что-то
@@ -817,7 +912,9 @@ def r_verb_c_q_text(_v,c,q1,_p,q2): return StVerb([
 ])
 
 
-# In[ ]:
+# ###### p_verb2
+
+# In[31]:
 
 
 # глагол с дополнением
@@ -842,7 +939,9 @@ def re_verb_OT_noun_DO_noun(_v,ot,_n1,do,_n2): return StVerb([
 ])
 
 
-# In[ ]:
+# ###### p_verb3_simple
+
+# In[32]:
 
 
 # сделать что-то
@@ -854,7 +953,9 @@ def p_verb3_simple(s,p): return p_alt(s,p,
 # r_verb_noun_vp - разделяемое
 
 
-# In[ ]:
+# ###### p_verb3_1
+
+# In[33]:
 
 
 # сделать (кому-то что-то)
@@ -867,7 +968,9 @@ def p_verb3_1(s,p): return p_alt(s,p,
 )
 
 
-# In[ ]:
+# ###### p_verb3
+
+# In[34]:
 
 
 # могу сделать
@@ -884,7 +987,9 @@ def r_CAN_verb(c,v): return StVerb([
 
 # ## Глагол(ы) с подлежащим, или другой формы
 
-# In[ ]:
+# ###### p_noun_verb1
+
+# In[35]:
 
 
 # некто делает
@@ -910,7 +1015,9 @@ def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
 ])
 
 
-# In[ ]:
+# ###### p_verb1
+
+# In[36]:
 
 
 # некто делает/ делать/ делай
@@ -930,10 +1037,12 @@ def r_povel_verb_ed(_v): return StVerb([
 def r_povel_verb_mn(_v): return StVerb([
     I(maindep=_v, asp='sov', form='povel',chis='mn') # asp='sov',
 ])
-rv_rule_povel_verb = [1,r_povel_verb_ed,r_povel_verb_mn]
+rv_rule_povel_verb = RuleVars([1,r_povel_verb_ed,r_povel_verb_mn])
 
 
-# In[ ]:
+# ###### p_verb
+
+# In[37]:
 
 
 # сделать одно и/но сделать сдругое
@@ -987,7 +1096,9 @@ def re_U_noun_EST_noun_C_noun_I_verb(_n1_,_h_,sn,c,n,_i_,_v2_):    return StC([
 
 # ## Фразы, предложения, текст
 
-# In[ ]:
+# ###### p_phrase
+
+# In[38]:
 
 
 @debug_pp
@@ -1023,7 +1134,9 @@ def r_noun_COMMA_verb(_n,comma,_v):    return StC([
 ])
 
 
-# In[ ]:
+# ###### p_question_phrase
+
+# In[39]:
 
 
 @debug_pp
@@ -1031,13 +1144,15 @@ def p_question_phrase(s,p):
     return p_have_question(s,p)
 
 
-# In[ ]:
+# ###### p_sentence
+
+# In[40]:
 
 
 dict_proper={}# имена собственные
 
 
-# In[ ]:
+# In[41]:
 
 
 @debug_pp
@@ -1069,8 +1184,72 @@ def p_sentence(s,p):
     return rezs
 
 
-# In[ ]:
+# ###### p_text
 
+# In[42]:
+
+
+import bisect
+def context_fetch_1(s,sentence_points,first,next_):
+    '''преобразует узел next_ в соотетствии с контекстом first
+    
+    first - указатель на первый узел
+    next_ - указатель на текущий узел'''
+    if first == next_: # дошли до контекстного узла
+        assert first.context_info.context, first
+        rule_group = first.context_info.context
+        # находим номер текущего предложения
+        ns = bisect.bisect_right(sentence_points,first.context_info.pos)-1
+        # выбираем правило
+        go_break = False
+        for k in range(1,len(rule_group)):
+            for n,test in rule_group[k][1]:
+                if ns+n>=0 and test(s,first.context_info.pos,sentence_points[ns+n]):
+                    rule_group = copy(rule_group) # для parse_info
+                    rule_group[0] = k
+                    #rule = rule_group[k][0]
+                    go_break = True
+                    break
+            if go_break: break
+        else:
+            warning('ни один вариант не подходит')
+        rule = rule_group[rule_group[0]][0]
+        # применяем правило
+        if first.context_info.args:
+            newrez = rule(*args)
+        else:
+            newrez = deepcopy(rule)
+        assert len(first.context_info.first_context)==0
+        if ParseInfo.enabled:
+            newrez.parse_info = copy(first.parse_info)
+            newrez.parse_info.rule_group = rule_group
+        return newrez
+            
+    else:
+        first_context = next_.context_info.first_context
+        for i in range(len(first_context)):
+            if first_context[i][0]==first: break
+        else: raise TextError('обрыв пути к контексту')
+        n = first_context[i][1]
+        del first_context[i]
+        next_.context_info.args[n] =             context_fetch_1(s,sentence_points,first,next_.context_info.args[n])
+        newrez = next_.context_info.rule(*next_.context_info.args)
+        newrez.context_info = next_.context_info
+        if ParseInfo.enabled:
+            newrez.parse_info = next_.parse_info
+        return newrez
+        
+def context_fetch(s,sentence_points,rez):
+    '''преобразует узел next_ в соотетствии со всеми контекстами, которые указаны в узле'''
+    while len(rez.context_info.first_context): # по всем контекстам
+        # ищем независимый контекстный узел
+        for first ,n in rez.context_info.first_context:
+            if len(first.context_info.first_context)==0:
+                break
+        else:
+            raise TextError('не могу выбрать подходящий контекстный узел',rez.context_info.first_context)
+        rez = context_fetch_1(s,sentence_points,first,rez)
+    return rez
 
 @debug_pp
 def p_text(s,p):
@@ -1078,25 +1257,31 @@ def p_text(s,p):
     p_text::= p_sentence* | p_phrase
     '''
     rez=[]
+    sentence_points = []
     while p<len(s):
-        rezs=maxlen_filter(p_sentence,s,p)
+        sentence_points.append(p)
+        rezs=maxlen_filter(p_sentence(s,p))
         if len(rezs)==0: break
         p1,r1=rezs[0] # отбрасываем остальные результаты
         p=p1
-        rez.append(I(nodep=r1))
+        rez.append(r1)
+        
     if len(rez)>0:
-        return [(p,StC(rez))]
+        return [(p,StC([
+            I(nodep=context_fetch(s,sentence_points,r1)) for r1 in rez
+        ]))]
     else:
-        return maxlen_filter(alt(p_phrase,p_question_phrase),s,p)
+        rez = maxlen_filter(alt(p_phrase,p_question_phrase)(s,p))
+        return [(rez[0][0],context_fetch(s,sentence_points,rez[0][1]))]
 
-def maxlen_filter(patt,s,p):
+def maxlen_filter(rezs):
     '''находит самые длинные результаты, а остальные отбрасывает
     
     если самых длинных несколько - warning
     '''
-    rezs=patt(s,p)
-    m=0
-    im=set()
+    #rezs=patt(s,p)
+    m=0 # самая длинная длина
+    im=set() # множество номеров результатаов с самой длинной длиной
     for i in range(len(rezs)):
         if rezs[i][0]>m:
             m=rezs[i][0]
@@ -1107,16 +1292,59 @@ def maxlen_filter(patt,s,p):
     if len(long_rezs)>1:
         #print(p,m,s[p:m],SAttrs().join(s))
         warning('multiple results:\n'+
-            SAttrs().join(s[p:m])+'\n'+
+            #SAttrs().join(s[p:m])+'\n'+
             '\n'.join(r.tostr() for void,r in long_rezs)
         )
             
     return [] if len(long_rezs)==0 else long_rezs
 
 
+# ## Контекстные паттерны
+
+# In[43]:
+
+
+def rc_10_5(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10):
+    return x5
+def rc_8_3(x1,x2,x3,x4,x5,x6,x7,x8):
+    return x3
+
+
+# In[44]:
+
+
+def apc_IT_1(rod):
+    def pc_HOW_MANY_noun_HAVE_noun__noun_HAVE_noun(s,p,sp):
+        rez1 = seq([W('how'), W('many'), p_noun, px_HAVE_HAS, p_noun_ip, W('?'), 
+                   p_noun_ip, px_HAVE_HAS,  p_noun, W('.')
+                   ],rc_10_5)(s,sp)
+        if len(rez1)==0: return False
+        assert len(rez1)==1, (rez1, p,sp, s)
+        nonlocal rod
+        return rez1[0][1].rod==rod
+    return pc_HOW_MANY_noun_HAVE_noun__noun_HAVE_noun
+
+def apc_IT_2(rod):
+    def fun(s,p,sp):
+        rez1 = seq([p_noun_ip, p_TOBE, p_noun, W(';'), 
+                   p_noun_ip, p_TOBE,  p_noun, W('.')
+                   ],rc_8_3)(s,sp)
+        if len(rez1)==0: return False
+        assert len(rez1)==1, (rez1, p,sp, s)
+        nonlocal rod
+        return rez1[0][1].rod==rod
+    return fun
+
+dict_pronoun_ip['it'] = RuleContext([1,
+    (ruwords['оно'],[(-1,apc_IT_1('s')),(-1,apc_IT_2('s'))]),
+    (ruwords['он'], [(-1,apc_IT_1('m')),(-1,apc_IT_2('s'))]),
+    (ruwords['она'],[(-1,apc_IT_1('g')),(-1,apc_IT_2('s'))])
+                                    ])
+
+
 # ## Запуск и отладка
 
-# In[ ]:
+# In[45]:
 
 
 def _en2ru(s): # main
@@ -1137,7 +1365,8 @@ def _en2ru(s): # main
             ret_s += (' | ' if p>0 else '')+ s[p]
             p+=1
         else:
-            p1,r1 = rezs[0] # отбрасываем остальные результаты
+            assert len(rezs)==1
+            p1,r1 = rezs[0]
             #print(p,p1,r1)
             s1 = r1.tostr()
             #print(p,p1,r1)
@@ -1171,21 +1400,25 @@ def pr_l_repr(s):
     
 
 
-# In[ ]:
+# In[46]:
 
 
-def en2ru_with_variants(variants,s):
+def with_variants(variants,fun,s):
+    '''variants - список пар (RuleVars,n)'''
     saves = {}
     for k,v in variants:
-        saves[id(k)]=get_variant(k)
-        select_variant(k,v)
-    s = en2ru(s)
-    for k,v in variants:
-        select_variant(k,saves[id(k)])
+        saves[id(k)]=k.default()
+        if type(v)==str: v = ruwords[v]
+        k.select(v)
+    try:
+        s = fun(s)
+    finally:
+        for k,v in variants:
+            k.select(saves[id(k)])
     return s
 
 
-# In[ ]:
+# In[47]:
 
 
 def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
@@ -1206,7 +1439,7 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
     return m
 
 
-# In[ ]:
+# In[48]:
 
 
 def _parse_pat(patt,s):
@@ -1231,10 +1464,256 @@ def d_parse_pat(patt,s):
     return r
 
 
-# In[ ]:
+# In[49]:
 
 
-def scheme(s,detailed=1):
+from IPython.core.display import HTML
+
+def sch_print_rez0(rez,depth,s,detailed):
+    '''выводит исходное дерево слева направо'''
+    info = rez.parse_info
+    if hasattr(info,'p_start'):
+        print('  '*depth+' '+SAttrs().join( s[info.p_start : info.p_end] ))
+    if hasattr(info,'patterns') or hasattr(info,'rule_group'):
+        if hasattr(info,'patterns'):
+            #'<'+str(id(info.patterns))+'>'+
+            patterns = ' '.join(info.patterns2str()) if detailed>=1 else info.patterns2str()[0]
+        else:
+            patterns = ''
+        if hasattr(info,'rule_group'):
+            if type(info.rule_group)==list:
+                n = info.rule_group[0] if info.rule_group[0]!=0 else 1
+                rule = info.rule_group[n]
+                rules = str(n)+'/'+str(len(info.rule_group)-1)+' '
+            else:
+                rule = info.rule_group
+                rules = ''
+            rules += (rule.__name__ if callable(rule) else str(rule))
+        else:
+            rules = ''
+        print('  '*depth +' '+ patterns+' -> '+rules)
+    print('  '*depth+'*'+str(rez))
+    print('  '*depth+'*'+repr(rez))
+
+    if hasattr(rez,'talk'):
+        for x in rez.talk:
+            sch_print_rez0(x[1],depth+1,s,detailed)
+
+# создание узлов (+ преобразование rule_group)
+class Node:
+    __slots__ = ['childs','p_start','p_end','patterns','rule','rez','str','html']
+    def make_html(self,cols,DISTANCE):
+        l = '_'*(cols[self.p_end]-cols[self.p_start]-DISTANCE)
+        
+        patts=[]
+        elseflag = False
+        disabled_exc = False
+        for p in self.rez.parse_info.patterns:
+            if p=='__ELSE__':
+                elseflag = True
+            elif type(p)==RuleVars:
+                disabled_exc = True
+            else:
+                s = ''
+                if disabled_exc:
+                    disabled_exc = False
+                    s+='?'
+                if elseflag:
+                    elseflag = False
+                    s+='!'
+                if len(s)!=0: s+=' '
+                ps = p.__name__ if callable(p) else p['__name__']
+                if len(patts)==0:
+                    s+='<a href="#'+ps+'">'+ps+'</a>'
+                else:
+                    s+='(<a href="#'+ps+'">'+ps+'</a>)'
+                patts.append(s)
+        
+        p0 = patts[0]
+        r = self.rule
+        s = self.str
+        pp = '<br>'.join(patts[1:])
+        
+        self.html = l+'<br>'+p0+'<br>'+r+'<br>'+s+'<br>'+pp
+        
+def sch_make_tree(struct):
+    '''возвращает пару (глубина, [Node-ы])'''
+    if hasattr(struct,'talk'):
+        if hasattr(struct.parse_info,'p_start'):
+            info = struct.parse_info
+            node = Node()
+            node.p_start = info.p_start
+            node.p_end = info.p_end
+            node.patterns = info.patterns2str()
+            if hasattr(info,'rule_group'):
+                if isinstance(info.rule_group,RuleVars):
+                    assert info.rule_group[0]!=0, info.rule_group
+                    rule =                         info.rule_group[info.rule_group[0]][0] if type(info.rule_group)==RuleContext                         else info.rule_group[info.rule_group[0]]
+                    rules= ('c-' if type(info.rule_group)==RuleContext else '')+                        str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
+                else:
+                    rule = info.rule_group
+                    rules = ''
+                node.rule = rules + (rule.__name__ if callable(rule) else str(rule))
+            else:
+                node.rule = ''
+            node.rez = struct
+            node.childs = []
+            depth = 0
+            for tup in struct.talk:
+                d,m = sch_make_tree(tup[1])
+                if d>depth: depth = d
+                node.childs+=m
+            node.childs.sort(key=lambda node:node.p_start)
+            return (depth+1,[node])
+        else:
+            mm = []
+            depth = 0
+            for tup in struct.talk:
+                d,m = sch_make_tree(tup[1])
+                if d>depth: depth = d
+                mm+=m
+            return (depth,mm)
+    elif hasattr(struct.parse_info,'p_start'):
+        # получется, всё, что не является структурой - обязано содержать parse_info ?
+        info = struct.parse_info
+        node = Node()
+        node.p_start = info.p_start
+        node.p_end = info.p_end
+        node.patterns = info.patterns2str()
+        if hasattr(info,'rule_group'):
+            if isinstance(info.rule_group,RuleVars):
+                no = info.rule_group[0] if info.rule_group[0]!=0 else 1
+                rule =                     info.rule_group[info.rule_group[0]][0] if type(info.rule_group)==RuleContext                     else info.rule_group[info.rule_group[0]]
+                rules= ('c-' if type(info.rule_group)==RuleContext else '')+                    str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
+            else:
+                rule = info.rule_group
+                rules = ''
+            node.rule = rules + (rule.__name__ if callable(rule) else str(rule))
+        else:
+            node.rule = ''
+        node.rez = struct
+        node.childs = []
+        return (1,[node])
+    else:
+        return (0,[])
+
+def sch_print_rez1(info,depth,s):
+    '''выводит преобразованное дерево слева направо'''
+    if hasattr(info,'p_start'):
+        print('  '*depth+' '+SAttrs().join( s[info.p_start : info.p_end] ))
+    patterns = ' '.join(info.patterns) if full else info.patterns[0]
+    print('  '*depth +' '+ patterns+' -> '+info.rule)
+    print('  '*depth+'*'+str(info.rez))
+
+    if hasattr(info,'childs'):
+        for x in info.childs:
+            sch_print_rez1(x,depth+1,s)
+
+def sch_make_lines(node,lines,cols,DISTANCE):
+    '''преобразует дерево в таблицу'''
+    dd=0 # уровень, номер Лайна. У детей меньше чем у родителей.
+    for c in node.childs:
+        d = sch_make_lines(c,lines,cols,DISTANCE)
+        if d>dd: dd = d
+
+    # приводим результат к текстовой форме
+    node.str = repr(node.rez.tostr())[1:-1]
+    # приводим паттерны в надлежащий вид
+    for i in range(1,len(node.patterns)):
+        node.patterns[i] = '('+node.patterns[i]+')'
+
+    # вычисляем кол-во строк в Лайне
+    if len(node.patterns)>lines[dd].h: lines[dd].h = len(node.patterns)
+
+    # длина строки в символах
+    maxlen = max(len(node.rule),len(node.str),max([len(i) for i in node.patterns]))
+    dlen = (maxlen+DISTANCE) - (cols[node.p_end]-cols[node.p_start])
+    #print(node.str,maxlen,dlen)
+    # модифицируем позиции столбцов
+    if dlen>0:
+        for i in range(node.p_end,len(cols)):
+            cols[i]+=dlen
+
+    # присваиваем объект в таблицу
+    lines[dd].line[node.p_start] = node
+    return dd+1
+
+def sch_print_table(s,cols,lines,DISTANCE,detailed):
+    def inde(s,p_start,p_end):
+        '''дополняет строку пробелами, чтобы заполнить нужные ячейки'''
+        return s+' '*(cols[p_end]-cols[p_start]-len(s))
+
+    # выводим исходную строку
+    for i in range(len(s)):
+        print(inde(s[i],i,i+1),end='')
+    print()
+
+    for line_ in lines:
+        line=line_.line
+
+        # _______
+        i=0
+        l=''
+        while i<len(s):
+            if line[i]==None:
+                l+=inde('',i,i+1)
+                i+=1
+            else:
+                l+='_'*(cols[line[i].p_end]-cols[line[i].p_start]-DISTANCE)+' '*DISTANCE
+                i=line[i].p_end
+        print(l)
+
+        # patterns[0]
+        i=0
+        l=''
+        while i<len(s):
+            if line[i]==None:
+                l+=inde('',i,i+1)
+                i+=1
+            else:
+                l+=inde(line[i].patterns[0],line[i].p_start,line[i].p_end)
+                i=line[i].p_end
+        print(l)
+
+        # rule
+        i=0
+        l=''
+        while i<len(s):
+            if line[i]==None:
+                l+=inde('',i,i+1)
+                i+=1
+            else:
+                l+=inde(line[i].rule,line[i].p_start,line[i].p_end)
+                i=line[i].p_end
+        print(l)
+
+        # rez
+        i=0
+        l=''
+        while i<len(s):
+            if line[i]==None:
+                l+=inde('',i,i+1)
+                i+=1
+            else:
+                l+=inde(line[i].str,line[i].p_start,line[i].p_end)
+                i=line[i].p_end
+        print(l)
+
+        # patterns[j]
+        if detailed>=1:
+            for j in range(1,line_.h):
+                i=0
+                l=''
+                while i<len(s):
+                    if line[i]==None or j>=len(line[i].patterns):
+                        l+=inde('',i,i+1)
+                        i+=1
+                    else:
+                        l+=inde(line[i].patterns[j],line[i].p_start,line[i].p_end)
+                        i=line[i].p_end
+                print(l)
+
+def scheme(s,detailed=1,nohtml = False):
     '''печатает схему разбора
     
     есть дополнительный аргумент datailed
@@ -1248,137 +1727,44 @@ def scheme(s,detailed=1):
     # парсим строку
     ParseInfo.enabled = True
     try:
-        rezs=maxlen_filter(alt(p_sentence,p_phrase,p_question_phrase),s,0)
+        rezs=maxlen_filter(alt(p_sentence,p_phrase,p_question_phrase)(s,0))
     finally:
         ParseInfo.enabled = False
         
-    print(len(rezs),'результатов')
+    hstr = ''
+    def h_print(s=''):
+        nonlocal nohtml
+        if nohtml:
+            print(s)
+        else:
+            nonlocal hstr
+            hstr+=s+'\n'
+        
+    h_print(str(len(rezs))+' результатов')
     # анализируем каждый результат
     for end,rez in rezs:
-        print()
+        h_print()
         # простой построчный вывод узлов результата
         if detailed==2:
-            def print_rez0(rez,depth):
-                info = rez.parse_info
-                if hasattr(info,'p_start'):
-                    print('  '*depth+' '+SAttrs().join( s[info.p_start : info.p_end] ))
-                if hasattr(info,'patterns') or hasattr(info,'rule_group'):
-                    if hasattr(info,'patterns'):
-                        #'<'+str(id(info.patterns))+'>'+
-                        patterns = ' '.join(info.patterns) if detailed>=1 else info.patterns[0]
-                    else:
-                        patterns = ''
-                    if hasattr(info,'rule_group'):
-                        if type(info.rule_group)==list:
-                            n = info.rule_group[0] if info.rule_group[0]!=0 else 1
-                            rule = info.rule_group[n]
-                            rules = str(n)+'/'+str(len(info.rule_group)-1)+' '
-                        else:
-                            rule = info.rule_group
-                            rules = ''
-                        rules += (rule.__name__ if callable(rule) else str(rule))
-                    else:
-                        rules = ''
-                    print('  '*depth +' '+ patterns+' -> '+rules)
-                print('  '*depth+'*'+str(rez))
-                print('  '*depth+'*'+repr(rez))
-
-                if hasattr(rez,'talk'):
-                    for x in rez.talk:
-                        print_rez0(x[1],depth+1)
-        
             rez.pull_deferred()
-            print_rez0(rez,0)
-        
-        # создание узлов
-        class Node:
-            __slots__ = ['childs','p_start','p_end','patterns','rule','rez']
-        def make_tree(struct):
-            if hasattr(struct,'talk'):
-                if hasattr(struct.parse_info,'p_start'):
-                    info = struct.parse_info
-                    node = Node()
-                    node.p_start = info.p_start
-                    node.p_end = info.p_end
-                    node.patterns = info.patterns
-                    if hasattr(info,'rule_group'):
-                        if type(info.rule_group)==list:
-                            assert info.rule_group[0]!=0, info.rule_group
-                            rule = info.rule_group[info.rule_group[0]]
-                            rules = str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
-                        else:
-                            rule = info.rule_group
-                            rules = ''
-                        node.rule = rules + (rule.__name__ if callable(rule) else str(rule))
-                    else:
-                        node.rule = ''
-                    node.rez = struct
-                    node.childs = []
-                    depth = 0
-                    for tup in struct.talk:
-                        d,m = make_tree(tup[1])
-                        if d>depth: depth = d
-                        node.childs+=m
-                    node.childs.sort(key=lambda node:node.p_start)
-                    return (depth+1,[node])
-                else:
-                    mm = []
-                    depth = 0
-                    for tup in struct.talk:
-                        d,m = make_tree(tup[1])
-                        if d>depth: depth = d
-                        mm+=m
-                    return (depth,mm)
-            elif hasattr(struct.parse_info,'p_start'):
-                info = struct.parse_info
-                node = Node()
-                node.p_start = info.p_start
-                node.p_end = info.p_end
-                node.patterns = info.patterns
-                if hasattr(info,'rule_group'):
-                    if type(info.rule_group)==list:
-                        no = info.rule_group[0] if info.rule_group[0]!=0 else 1
-                        rule = info.rule_group[no]
-                        rules = str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
-                    else:
-                        rule = info.rule_group
-                        rules = ''
-                    node.rule = rules + (rule.__name__ if callable(rule) else str(rule))
-                else:
-                    node.rule = ''
-                node.rez = struct
-                node.childs = []
-                return (1,[node])
-            else:
-                return (0,[])
+            sch_print_rez0(rez,0,s,detailed)
         
         # простой вывод узлов
         if 0:
-            def print_rez1(info,depth):
-                if hasattr(info,'p_start'):
-                    print('  '*depth+' '+SAttrs().join( s[info.p_start : info.p_end] ))
-                patterns = ' '.join(info.patterns) if full else info.patterns[0]
-                print('  '*depth +' '+ patterns+' -> '+info.rule)
-                print('  '*depth+'*'+str(info.rez))
-
-                if hasattr(info,'childs'):
-                    for x in info.childs:
-                        print_rez1(x,depth+1)
-                    
             rez.pull_deferred()
             
         # создание дерева
-        depth,mm = make_tree(rez)
+        depth,mm = sch_make_tree(rez)
         assert len(mm)==1
         tree=mm[0]
         
         # простой вывод узлов
         if 0:
             print('depth=',depth)
-            print_rez1(tree,0)
+            sch_print_rez1(tree,0,s)
         
         DISTANCE = 2
-        cols = []
+        cols = [] # позиции столбцов - кол-во символов от начала строки до начала столбца
         pos=0
         for word in s:
             cols.append(pos)
@@ -1388,105 +1774,38 @@ def scheme(s,detailed=1):
         class Line:
             __slots__=['h','line']
             def __init__(self,h,l):
-                self.h = h
-                self.line = l
+                self.h = h      # количество строчек в чинии
+                self.line = l   # список объектов (Node-ов) по столбцам
                 
         lines = [Line(0,[None for i in range(len(s))]) for j in range(depth)]
-        def make_lines(node):
-            dd=0
-            for c in node.childs:
-                d = make_lines(c)
-                if d>dd: dd = d
-                    
-            node.rez = repr(node.rez.tostr())[1:-1]
-            for i in range(1,len(node.patterns)):
-                node.patterns[i] = '('+node.patterns[i]+')'
-            
-            if len(node.patterns)>lines[dd].h: lines[dd].h = len(node.patterns)
-                
-            maxlen = max(len(node.rule),len(node.rez),max([len(i) for i in node.patterns]))
-            dlen = (maxlen+DISTANCE) - (cols[node.p_end]-cols[node.p_start])
-            #print(node.rez,maxlen,dlen)
-            if dlen>0:
-                for i in range(node.p_end,len(cols)):
-                    cols[i]+=dlen
-            
-            lines[dd].line[node.p_start] = node
-            return dd+1
-        dd = make_lines(tree)
+        dd = sch_make_lines(tree,lines,cols,DISTANCE)
         assert dd==depth
         
-        def inde(s,p_start,p_end):
-            return s+' '*(cols[p_end]-cols[p_start]-len(s))
+        if nohtml:
+            sch_print_table(s,cols,lines,DISTANCE,detailed)
         
-        for i in range(len(s)):
-            print(inde(s[i],i,i+1),end='')
-        print()
-        
-        for line_ in lines:
-            line=line_.line
-            
-            # _______
-            i=0
-            l=''
-            while i<len(s):
-                if line[i]==None:
-                    l+=inde('',i,i+1)
-                    i+=1
-                else:
-                    l+='_'*(cols[line[i].p_end]-cols[line[i].p_start]-DISTANCE)+' '*DISTANCE
-                    i=line[i].p_end
-            print(l)
-            
-            # patterns[0]
-            i=0
-            l=''
-            while i<len(s):
-                if line[i]==None:
-                    l+=inde('',i,i+1)
-                    i+=1
-                else:
-                    l+=inde(line[i].patterns[0],line[i].p_start,line[i].p_end)
-                    i=line[i].p_end
-            print(l)
+        else:
+            def make_html(n):
+                n.make_html(cols,DISTANCE)
+                for i in n.childs:
+                    make_html(i)
+            make_html(tree)
 
-            # rule
-            i=0
-            l=''
-            while i<len(s):
-                if line[i]==None:
-                    l+=inde('',i,i+1)
-                    i+=1
-                else:
-                    l+=inde(line[i].rule,line[i].p_start,line[i].p_end)
-                    i=line[i].p_end
-            print(l)
+            ss = '<tr>'+''.join(['<td>'+si+'</td>' for si in s])+'</tr>\n'
+            for ll in lines:
+                sl = '<tr>\n'
+                p_end=0
+                for l in ll.line:
+                    if l!=None:
+                        sl+='<td></td>'*(l.p_start-p_end)
+                        sl+='<td colspan="'+str(l.p_end-l.p_start)+'">'+l.html+'</td>\n'
+                        p_end = l.p_end
+                ss+=sl+'</tr>\n\n'
 
-            # rez
-            i=0
-            l=''
-            while i<len(s):
-                if line[i]==None:
-                    l+=inde('',i,i+1)
-                    i+=1
-                else:
-                    l+=inde(line[i].rez,line[i].p_start,line[i].p_end)
-                    i=line[i].p_end
-            print(l)
-            
-            if detailed>=1:
-                for j in range(1,line_.h):
-                    # patterns[j]
-                    i=0
-                    l=''
-                    while i<len(s):
-                        if line[i]==None or j>=len(line[i].patterns):
-                            l+=inde('',i,i+1)
-                            i+=1
-                        else:
-                            l+=inde(line[i].patterns[j],line[i].p_start,line[i].p_end)
-                            i=line[i].p_end
-                    print(l)
+            h_print('<table>'+ss+'\n</table>\n')
+
+    if not nohtml:
+        return HTML(hstr)
            
 
 
@@ -1498,8 +1817,10 @@ def scheme(s,detailed=1):
 # выбираем варианты вручную
 # пока в одном тексте не начнут требоваться разные варианты одного правила
 # 
+# на боевое применение не выходим
+# пока не будут пройдены времена глаголов
+# 
 # КОДИТЬ И ДЕБАЖИТЬ ТЕКУЩЕЕ
-# 12) прилагательные, расположение
 # 13) где?
 # 14) какого цвета?
 # 15) посмотри
@@ -1538,6 +1859,8 @@ def scheme(s,detailed=1):
 # вижу двух рыжих котов
 # вижу два горячих утюга
 # два пирожных
+# 
+# add_skl_suffix
 # ```
 
 # ## придумываем способ выборов вариантов (контекстных)
@@ -1546,6 +1869,7 @@ def scheme(s,detailed=1):
 # 
 # git-ветка с исключениями
 #     исключения на несколько предложений
+#      - не правильно, контексты - не синтаксические конструкции
 # git-ветка с нейросетью
 #     научится...
 # git-ветка с другим жестким алгоритмом
@@ -1560,7 +1884,7 @@ def scheme(s,detailed=1):
 #                 True - узел зависит от контекста
 #                     ссылка на правило, также принимат контекст
 #                 False - узел не зависит от контекста
-#             contect_dep_srcs - массив номеров - 
+#             context_dep_srcs - массив номеров - 
 #                 какие аргументы правила зависят от контекста (или их потомки зависят от контекста)
 #                 т.е. какие аргументы правила требую ремейка в случае изменения контекста
 # 
@@ -1597,42 +1921,80 @@ def scheme(s,detailed=1):
 
 # # Тесты
 
-# In[ ]:
+# In[50]:
 
 
-get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
+#!jupyter nbconvert --to script en2ru.ipynb
 
 
-# In[ ]:
+# In[51]:
 
 
 en2ru('I see jam and one cup.')
 
 
-# In[ ]:
+# In[52]:
+
+
+en2ru('They have a horse;it is black.')
+
+
+# In[53]:
+
+
+en2ru('How many chickens has the hen? It has eleven.')
+
+
+# In[54]:
 
 
 #decline('two watches')
 
 
-# In[ ]:
+# In[55]:
+
+
+scheme('it is white too')
+
+
+# In[56]:
+
+
+en2ru('it is white too')
+
+
+# In[57]:
 
 
 get_ipython().getoutput('!')
-pr_l_repr(en2ru_with_variants([
+pr_l_repr(with_variants([
     (dict_pronoun_ip['it'],3),
-],'''She has a hat; it is white too.
+],en2ru,'''She has a hat; it is white too.
 She has a ribbon; it is red.
 '''))
 
 
-# In[ ]:
+# In[58]:
+
+
+en2ru('''Have you a cat? Yes,
+	we have.
+	How many kittens has
+	the cat?
+	It has one kitten.
+	How many ducks have
+	you?
+	We have two ducks and
+	ten ducklings.''')
+
+
+# In[59]:
 
 
 import tests
 tests = reload(tests)
 tests.init(parse_system,en_dictionary,
-           en2ru,en2ru_with_variants,decline,scheme,d_en2ru,pr_l_repr,
+           en2ru,with_variants,decline,scheme,d_en2ru,pr_l_repr,
            p_noun,p_noun1,r_noun_comma_noun,rv_noun_HAVE_noun,
           1,False)
 tests.test1()
@@ -1651,8 +2013,23 @@ tests.finalize()
 tests.TEST_ERRORS
 
 
-# In[ ]:
+# In[60]:
 
 
+pr_l_repr(en2ru('''They have a horse;
+	it is black.
+	They have a pig;
+	it is big.
+	They have a goat;
+	it is white.
+	They have a cow;
+	the cow is red.
+	They have no car.
+	'''))
 
+
+# In[61]:
+
+
+scheme('it is black.')
 

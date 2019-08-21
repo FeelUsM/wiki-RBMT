@@ -258,7 +258,7 @@ def ____Pronoun():
 	it = dict_pronoun_ip['it']
 	it.append(dict_pronoun_ip['she'])
 	it.select(tmp)
-	print(it.default())
+	#print(it.default())
 
 ____Pronoun()
 
