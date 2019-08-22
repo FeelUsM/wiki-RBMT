@@ -285,7 +285,7 @@ W('cat')(tokenize('cat'),0)
 # ###### dict_numeral
 # ###### dict_verb_simple
 # ###### dict_verb_komu
-# 
+# r_adj_noun
 
 # ## Other
 
@@ -313,6 +313,7 @@ def p_adj(s,p):
 # ## Noun-like
 
 # ###### p_adj_noun3
+# r_A_noun, r_THE_noun, r_GOOD_MORNING
 
 # In[6]:
 
@@ -360,6 +361,7 @@ def p_noun3(s,p): return p_alt(s,p,
 
 
 # ###### p_noun2_1
+# r_noun_dops
 
 # In[9]:
 
@@ -377,6 +379,7 @@ def r_noun_dops(n,d): return StNoun([
 
 # ###### p_noun2
 # ###### p_dop_noun2
+# r_noun_numeral
 
 # In[10]:
 
@@ -400,6 +403,7 @@ def r_noun_numeral(n,num): return StNoun([
 # ###### p_noun1
 # ###### p_dop_noun1
 # ###### p_noun1_ip
+# r_numeral_noun
 
 # In[11]:
 
@@ -434,6 +438,7 @@ def r_numeral_noun(num,n):
 # ###### p_noun
 # ###### p_dop_noun
 # ###### p_noun_ip
+# r_noun_and_noun, r_noun_comma_noun
 
 # In[12]:
 
@@ -480,6 +485,7 @@ def r_noun_comma_noun(sn,c,n):    return StNoun([
 # ## Существительные в разных формах
 
 # ###### p_noun_dp
+# r_noun_dp, r_TO_noun_dp
 
 # In[13]:
 
@@ -499,6 +505,7 @@ def r_TO_noun_dp(_t,_n): return StNoun([
 
 
 # ###### pe_IN_THE_STREET
+# r_NA_X_ULITSE
 
 # In[14]:
 
@@ -515,6 +522,7 @@ def r_NA_X_ULITSE(v,_a,_U): return StC([
 
 
 # ###### pe_IN_adj_STREET
+# r_NA_adj_ULITSE
 
 # In[15]:
 
@@ -539,6 +547,7 @@ def r_NA_adj_ULITSE(v,_a,_U): return StC([
 
 
 # ###### p_where
+# r_V_noun_pp, r_NA_noun_pp
 
 # In[16]:
 
@@ -562,6 +571,7 @@ def r_NA_noun_pp(v,_n): return StC([
 
 
 # ###### p_dop
+# r_X_noun_dp, r_IZ_noun, r_S_noun_tp
 
 # In[17]:
 
@@ -588,6 +598,7 @@ def r_S_noun_tp(s,n): return StNoun([
 
 
 # ###### p_dops
+# r_seq_dops
 
 # In[18]:
 
@@ -613,6 +624,7 @@ px_HAVE_HAS = alt( W('have'), W('has') )
 
 
 # ###### p_have_question
+# r_have_question, rv_HOW_MANY_noun_HAVE_noun(r_SKOLKO_noun_U_noun, r_SKOLKO_U_noun_noun)
 
 # In[20]:
 
@@ -648,6 +660,7 @@ rv_HOW_MANY_noun_HAVE_noun = RuleVars([2,r_SKOLKO_noun_U_noun,r_SKOLKO_U_noun_no
 
 
 # ###### pe_noun_HAVE_noun
+# rv_noun_HAVE_noun(r_U_noun_EST_noun, r_U_noun_noun), r_U_noun_NET_noun
 
 # In[21]:
 
@@ -688,6 +701,7 @@ def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
 
 
 # ###### pe_noun_HAVE
+# r_U_noun_EST, r_U_noun_NET
 
 # In[22]:
 
@@ -718,6 +732,7 @@ def r_U_noun_NET(_n1_,_h_,_no_):    return StC([
 
 
 # ###### p_HAVE_noun
+# r_IMET_noun_vp, r_NE_IMET_noun_vp, r_IMET, r_NE_IMET
 
 # In[23]:
 
@@ -751,6 +766,7 @@ def r_NE_IMET(_v,no): return StVerb([
 # ## to_be
 
 # ###### pe_noun_TOBE_where
+# re_ETO_X_where, re_TO_X_where, r_noun_X_where
 
 # In[24]:
 
@@ -778,6 +794,7 @@ def re_TO_X_where(_n,x,_w): return StC([
 
 
 # ###### pe_noun_TOBE_noun
+# re_ETO_X_noun, re_TO_X_noun, r_noun_X_noun
 
 # In[25]:
 
@@ -806,6 +823,7 @@ def re_TO_X_noun(_n1,_tobe,_n2): return StC([
 
 
 # ###### p_TOBE
+# r_EST
 
 # In[26]:
 
@@ -823,6 +841,7 @@ def r_EST(_v): return StVerb([
 
 
 # ###### p_TOBE_noun
+# rv_TOBE_noun(r_EST_noun_ip, r_JAVLYATSA_noun_tp)
 
 # In[27]:
 
@@ -845,6 +864,9 @@ rv_TOBE_noun = RuleVars([1, r_EST_noun_ip, r_JAVLYATSA_noun_tp])
 
 
 # ## Глагол с дополнениями
+
+# ###### разделяемые правила
+# r_verb_noun_vp, r_verb_noun_dp
 
 # In[28]:
 
@@ -875,6 +897,7 @@ def p_verb3_komu(s,p): return p_alt(s,p,
 
 
 # ###### p_verb3_komu_chto
+# r_verb_c_phrase, r_verb_q_text, r_verb_c_q_text
 
 # In[30]:
 
@@ -913,6 +936,7 @@ def r_verb_c_q_text(_v,c,q1,_p,q2): return StVerb([
 
 
 # ###### p_verb2
+# re_verb_OT_noun_DO_noun, r_verb_dops
 
 # In[31]:
 
@@ -969,6 +993,7 @@ def p_verb3_1(s,p): return p_alt(s,p,
 
 
 # ###### p_verb3
+# r_CAN_verb
 
 # In[34]:
 
@@ -988,6 +1013,7 @@ def r_CAN_verb(c,v): return StVerb([
 # ## Глагол(ы) с подлежащим, или другой формы
 
 # ###### p_noun_verb1
+# r_noun_verb, r_noun_TOZHE_verb
 
 # In[35]:
 
@@ -1016,6 +1042,7 @@ def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
 
 
 # ###### p_verb1
+# r_to_verb, rv_rule_povel_verb(r_povel_verb_ed, r_povel_verb_mn)
 
 # In[36]:
 
@@ -1041,6 +1068,7 @@ rv_rule_povel_verb = RuleVars([1,r_povel_verb_ed,r_povel_verb_mn])
 
 
 # ###### p_verb
+# r_verb_NO_verb, r_verb_c_verb, r_verb_I_verb, re_U_noun_EST_noun_C_noun_I_verb
 
 # In[37]:
 
@@ -1186,8 +1214,10 @@ def p_sentence(s,p):
 
 # ###### p_text
 
-# In[42]:
+# In[86]:
 
+
+CONTEXT_DEBUGGING = False
 
 import bisect
 def context_fetch_1(s,sentence_points,first,next_):
@@ -1195,6 +1225,7 @@ def context_fetch_1(s,sentence_points,first,next_):
     
     first - указатель на первый узел
     next_ - указатель на текущий узел'''
+    global CONTEXT_DEBUGGING
     if first == next_: # дошли до контекстного узла
         assert first.context_info.context, first
         rule_group = first.context_info.context
@@ -1202,17 +1233,23 @@ def context_fetch_1(s,sentence_points,first,next_):
         ns = bisect.bisect_right(sentence_points,first.context_info.pos)-1
         # выбираем правило
         go_break = False
-        for k in range(1,len(rule_group)):
-            for n,test in rule_group[k][1]:
+        for k in range(1,len(rule_group)): # по всем правилам
+            j = 0
+            for n,test in rule_group[k][1]: # по всем тестам данного правила
                 if ns+n>=0 and test(s,first.context_info.pos,sentence_points[ns+n]):
                     rule_group = copy(rule_group) # для parse_info
                     rule_group[0] = k
-                    #rule = rule_group[k][0]
+                    if CONTEXT_DEBUGGING:
+                        print('at',first.context_info.pos,
+                              'найдено правило',k,
+                              'по тесту',j,'('+str(sentence_points[ns+n])+')')
                     go_break = True
                     break
+                j+=1
             if go_break: break
         else:
-            warning('ни один вариант не подходит')
+            if CONTEXT_DEBUGGING:
+                print('at',first.context_info.pos,': ни один вариант не подходит')
         rule = rule_group[rule_group[0]][0]
         # применяем правило
         if first.context_info.args:
@@ -1240,7 +1277,7 @@ def context_fetch_1(s,sentence_points,first,next_):
         return newrez
         
 def context_fetch(s,sentence_points,rez):
-    '''преобразует узел next_ в соотетствии со всеми контекстами, которые указаны в узле'''
+    '''преобразует узел rez в соотетствии со всеми контекстами, которые указаны в узле'''
     while len(rez.context_info.first_context): # по всем контекстам
         # ищем независимый контекстный узел
         for first ,n in rez.context_info.first_context:
@@ -1267,6 +1304,16 @@ def p_text(s,p):
         rez.append(r1)
         
     if len(rez)>0:
+        global CONTEXT_DEBUGGING
+        if CONTEXT_DEBUGGING:
+            print('--- text start ---')
+            for isp in sentence_points[:-1]:
+                sp = sentence_points[isp]
+                nsp =sentence_points[isp+1]
+                print(sp,SAttrs().join(s[sp:nsp]))
+            sp = sentence_points[-1]
+            print(sp,SAttrs().join(s[sp:]))
+            print('--- text end ---')
         return [(p,StC([
             I(nodep=context_fetch(s,sentence_points,r1)) for r1 in rez
         ]))]
@@ -1304,13 +1351,17 @@ def maxlen_filter(rezs):
 # In[43]:
 
 
+def rc_collect_all(*args):
+    return StC([
+            I(nodep=r1) for r1 in args
+        ])
 def rc_10_5(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10):
     return x5
 def rc_8_3(x1,x2,x3,x4,x5,x6,x7,x8):
     return x3
 
 
-# In[44]:
+# In[103]:
 
 
 def apc_IT_1(rod):
@@ -1318,33 +1369,57 @@ def apc_IT_1(rod):
         rez1 = seq([W('how'), W('many'), p_noun, px_HAVE_HAS, p_noun_ip, W('?'), 
                    p_noun_ip, px_HAVE_HAS,  p_noun, W('.')
                    ],rc_10_5)(s,sp)
-        if len(rez1)==0: return False
+        #print('test: how many:',p,sp)
+        if len(rez1)==0: 
+            #print('test rez: False # len(rez1)==0')
+            return False
         assert len(rez1)==1, (rez1, p,sp, s)
         nonlocal rod
+        #print('test rez:',rez1[0][1].rod==rod,'#',rez1[0][1].rod,rod)
         return rez1[0][1].rod==rod
     return pc_HOW_MANY_noun_HAVE_noun__noun_HAVE_noun
 
 def apc_IT_2(rod):
     def fun(s,p,sp):
-        rez1 = seq([p_noun_ip, p_TOBE, p_noun, W(';'), 
-                   p_noun_ip, p_TOBE,  p_noun, W('.')
+        rez1 = seq([p_noun_ip, alt(px_HAVE_HAS,p_TOBE), p_noun, W(';'), 
+                   p_noun_ip, p_TOBE,  alt(p_noun,p_where), W('.')
                    ],rc_8_3)(s,sp)
-        if len(rez1)==0: return False
+        #print('test: noun have noun;:',p,sp)
+        if len(rez1)==0: 
+            #print('test rez: False # len(rez1)==0')
+            return False
         assert len(rez1)==1, (rez1, p,sp, s)
         nonlocal rod
+        #print('test rez:',rez1[0][1].rod==rod,'#',rez1[0][1].rod,rod)
         return rez1[0][1].rod==rod
     return fun
 
 dict_pronoun_ip['it'] = RuleContext([1,
     (ruwords['оно'],[(-1,apc_IT_1('s')),(-1,apc_IT_2('s'))]),
-    (ruwords['он'], [(-1,apc_IT_1('m')),(-1,apc_IT_2('s'))]),
-    (ruwords['она'],[(-1,apc_IT_1('g')),(-1,apc_IT_2('s'))])
+    (ruwords['он'], [(-1,apc_IT_1('m')),(-1,apc_IT_2('m'))]),
+    (ruwords['она'],[(-1,apc_IT_1('g')),(-1,apc_IT_2('g'))])
                                     ])
 
 
 # ## Запуск и отладка
 
-# In[45]:
+# * `en2ru(s)` - переводит строку, возвращает строку
+# * `d_en2ru(s)` - переводит строку, возвращает строку, дополнительно печатает процесс разбора
+# * `pr_l_repr(s)` - печатает строку в тройных кавычках
+# * `with_variants(variants,fun,s)` - устанавливает варианты, и потом вызывает fun(s).
+# `variants` - список пар (RuleVars,n)
+# * `decline(s,pads=['ip','rp','dp','vp','tp','pp'])` - переводит строку и выводит ее в разных падежах. Строка должна быть существительным
+# * `parse_pat(patt,s)` == `patt(tokenize(s),0)`
+# * `d_parse_pat(patt,s)` - дополнительно печатает процесс разбора
+# * `scheme(s,detailed=1,nohtml = False)` - печатает схему разбора
+#     
+#     есть дополнительный аргумент datailed
+#         0 - не печатает сквозные паттерны (которые без правил)
+#         1 - дефолтный вывод
+#         2 - дополнительно печатает нестрингифицированные объекты
+# 
+
+# In[84]:
 
 
 def _en2ru(s): # main
@@ -1385,13 +1460,26 @@ def en2ru(s):
 def d_en2ru(s):
     '''переводит строку, возвращает строку
     
-    дополнительно пишет отладочный вывод'''
+    дополнительно пишет отладочный вывод разбора'''
     l_d = parse_system.DEBUGGING
     parse_system.DEBUGGING=True
     try:
         r=_en2ru(s)
     finally:
         parse_system.DEBUGGING=l_d
+    return r
+
+def c_en2ru(s):
+    '''переводит строку, возвращает строку
+    
+    дополнительно пишет отладочный вывод поиска контекстов'''
+    global CONTEXT_DEBUGGING
+    l_d = CONTEXT_DEBUGGING
+    CONTEXT_DEBUGGING=True
+    try:
+        r=_en2ru(s)
+    finally:
+        CONTEXT_DEBUGGING=l_d
     return r
 
 def pr_l_repr(s):
@@ -1464,7 +1552,7 @@ def d_parse_pat(patt,s):
     return r
 
 
-# In[49]:
+# In[99]:
 
 
 from IPython.core.display import HTML
@@ -1500,6 +1588,8 @@ def sch_print_rez0(rez,depth,s,detailed):
             sch_print_rez0(x[1],depth+1,s,detailed)
 
 # создание узлов (+ преобразование rule_group)
+# ! - было исключение
+# ? - есть отключенные исключения
 class Node:
     __slots__ = ['childs','p_start','p_end','patterns','rule','rez','str','html']
     def make_html(self,cols,DISTANCE):
@@ -1713,6 +1803,26 @@ def sch_print_table(s,cols,lines,DISTANCE,detailed):
                         i=line[i].p_end
                 print(l)
 
+def scheme_pat(patt,s,detailed=1,nohtml = False):
+    '''печатает схему разбора
+    
+    есть дополнительный аргумент datailed
+        0 - не печатает сквозные паттерны (которые без правил)
+        1 - дефолтный вывод
+        2 - дополнительно печатает нестрингифицированные объекты
+    '''
+    # токенизируем строку
+    s=[ i for i in tokenizer(s)]
+    
+    # парсим строку
+    ParseInfo.enabled = True
+    try:
+        rezs=debug_pp(patt)(s,0)
+    finally:
+        ParseInfo.enabled = False
+        
+    return scheme_print(s,rezs,detailed,nohtml)
+        
 def scheme(s,detailed=1,nohtml = False):
     '''печатает схему разбора
     
@@ -1731,7 +1841,17 @@ def scheme(s,detailed=1,nohtml = False):
     finally:
         ParseInfo.enabled = False
         
-    hstr = ''
+    return scheme_print(s,rezs,detailed,nohtml)
+        
+def scheme_print(s,rezs,detailed=1,nohtml = False):
+    '''печатает схему разбора
+    
+    есть дополнительный аргумент datailed
+        0 - не печатает сквозные паттерны (которые без правил)
+        1 - дефолтный вывод
+        2 - дополнительно печатает нестрингифицированные объекты
+    '''
+    hstr = '' # html_str
     def h_print(s=''):
         nonlocal nohtml
         if nohtml:
@@ -1755,7 +1875,7 @@ def scheme(s,detailed=1,nohtml = False):
             
         # создание дерева
         depth,mm = sch_make_tree(rez)
-        assert len(mm)==1
+        assert len(mm)==1, mm
         tree=mm[0]
         
         # простой вывод узлов
@@ -1863,6 +1983,43 @@ def scheme(s,detailed=1,nohtml = False):
 # add_skl_suffix
 # ```
 
+# In[96]:
+
+
+#decline('two watches')
+
+
+# In[89]:
+
+
+en2ru('it is white too')
+
+
+# In[90]:
+
+
+get_ipython().getoutput('!')
+pr_l_repr(with_variants([
+    (dict_pronoun_ip['it'],3),
+],en2ru,'''She has a hat; it is white too.
+She has a ribbon; it is red.
+'''))
+
+
+# In[94]:
+
+
+pr_l_repr(en2ru('''Have you a cat? Yes,
+	we have.
+	How many kittens has
+	the cat?
+	It has one kitten.
+	How many ducks have
+	you?
+	We have two ducks and
+	ten ducklings.'''))
+
+
 # ## придумываем способ выборов вариантов (контекстных)
 
 # ```
@@ -1933,62 +2090,7 @@ def scheme(s,detailed=1,nohtml = False):
 en2ru('I see jam and one cup.')
 
 
-# In[52]:
-
-
-en2ru('They have a horse;it is black.')
-
-
-# In[53]:
-
-
-en2ru('How many chickens has the hen? It has eleven.')
-
-
-# In[54]:
-
-
-#decline('two watches')
-
-
-# In[55]:
-
-
-scheme('it is white too')
-
-
-# In[56]:
-
-
-en2ru('it is white too')
-
-
-# In[57]:
-
-
-get_ipython().getoutput('!')
-pr_l_repr(with_variants([
-    (dict_pronoun_ip['it'],3),
-],en2ru,'''She has a hat; it is white too.
-She has a ribbon; it is red.
-'''))
-
-
-# In[58]:
-
-
-en2ru('''Have you a cat? Yes,
-	we have.
-	How many kittens has
-	the cat?
-	It has one kitten.
-	How many ducks have
-	you?
-	We have two ducks and
-	ten ducklings.''')
-
-
-# In[59]:
+# In[104]:
 
 
 import tests
@@ -2011,25 +2113,4 @@ tests.test11()
 tests.test12()
 tests.finalize()
 tests.TEST_ERRORS
-
-
-# In[60]:
-
-
-pr_l_repr(en2ru('''They have a horse;
-	it is black.
-	They have a pig;
-	it is big.
-	They have a goat;
-	it is white.
-	They have a cow;
-	the cow is red.
-	They have no car.
-	'''))
-
-
-# In[61]:
-
-
-scheme('it is black.')
 

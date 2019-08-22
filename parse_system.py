@@ -792,7 +792,7 @@ def debug_pp(fun):
 			if DEBUGGING: print(indent+'{'+debug_s)
 		
 		cache[p]=None
-		rezs=fun(s,p)   # CALL FUN
+		rezs=fun(s,p)   # <<<<<================== CALL FUN ======================
 		assert type(rezs)==list , 'паттерн '+fun.__name__+' вернул неправильный тип'
 		if not ParseInfo.enabled:
 			cache[p]=rezs
