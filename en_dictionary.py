@@ -60,11 +60,7 @@ def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,skl=None,sense=None,reset=False):
 	а add_dict_variant просто добавляет еще один вариант
 	по этому если старый вариант уже был, его надо сначала удалить из dict_noun
 	иначе в dict_noun остануться оба варианта: и старый и новый'''
-	if ruw   in ruwords and type(dict_noun[enw])==list and ruwords[ruw] in dict_noun[enw]: 
-		dict_noun[enw].remove( ruwords[ruw]  )
-	if ruwmn in ruwords and type(dict_noun[enwmn])==list and ruwords[ruwmn] in dict_noun[enwmn]: 
-		dict_noun[enwmn].remove(ruwords[ruwmn])
-	if add_runoun2(ruw,ruwmn,r,o,skl,sense):
+	if (ruw in ruwords and ruwmn in ruwords) or add_runoun2(ruw,ruwmn,r,o,skl,sense):
 		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 		add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
 	
@@ -74,8 +70,7 @@ def add_ennoun1(enw,ruw,c,r,o,skl=None,sense=None,reset=False):
 	а add_dict_variant просто добавляет еще один вариант
 	по этому если старый вариант уже был, его надо сначала удалить из dict_noun
 	иначе в dict_noun остануться оба варианта: и старый и новый'''
-	if ruw   in ruwords: remove_dict_variant(dict_noun,enw,  ruwords[ruw]  )
-	if add_runoun1(ruw,c,r,o,skl,sense):
+	if ruw in ruwords or add_runoun1(ruw,c,r,o,skl,sense):
 		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 	
 def ____Noun():
@@ -198,6 +193,13 @@ def ____Noun():
 	add_ennoun2('ribbon'   ,'ribbons'   ,"лента"   ,"ленты"	 ,'g',False)
 	add_ennoun2('lemon'	,'lemons'	,"лимон"   ,"лимоны"	,'m',False)
 
+	add_ennoun2('room'	  ,'rooms'	 ,"комната"	,"комнаты"	  ,'g',False)
+	add_ennoun2('table'	  ,'tables'	 ,"стол"	,"столы"	  ,'m',False)
+	add_ennoun2('house'	  ,'houses'	 ,"дом"		,"дома"	  ,'m',False)
+	add_ennoun2('garden'  ,'gardens' ,"сад"		,"сады"	  ,'m',False)
+	add_ennoun2('copybook','copybooks',"тетрадь","тетради"	  ,'g',False)
+	add_ennoun2('tree'	  ,'trees'	 ,"дерево"	,"деревья"	  ,'s',False)
+
 	#add_runoun('часы (предмет)',None,False,'m','mn','час','ы','ов','ам','ы','ами','ах')
 	#dict_noun['watch']= ruwords['часы (предмет)']
 	#dict_noun['watches']= ruwords['часы (предмет)']
@@ -290,7 +292,22 @@ def ____Adj():
 	dict_adj['this']=ruwords["этот"]
 	dict_adj['that']=ruwords["тот"]
 
+	dict_adj['my']=ruwords["мой"]
+	dict_adj['your']=ruwords["твой"]
+
 ____Adj()
+
+
+# ## Adv
+
+# In[ ]:
+
+
+dict_adv={'__name__':'dict_adv'}
+def ____Adv():
+	dict_adv['very'] = S("очень")
+
+____Adv()
 
 
 # ## Numeral
@@ -384,6 +401,10 @@ def ____Other():
 	dict_other[':']=S(':')
 	dict_other['"']=S('"')
 	dict_other["'"]=S("'")
+	dict_other["?"]=S("?")
+	dict_other['where']=S("где")
+	dict_other['under']=S("под")
+	dict_other['thank']=S("спасибо")
 ____Other()
 
 
@@ -395,7 +416,8 @@ def r_adj_noun(_a_,_n_):
 		I(dep=_a_,
 			rod=_n_.rod,
 			chis=_n_.chis,
-			pad=_n_.pad),
+			pad=_n_.pad,
+			odush=_n_.odush),
 		I(maindep=_n_)
 	])
 

@@ -1264,7 +1264,7 @@ def test12():
 	'''Это ящик; он -- большой.
 	Это кролик; он -- белый.
 	Это девочка; она -- большая.
-	Это мальчик; он тоже есть большой.''')
+	Это мальчик; он -- тоже большой.''')
 
 	ttest(en2ru,'''They have two kittens,
 	three squirrels, eight
@@ -1304,4 +1304,134 @@ def test12():
 
 	ttest(en2ru,'It has four legs, a short tail and it can give milk.',
 	'У него есть четыре ноги, короткий хвост и оно может давать молоко.')
+
+def test13():
+	print('--- Lesson 13 ---')
+	global N
+	N=13
+
+	ttest(en2ru,'Where is the girl? She is in the room.',
+	'Где девочка? Она в комнате.')
+
+	ttest(en2ru,'''Where is your book?
+	It is on the table.
+	Where is the table?
+	It is in the house.
+	''',
+	'''Где твоя книга?
+	Она на столе.
+	Где стол?
+	Он в доме.''')
+
+	ttest(en2ru,'''Where is the house?
+	It is in the garden.
+	''',
+	'''Где дом?
+	Он в саду.''')
+
+	ttest(en2ru,'''
+	Where is the boy?
+	He is in the garden.
+	Where are you?
+	I am in the garden
+	too.
+	Where is your pen?
+	My pen is on the
+	table.
+	''',
+	'''
+	Где мальчик?
+	Он в саду.
+	Где ты?
+	Я
+	тоже в саду.
+	Где твоя ручка?
+	Моя ручка на
+	столе.''')
+
+	ttest(en2ru,'''
+	Where is your copybook?
+	It is on the table too.
+	Where is your goat?
+	My goat is in the
+	garden.
+	Where is your horse?
+	My horse is under that
+	tree.
+	''',
+	'''
+	Где твоя тетрадь?
+	Она тоже на столе.
+	Где твоя коза?
+	Моя коза в
+	саду.
+	Где твоя лошадь?
+	Моя лошадь под тем
+	деревом.''')
+
+	ttest(en2ru,'''
+	Have you a house? Yes, we have.
+	Have you a garden? Yes, we have.
+	Is your garden big? Yes, it is.
+	Is your goat under the tree? Yes, it is.
+	Is your car under the tree too? No, it is not.
+	Is the boy in the house? Yes, he is.
+	Is the girl in the room? Yes, she is.
+	My room is very good.
+	My gun is very good.
+	My garden is very big.
+	Is your goat white?
+	Yes, my goat is white.
+	Is your cow red?
+	No, my cow is not red.
+	Give me my hat! Thank you.
+	''',
+	'''
+	У тебя есть дом? Да, у нас есть.
+	У тебя есть сад? Да, у нас есть.
+	Твой сад -- большой? Да, это так.
+	Твоя коза под деревом? Да, это так.
+	Твой автомобиль тоже под деревом? Нет, это не так.
+	Мальчик в доме? Да, это так.
+	Девочка в комнате? Да, это так.
+	Моя комната -- очень хорошая.
+	Моё ружьё -- очень хорошее.
+	Мой сад -- очень большой.
+	Твоя коза -- белая?
+	Да, моя коза -- белая.
+	Твоя корова -- красная?
+	Нет, моя корова -- не красная.
+	Дай мне мою шляпу! Спасибо.''')
+
+	ttest(en2ru,'''
+	Where is my pen? It
+	is on the table.
+	Where is my book? It
+	is on the table too.
+	Where is your car? It
+	is in the street.
+	Where are you? I am
+	in my room.
+	This is a very good
+	book.
+	Your white goat is
+	under that tree.
+	Show me that vase!
+	Thank you.
+	''',
+	'''
+	Где моя ручка? Она на столе.
+	Где моя книга? Она тоже на столе.
+	Где твой автомобиль? Он на улице.
+	Где ты? Я
+	в моей комнате.
+	Это очень хорошая
+	книга.
+	Твоя белая коза
+	под тем деревом.
+	Покажи мне ту вазу!
+	Спасибо.''')
+
+#	ttest(en2ru,,
+#	)
 

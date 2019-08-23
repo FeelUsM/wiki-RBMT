@@ -788,6 +788,11 @@ class StAdj(StDeclinable):
 	
 	pad дополнительно имеет еще 1 вариант 'sh' - прилагательное в укороченной форме
 	'''
+	__slots__=['_chis','_rod']
+	obediences = {
+		'maindep': lambda x:_types_assert(x,StDeclinable),
+		'nodep'  : none_fun,
+	}
 	@staticmethod
 	def pad_checker(pad):
 		assert pad in {'ip','rp','dp','vp','tp','pp','sh'} , pad
@@ -796,6 +801,30 @@ class StAdj(StDeclinable):
 	def __init__(self,word=None,o=None,r=None,c=None,p=None):
 		StDeclinable.__init__(self,word,o,r,c,p)
 
+	rod=property()
+	@rod.getter
+	def rod(self):
+		return self._rod
+	@rod.setter
+	def rod(self,val):
+		self._rod=val
+		if self.word==None:
+			for i in self.talk:
+				if i[0]=='dep' or i[0]=='maindep' :
+					set_property(i,rod=val)
+				
+	chis=property()
+	@chis.getter
+	def chis(self):
+		return self._chis
+	@chis.setter
+	def chis(self,val):
+		self._chis=val
+		if self.word==None:
+			for i in self.talk:
+				if i[0]=='dep' or i[0]=='maindep' :
+					set_property(i,chis=val)
+				
 	def __repr__(self):
 		return 'StAdj'+repr_id(self)+repr_attrs(self,self.word!=None)+'('+\
 			(repr_talk(self.talk) if self.word==None else repr(self.word))+','+ self.post_repr()

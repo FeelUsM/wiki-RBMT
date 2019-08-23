@@ -57,7 +57,10 @@ class TestError(ValueError):
 
 
 def default_warning(s): 
-    print(s,file=sys.stderr)
+	global DEBUGGING
+	if DEBUGGING:
+	 	print(s)
+	print(s,file=sys.stderr)
 warning_fun = default_warning
 def warning(s):
 	return warning_fun(s)
@@ -609,7 +612,7 @@ def p_alt(s,p,*args):
 			rezs+=patt(s,p)
 		return [(p1,rez_checker(r1)) for p1,r1 in rezs]
 	i+=1
-	r_rezs=[]                  #парсим все аргументы после ELSE
+	r_rezs=[]                  #парсим все аргументы после ELSE (регулярные)
 	while i<len(args):
 		assert args[i]!=ELSE   #    assert ELSE больше не встречается
 		r_rezs+=args[i](s,p)
@@ -617,27 +620,58 @@ def p_alt(s,p,*args):
 	r_rezs = [(p1,rez_checker(r1)) for p1,r1 in r_rezs]
 	if len(r_rezs)==0: return []#если результатов нет (регулярных), то всё
 	r_ends = {p1 for p1,r1 in r_rezs}### длины регулярных результатов
+
+	# почти эквивалент закомментированному дальше
 	i=0
-	e_rezs=[]                  #парсим все аргументы с начала до ELSE
+	e_rezs = []                  #парсим все аргументы с начала до ELSE
+	disabled_e_rezs = []
 	while args[i]!=ELSE:
-		e_rezs+=args[i](s,p)
+		tmp_e_rezs = args[i](s,p)
+		has_good_rezs = False
+		wrong_rezs = []
+		for p1,r1 in tmp_e_rezs:
+			if p1 in r_ends: 
+				has_good_rezs = True
+			else: 
+				wrong_rezs.append((p1,r1))
+
+			if type(r1)==RuleVars:
+				disabled_e_rezs.append((p1,r1))  # выключенные исключения
+			elif p1 in r_ends: #защита от коротких/длинных исключений
+				e_rezs.append((p1,r1))
+
+		if not has_good_rezs:  #защита от коротких/длинных исключений
+			for p1, r1 in wrong_rezs:
+				warning('WRONG_EXCEPTION N'+str(i)+'('+str(p)+':'+str(p1)+'): '+str(r1))
 		i+=1
 	if len(e_rezs)==0: 
 		return r_rezs          #если результатов (исключений) нет, возвращаем регулярные, всё
 
-							# выключенные исключения
-	disabled_e_rezs = [(p1,r1) for p1,r1 in e_rezs if type(r1)==RuleVars]
 	disabled_e_ends = {p1 for p1,r1 in disabled_e_rezs}### длины результатов выключенных исключений
-	e_rezs = [(p1,rez_checker(r1)) for p1,r1 in e_rezs if type(r1)!=RuleVars ]
 	e_ends = {p1 for p1,r1 in e_rezs}### длины результатов исключений
-		
-	wrong_ends = e_ends - r_ends#защита от коротких/длинных исключений
-	if len(wrong_ends)>0:
-		for p1,r1 in e_rezs:
-			if p1 in wrong_ends:
-				warning('WRONG_EXCEPTION ('+str(p)+':'+str(p1)+'): '+str(r1))
-		e_rezs = [(p1,r1) for p1,r1 in e_rezs if p1 not in wrong_ends]	
 	remain_ends = r_ends - e_ends#регулярные результаты, для которых нет исключений
+
+	#i=0
+	#e_rezs=[]                  #парсим все аргументы с начала до ELSE
+	#while args[i]!=ELSE:
+	#	e_rezs+=args[i](s,p)
+	#	i+=1
+	#if len(e_rezs)==0: 
+	#	return r_rezs          #если результатов (исключений) нет, возвращаем регулярные, всё
+	#
+	#						# выключенные исключения
+	#disabled_e_rezs = [(p1,r1) for p1,r1 in e_rezs if type(r1)==RuleVars]
+	#disabled_e_ends = {p1 for p1,r1 in disabled_e_rezs}### длины результатов выключенных исключений
+	#e_rezs = [(p1,rez_checker(r1)) for p1,r1 in e_rezs if type(r1)!=RuleVars ]
+	#e_ends = {p1 for p1,r1 in e_rezs}### длины результатов исключений
+	#	
+	#wrong_ends = e_ends - r_ends#защита от коротких/длинных исключений
+	#if len(wrong_ends)>0:
+	#	for p1,r1 in e_rezs:
+	#		if p1 in wrong_ends:
+	#			warning('WRONG_EXCEPTION ('+str(p)+':'+str(p1)+'): '+str(r1))
+	#	e_rezs = [(p1,r1) for p1,r1 in e_rezs if p1 not in wrong_ends]	
+	#remain_ends = r_ends - e_ends#регулярные результаты, для которых нет исключений
 
 	def else_adder(r):
 		'''в исключения добавляем __ELSE__'''
