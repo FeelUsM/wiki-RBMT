@@ -270,7 +270,7 @@ class RuleVars(list):
 		if not reset:
 			for w in self:
 				if w==ruw:
-					warning('добавляем уже имеющееся слово')
+					warning('RuleVars.append(): добавляем уже имеющееся слово')
 					return False
 			list.append(self,ruw)
 			self[0]=len(self)-1 # 
