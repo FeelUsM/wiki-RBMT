@@ -997,7 +997,7 @@ rv_TOBE_noun = RuleVars([1, r_EST_noun_ip, r_JAVLYATSA_noun_tp])
 # ###### p_tobe_question
 # r_GDE_noun_ip, r_noun_noun_question, r_noun_question, r_noun_adj_question, r_noun_where_TOO_question
 
-# In[70]:
+# In[32]:
 
 
 @debug_pp
@@ -1365,7 +1365,7 @@ def r_noun_COMMA_verb(_n,comma,_v):    return StC([
 
 # ###### p_question_phrase
 
-# In[69]:
+# In[44]:
 
 
 @debug_pp
@@ -1551,7 +1551,7 @@ def maxlen_filter(rezs):
 
 # ## Контекстные паттерны
 
-# In[48]:
+# In[73]:
 
 
 def rc_collect_all(*args):
@@ -1560,13 +1560,17 @@ def rc_collect_all(*args):
         ])
 def rc_10_5(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10):
     return x5
+def rc_10_4(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10):
+    return x4
 def rc_8_3(x1,x2,x3,x4,x5,x6,x7,x8):
     return x3
 def rc_9_3(x1,x2,x3,x4,x5,x6,x7,x8,x9):
     return x3
+def rc_9_4(x1,x2,x3,x4,x5,x6,x7,x8,x9):
+    return x4
 
 
-# In[49]:
+# In[84]:
 
 
 def apc_IT_1(rod):
@@ -1595,7 +1599,11 @@ def apc_IT_2(rod):
             ],rc_8_3),
             seq([W('where'), p_TOBE, p_noun_ip, W('?'), 
                    p_noun_ip, p_TOBE,  p_where, W('too'), W('.')
-            ],rc_9_3)
+            ],rc_9_3),
+            seq([W('what'),W('colour'),p_TOBE,p_noun_ip, W('?'), 
+                   p_noun_ip, p_TOBE,  p_noun, W('.')
+            ],rc_9_4)
+            
         )
         #print('test: noun have noun;:',p,sp)
         if len(rez1)==0: 
@@ -2218,6 +2226,12 @@ Boy: Show me your ribbons! Thank you.
 '''))
 
 
+# In[57]:
+
+
+en2ru('It \nis black.')
+
+
 # ## придумываем способ выборов вариантов (контекстных)
 
 # ```
@@ -2276,19 +2290,19 @@ Boy: Show me your ribbons! Thank you.
 
 # # Тесты
 
-# In[57]:
+# In[87]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
 
 
-# In[58]:
+# In[59]:
 
 
 en2ru('I see jam and one cup.')
 
 
-# In[59]:
+# In[60]:
 
 
 import tests
@@ -2314,16 +2328,112 @@ tests.finalize()
 tests.TEST_ERRORS
 
 
-# In[67]:
+# In[61]:
 
 
 add_ennoun2('colour'  ,'colours'  ,"цвет","цвета"   ,'m',False)
 add_ennoun2('flag'  ,'flags'  ,"флаг","флаги"   ,'m',False)
+add_ennoun2('shirt'  ,'shirts'  ,"рубашка","рубашки"   ,'g',False)
+add_skl2('s',False,make_skl2(
+'платье'   ,'платья',
+'платья'   ,'платьев',
+'платью'   ,'платьям',
+'платье'   ,'платья',
+'платьем'  ,'платьями',
+'платье'   ,'платьях'))
+         
+add_ennoun2('dress'  ,'dresses'  ,"платье","платья"   ,'s',False,skl=6)
+add_ennoun2('pencil'  ,'pencils'  ,"карандаш","карандаши"   ,'m',False)
+add_ennoun2('daddy'  ,'daddis'  ,"папа","папы"   ,'m',True)
+add_ennoun2('mammy'  ,'mammis'  ,"мама","мамы"   ,'g',True)
 dict_other['what'] = S('что')
 
 
-# In[71]:
+# In[85]:
 
 
 en2ru('What colour is this flag? It is red.')
+
+
+# In[86]:
+
+
+pr_l_repr(en2ru('''What colour is your shirt?
+It is green.
+What colour is your cap?
+It is grey.
+What colour is my dress?
+It is blue.
+What colour is my hat? It
+Is black.
+'''))
+
+
+# In[64]:
+
+
+pr_l_repr(en2ru('''I have a kitten; my
+kitten is white.
+He has a dog; his dog
+is black.
+She has a dress; her dress
+is blue.
+'''))
+
+
+# In[65]:
+
+
+pr_l_repr(en2ru('''You have a car; your
+car is big.
+His shirt is very good.
+His cap is good too.
+His pistol is black and
+his horse is black too.
+'''))
+
+
+# In[66]:
+
+
+pr_l_repr(en2ru('''Has he a flag? Yes, he has.
+Has he a stick? No, he has not.
+Has she a doll? Yes, she has.
+Have you a black pencil, Daddy? Yes,
+I have.
+Have you a green hat, Mammy? Yes, I
+have.
+Where is it? It is in the box.
+Have you a blue dress? Yes, I have.
+Where is it? It is on the bed.
+Have you a goat? Yes, I have.
+Where is it? It is in the garden.
+Have you a horse? Yes, I have.
+Where is it? It is in the garden too.
+He has a big dog.
+His dog is under that tree.
+She has a kitten.
+Her kitten is in the box.
+Take my ball!
+Take this copy-book!
+'''))
+
+
+# In[67]:
+
+
+pr_l_repr(en2ru('''What colour is your
+pencil? My pencil is
+green.
+Show me your blue
+shirt!
+Give me her grey
+dress!
+Daddy, where is the
+red flag?
+It is on the house.
+Mammy, take my cake,
+it is very good.
+I like lemons.
+'''))
 

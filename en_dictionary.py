@@ -57,21 +57,26 @@ dict_noun={'__name__':'dict_noun'}
 def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,skl=None,sense=None,reset=False):
 	''' add_runoun2 обновляет ruwords[ruw/mn]
 
-	а add_dict_variant просто добавляет еще один вариант
-	по этому если старый вариант уже был, его надо сначала удалить из dict_noun
-	иначе в dict_noun остануться оба варианта: и старый и новый'''
-	if (ruw in ruwords and ruwmn in ruwords) or add_runoun2(ruw,ruwmn,r,o,skl,sense):
-		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
-		add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
+	а add_dict_variant просто добавляет еще один вариант'''
+	if rd.VERBOSE_ADDS:
+		if add_runoun2(ruw,ruwmn,r,o,skl,sense):
+			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
+			add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
+	else:
+		if (ruw in ruwords and ruwmn in ruwords) or add_runoun2(ruw,ruwmn,r,o,skl,sense):
+			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
+			add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
 	
 def add_ennoun1(enw,ruw,c,r,o,skl=None,sense=None,reset=False):
 	''' add_runoun1 обновляет ruwords[ruw]
 
-	а add_dict_variant просто добавляет еще один вариант
-	по этому если старый вариант уже был, его надо сначала удалить из dict_noun
-	иначе в dict_noun остануться оба варианта: и старый и новый'''
-	if ruw in ruwords or add_runoun1(ruw,c,r,o,skl,sense):
-		add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
+	а add_dict_variant просто добавляет еще один вариант'''
+	if rd.VERBOSE_ADDS:
+		if ruw in ruwords or add_runoun1(ruw,c,r,o,skl,sense):
+			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
+	else:
+		if ruw in ruwords or add_runoun1(ruw,c,r,o,skl,sense):
+			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 	
 def ____Noun():
 	
@@ -294,6 +299,14 @@ def ____Adj():
 
 	dict_adj['my']=ruwords["мой"]
 	dict_adj['your']=ruwords["твой"]
+	dict_adj['his']=ruwords["его"]
+	dict_adj['its']=ruwords["его"]
+	dict_adj['her']=ruwords["её"]
+
+	dict_adj['green']=ruwords["зелёный"]
+	dict_adj['gray']=ruwords["серый"]
+	dict_adj['grey']=ruwords["серый"]
+	dict_adj['blue']=ruwords["синий"]
 
 ____Adj()
 
@@ -368,6 +381,8 @@ def ____Verb():
 
 	dict_verb_simple['can']=   ruwords['мочь']
 
+	dict_verb_simple['take']=   ruwords['брать']
+	dict_verb_simple['takes']=  ruwords['брать']
 	dict_verb_simple['see']=   ruwords['видеть']
 	dict_verb_simple['sees']=  ruwords['видеть']
 	dict_verb_simple['like']=  ruwords['любить']
