@@ -58,10 +58,12 @@ def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,skl=None,sense=None,reset=False):
 	''' add_runoun2 обновляет ruwords[ruw/mn]
 
 	а add_dict_variant просто добавляет еще один вариант'''
+	# в интерактивном режиме мы ruwords перезаписываем в любом случае
 	if rd.VERBOSE_ADDS:
 		if add_runoun2(ruw,ruwmn,r,o,skl,sense):
 			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
 			add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
+	# в режиме исходника если слово уже есть, то мы его не добавляем
 	else:
 		if (ruw in ruwords and ruwmn in ruwords) or add_runoun2(ruw,ruwmn,r,o,skl,sense):
 			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
@@ -71,9 +73,11 @@ def add_ennoun1(enw,ruw,c,r,o,skl=None,sense=None,reset=False):
 	''' add_runoun1 обновляет ruwords[ruw]
 
 	а add_dict_variant просто добавляет еще один вариант'''
+	# в интерактивном режиме мы ruwords перезаписываем в любом случае
 	if rd.VERBOSE_ADDS:
 		if ruw in ruwords or add_runoun1(ruw,c,r,o,skl,sense):
 			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
+	# в режиме исходника если слово уже есть, то мы его не добавляем
 	else:
 		if ruw in ruwords or add_runoun1(ruw,c,r,o,skl,sense):
 			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)

@@ -73,6 +73,9 @@ def repr_id(self):
 	global DEBUGGING_ID
 	return '<'+str(id(self))+'>' if DEBUGGING_ID else ''
 
+def repr_rule(r):
+	return r.__name__ if callable(r) else str(r)
+
 
 PUNCT_CHARS=".,:;?!'\""
 
@@ -255,6 +258,7 @@ class RuleVars(list):
 				assert x[0]<len(x)
 				for e in x:
 					list.append(self,e)
+				self[0] = x[0]
 			else: # инициализируем от списка без числа
 				list.append(self,1)
 				for e in x:
@@ -262,6 +266,8 @@ class RuleVars(list):
 		else: # инициализируем от единственного объекта
 			list.append(self,1)
 			list.append(self,x)
+	def __copy__(self):
+		return RuleVars(self)
 	def append(self,ruw,reset=False):
 		'''добавляет вариант к переводу (только в виде списка) и устанавливает указатель на него
 
@@ -354,6 +360,8 @@ class RuleContext(RuleVars):
 			for p in self[i][1]:
 				assert len(p)==2
 				assert p[0]>=-5 and p[0]<=0
+	def __copy__(self):
+		return RuleContext(self)
 	def remove(self,n):
 		'''удаляет вариант (из списка) и по возможности не меняет указатель варианта
 
@@ -403,7 +411,6 @@ class RuleContext(RuleVars):
 		else:
 			self[0]=n
 			return True
-
 
 class ContextInfo:
 	'''

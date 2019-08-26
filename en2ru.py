@@ -176,7 +176,7 @@ p_noun
 
 
 import parse_system
-from parse_system import S, SAttrs, ParseInfo, tokenizer, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open, ch_prefix, ch_anti_prefix,                        seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals, global_cache,                         RuleVars, RuleContext
+from parse_system import S, SAttrs, ParseInfo, tokenizer, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open, ch_prefix, ch_anti_prefix,                        seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals, global_cache,                         RuleVars, RuleContext, repr_rule
 
 import classes
 from classes import StC, StNum, StNoun, StAdj, StVerb, I
@@ -1423,79 +1423,97 @@ def p_sentence(s,p):
 CONTEXT_DEBUGGING = False
 
 import bisect
-def context_fetch_1(s,sentence_points,first,next_):
-    '''преобразует узел next_ в соотетствии с контекстом first
-    
-    first - указатель на первый узел
-    next_ - указатель на текущий узел'''
-    global CONTEXT_DEBUGGING
-    if first == next_: # дошли до контекстного узла
-        assert first.context_info.context, first
-        rule_group = first.context_info.context
-        # находим номер текущего предложения
-        ns = bisect.bisect_right(sentence_points,first.context_info.pos)-1
-        # выбираем правило
-        go_break = False
-        for k in range(1,len(rule_group)): # по всем правилам
-            j = 0
-            for n,test in rule_group[k][1]: # по всем тестам данного правила
-                if ns+n>=0 and test(s,first.context_info.pos,sentence_points[ns+n]):
-                    rule_group = copy(rule_group) # для parse_info
-                    rule_group[0] = k
-                    if CONTEXT_DEBUGGING:
-                        print('at',first.context_info.pos,
-                              'найдено правило',k,
-                              'по тесту',j,'('+str(sentence_points[ns+n])+')')
-                    go_break = True
-                    break
-                j+=1
-            if go_break: break
-        else:
-            if CONTEXT_DEBUGGING:
-                print('at',first.context_info.pos,': ни один вариант не подходит')
-        rule = rule_group[rule_group[0]][0]
-        # применяем правило
-        if first.context_info.args:
-            newrez = rule(*args)
-        else:
-            newrez = deepcopy(rule)
-        assert len(first.context_info.first_context)==0
-        if ParseInfo.enabled:
-            newrez.parse_info = copy(first.parse_info)
-            newrez.parse_info.rule_group = rule_group
-        return newrez
-            
-    else:
-        first_context = next_.context_info.first_context
-        for i in range(len(first_context)):
-            if first_context[i][0]==first: break
-        else: raise TextError('обрыв пути к контексту')
-        n = first_context[i][1]
-        del first_context[i]
-        next_.context_info.args[n] =             context_fetch_1(s,sentence_points,first,next_.context_info.args[n])
-        newrez = next_.context_info.rule(*next_.context_info.args)
-        newrez.context_info = next_.context_info
-        if ParseInfo.enabled:
-            newrez.parse_info = next_.parse_info
-        return newrez
-        
-def context_fetch(s,sentence_points,rez):
-    '''преобразует узел rez в соотетствии со всеми контекстами, которые указаны в узле'''
-    while len(rez.context_info.first_context): # по всем контекстам
-        # ищем независимый контекстный узел
-        for first ,n in rez.context_info.first_context:
-            if len(first.context_info.first_context)==0:
-                break
-        else:
-            raise TextError('не могу выбрать подходящий контекстный узел',rez.context_info.first_context)
-        rez = context_fetch_1(s,sentence_points,first,rez)
-    return rez
-
 @debug_pp
 def p_text(s,p):
     '''или последовательность предложений или 1 фраза
     p_text::= p_sentence* | p_phrase
     '''
+    default_variants = {} # сюда замыкается context_fetch_1
+
+    def context_fetch_1(s,sentence_points,first,next_):
+        '''преобразует узел next_ в соотетствии с контекстом first
+
+        first - указатель на первый узел
+        next_ - указатель на текущий узел'''
+        global CONTEXT_DEBUGGING
+        nonlocal default_variants
+        
+        def current_rule(rule_group):
+            return '('+str(id(rule_group))+')'+                str(rule_group[0])+                '('+repr_rule(rule_group[rule_group[0]][0])+')'
+        
+        if first == next_: # дошли до контекстного узла
+            assert first.context_info.context, first
+            rule_group = first.context_info.context
+            # находим номер текущего предложения
+            ns = bisect.bisect_right(sentence_points,first.context_info.pos)-1
+            if CONTEXT_DEBUGGING: print('на входе',current_rule(rule_group))
+            # выбираем правило
+            go_break = False
+            for k in range(1,len(rule_group)): # по всем правилам
+                j = 0
+                for n,test in rule_group[k][1]: # по всем тестам данного правила
+                    if ns+n>=0 and test(s,first.context_info.pos,sentence_points[ns+n]):
+                        tmp = rule_group[0]
+                        rule_group[0] = k
+                        if not id(rule_group) in default_variants:
+                            default_variants[id(rule_group)] = (rule_group,tmp)
+                        old_rule_group = rule_group
+                        print(repr(rule_group))
+                        rule_group = copy(rule_group) # для parse_info
+                        print(repr(rule_group))
+                        if CONTEXT_DEBUGGING:
+                            print('at',first.context_info.pos,
+                                  'найдено правило',current_rule(old_rule_group),current_rule(rule_group),
+                                  'по тесту',j,'('+str(sentence_points[ns+n])+')')
+                        go_break = True
+                        break
+                    j+=1
+                if go_break: break
+            else:
+                if CONTEXT_DEBUGGING:
+                    print('at',first.context_info.pos,
+                          'используем правило',current_rule(rule_group),
+                          'т.к. ни один вариант не подходит')
+            rule = rule_group[rule_group[0]][0]
+            if CONTEXT_DEBUGGING: print('итого',current_rule(rule_group))
+            # применяем правило
+            if first.context_info.args:
+                newrez = rule(*args)
+            else:
+                newrez = deepcopy(rule)
+            assert len(first.context_info.first_context)==0
+            if ParseInfo.enabled:
+                newrez.parse_info = copy(first.parse_info)
+                newrez.parse_info.rule_group = rule_group
+            return newrez
+
+        else: #шаг рекурсии
+            first_context = next_.context_info.first_context
+            for i in range(len(first_context)):
+                if first_context[i][0]==first: break
+            else: raise TextError('обрыв пути к контексту')
+            n = first_context[i][1]
+            del first_context[i]
+            next_.context_info.args[n] =                 context_fetch_1(s,sentence_points,first,next_.context_info.args[n])
+            newrez = next_.context_info.rule(*next_.context_info.args)
+            newrez.context_info = next_.context_info
+            if ParseInfo.enabled:
+                newrez.parse_info = next_.parse_info
+            return newrez
+
+    def context_fetch(s,sentence_points,rez):
+        '''преобразует узел rez в соотетствии со всеми контекстами, которые указаны в узле'''
+        while len(rez.context_info.first_context): # по всем контекстам
+            # ищем независимый контекстный узел
+            for first ,n in rez.context_info.first_context:
+                if len(first.context_info.first_context)==0:
+                    break
+            else:
+                raise TextError('не могу выбрать подходящий контекстный узел',rez.context_info.first_context)
+            rez = context_fetch_1(s,sentence_points,first,rez)
+        return rez
+
+    # p_text(s,p):
     rez=[]
     sentence_points = []
     while p<len(s):
@@ -1517,12 +1535,17 @@ def p_text(s,p):
             sp = sentence_points[-1]
             print(sp,':',SAttrs().join(s[sp:]))
             print('--- text end ---')
-        return [(p,StC([
+        rezs2 =  [(p,StC([
             I(nodep=context_fetch(s,sentence_points,r1)) for r1 in rez
         ]))]
     else:
         rez = maxlen_filter(alt(p_phrase,p_question_phrase)(s,p))
-        return [] if len(rez)==0 else             [(rez[0][0],context_fetch(s,sentence_points,rez[0][1]))]
+        rezs2 = [] if len(rez)==0 else             [(rez[0][0],context_fetch(s,sentence_points,rez[0][1]))]
+    for idd,(r,n) in default_variants.items():
+        #print(k)
+        r[0] = n
+    return rezs2
+        
 
 def maxlen_filter(rezs):
     '''находит самые длинные результаты, а остальные отбрасывает
@@ -1551,7 +1574,7 @@ def maxlen_filter(rezs):
 
 # ## Контекстные паттерны
 
-# In[73]:
+# In[48]:
 
 
 def rc_collect_all(*args):
@@ -1570,7 +1593,7 @@ def rc_9_4(x1,x2,x3,x4,x5,x6,x7,x8,x9):
     return x4
 
 
-# In[84]:
+# In[49]:
 
 
 def apc_IT_1(rod):
@@ -2290,7 +2313,7 @@ en2ru('It \nis black.')
 
 # # Тесты
 
-# In[87]:
+# In[58]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
@@ -2303,6 +2326,42 @@ en2ru('I see jam and one cup.')
 
 
 # In[60]:
+
+
+print(id(dict_pronoun_ip['it']))
+dict_pronoun_ip['it']
+
+
+# In[72]:
+
+
+c_en2ru('''Have you a goat? Yes, I have.
+Where is it? It is in the garden.''')
+
+
+# In[74]:
+
+
+copy(dict_pronoun_ip['it'])
+
+
+# In[63]:
+
+
+class Cl(list):
+    __slots__=['can_be_disabled','link']
+    pass
+class Cl2(Cl):
+    pass
+x = Cl2()
+x.append(1)
+x.append(2)
+x.append(3)
+
+copy(x)
+
+
+# In[64]:
 
 
 import tests
@@ -2328,7 +2387,7 @@ tests.finalize()
 tests.TEST_ERRORS
 
 
-# In[61]:
+# In[65]:
 
 
 add_ennoun2('colour'  ,'colours'  ,"цвет","цвета"   ,'m',False)
@@ -2349,13 +2408,13 @@ add_ennoun2('mammy'  ,'mammis'  ,"мама","мамы"   ,'g',True)
 dict_other['what'] = S('что')
 
 
-# In[85]:
+# In[66]:
 
 
 en2ru('What colour is this flag? It is red.')
 
 
-# In[86]:
+# In[67]:
 
 
 pr_l_repr(en2ru('''What colour is your shirt?
@@ -2369,7 +2428,7 @@ Is black.
 '''))
 
 
-# In[64]:
+# In[68]:
 
 
 pr_l_repr(en2ru('''I have a kitten; my
@@ -2381,7 +2440,7 @@ is blue.
 '''))
 
 
-# In[65]:
+# In[69]:
 
 
 pr_l_repr(en2ru('''You have a car; your
@@ -2393,7 +2452,7 @@ his horse is black too.
 '''))
 
 
-# In[66]:
+# In[70]:
 
 
 pr_l_repr(en2ru('''Has he a flag? Yes, he has.
@@ -2419,7 +2478,7 @@ Take this copy-book!
 '''))
 
 
-# In[67]:
+# In[71]:
 
 
 pr_l_repr(en2ru('''What colour is your
