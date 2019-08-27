@@ -535,7 +535,10 @@ def tokenizer(s):
 # In[14]:
 
 
-def tokenize(s) : return [i for i in tokenizer(s)]
+def tokenize(s) : 
+	global global_cache
+	global_cache = {}
+	return [i for i in tokenizer(s)]
 
 
 #------------------------------------------------------------
@@ -779,7 +782,9 @@ def seq(patterns,rule_group):#,numbrs=None
 		return [(pos,                 context_adder(rule,rez,p) ) for pos,rez in sp_seq(s,p,patterns)]
 	return p_seq_info if ParseInfo.enabled else p_seq
 
-global_cache=dict()
+global_cache = {}
+s_point=[] # когда изменяется s - означает, что нужно сбросить кэш
+
 def debug_pp(fun):
 	'''функция-обертка для нетерминалов
 
@@ -789,66 +794,63 @@ def debug_pp(fun):
 	if DEBUGGING: отладочный вывод процесса разбора
 	if ParseInfo.enabled: добавляет fun в patterns
 	'''
-	s_point=[] # когда изменяется s - означает, что нужно сбросить кэш
-	cache={}
-	global gloabal_cache
-	global_cache[fun.__name__] = cache
 	#эта вся функция относится к какому-то паттерну (который обернут этой функцией)
 	#cache индексируется позицией в строке
 	# и содержит полный_результат - массив пар (позиция,разултат)
 	def wrapper(s,p):
 		global CURRENT_DEBUG_DEPTH
-		nonlocal s_point,cache
+		global global_cache
+		global s_point
 		if not(s is s_point):
-			s_point=s
-			cache={}
-			global gloabal_cache
-			global_cache[fun.__name__] = cache
+			global_cache={}
+			s_point = s
+		fn = (p,fun.__name__)
+		cache = global_cache
 		if DEBUGGING:
 			indent = '    '*CURRENT_DEBUG_DEPTH
 			debug_s = '.'*p+'*'+'.'*(len(s)-p-1)+(' ' if p<len(s) else '')+\
 				fun.__name__+'___'+str(p)
-		if p in cache:
-			if cache[p]==None:
+		if fn in cache:
+			if cache[fn]==None:
 				raise ParseError('зацикливание '+fun.__name__+'(s,'+str(p)+')')
 			if DEBUGGING: 
 				print(indent+'|'+debug_s)
 				if ParseInfo.enabled:
-					for p1,r1,patts in cache[p]:
+					for p1,r1,patts in cache[fn]:
 						print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
 							 str(r1)+' <'+str(id(patts))+'>'+repr(patts))
 				else:
-					for p1,r1 in cache[p]:
+					for p1,r1 in cache[fn]:
 						print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
 							 str(r1))
-			if ParseInfo.enabled:
-				def cache_info_adder(r1,patterns):
-					r1.parse_info.patterns = patterns
-					return r1
-				return [(p1,cache_info_adder(r1,patterns)) \
-						for p1,r1,patterns in cache[p]]
-			else:
-				return cache[p]
+			#if ParseInfo.enabled:
+			def cache_info_adder(r1,patterns):
+				r1.parse_info.patterns = patterns
+				return r1
+			return [(p1,cache_info_adder(r1,patterns)) \
+					for p1,r1,patterns in cache[fn]]
+			#else:
+			#	return cache[p]
 		else:
 			if DEBUGGING: print(indent+'{'+debug_s)
 		
-		cache[p]=None
+		cache[fn]=None
 		rezs=fun(s,p)   # <<<<<================== CALL FUN ======================
 		assert type(rezs)==list , 'паттерн '+fun.__name__+' вернул неправильный тип'
-		if not ParseInfo.enabled:
-			cache[p]=rezs
-		else:
-			def info_adder(p1,r1):
-				r1.parse_info.p_start = p
-				r1.parse_info.p_end = p1
-				if not hasattr(r1.parse_info,'patterns'):
-					r1.parse_info.patterns = []
-				patt = copy(r1.parse_info.patterns)
-				patt.append(fun)
-				r1.parse_info.patterns = patt
-				return r1
-			rezs = [(p1,info_adder(p1,r1)) for p1,r1 in rezs]
-			cache[p]=[ ( p1,r1,r1.parse_info.patterns ) for p1,r1 in rezs]
+		#if not ParseInfo.enabled:
+		#	cache[p]=rezs
+		#else:
+		def info_adder(p1,r1):
+			r1.parse_info.p_start = p
+			r1.parse_info.p_end = p1
+			if not hasattr(r1.parse_info,'patterns'):
+				r1.parse_info.patterns = []
+			patt = copy(r1.parse_info.patterns)
+			patt.append(fun)
+			r1.parse_info.patterns = patt
+			return r1
+		rezs = [(p1,info_adder(p1,r1)) for p1,r1 in rezs]
+		cache[fn]=[ ( p1,r1,r1.parse_info.patterns ) for p1,r1 in rezs]
 		
 		#for p1,r1 in rezs:
 		#    assert p1>p, r1

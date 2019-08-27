@@ -251,7 +251,7 @@ def test1():
 	# In[21]:
 
 
-	test(p_noun(tokenize('cat,_cat,_a cat'),0)[1][1].tostr(),'кот,_кот,_кот')
+	test(p_noun(tokenize('cat,_cat,_a cat'),0)[0][1].tostr(),'кот,_кот,_кот')
 
 
 	# In[22]:
