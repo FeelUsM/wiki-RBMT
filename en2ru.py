@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # # Зачем всё это?
@@ -176,7 +176,7 @@ p_noun
 
 
 import parse_system
-from parse_system import S, SAttrs, ParseInfo, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open, ch_prefix, ch_anti_prefix,                        seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals, global_cache,                         RuleVars, RuleContext, repr_rule
+from parse_system import S, SAttrs, ParseInfo, tokenize,                        ch_title, ch_sentence, ch_anti_sentence, ch_open, ch_prefix, ch_anti_prefix,                        seq, alt, p_alt, ELSE, W, D,                        warning, debug_pp, reset_globals, global_cache,                         RuleVars, RuleContext, repr_rule, rez_checker
 
 import classes
 from classes import StC, StNum, StNoun, StAdj, StVerb, I
@@ -188,6 +188,9 @@ import en_dictionary
 from en_dictionary import dict_adj, dict_adv, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb_simple, dict_verb_komu, r_adj_noun, dict_other,                        add_ennoun2, add_ennoun1, add_dict_variant
 from importlib import reload
 from copy import copy, deepcopy
+
+def dict_funs(*funs):
+    return {fun.__name__:fun for fun in funs}
 
 
 # # Паттерны и правила: Составные
@@ -653,7 +656,7 @@ def r_S_noun_tp(s,n): return StNoun([
 # ###### p_dops
 # r_seq_dops
 
-# In[ ]:
+# In[20]:
 
 
 # последовательность дополнений
@@ -670,7 +673,7 @@ def r_seq_dops(d1,d2): return StC([
 
 # ## have/has
 
-# In[ ]:
+# In[21]:
 
 
 px_HAVE_HAS = alt( W('have'), W('has') )
@@ -679,7 +682,7 @@ px_HAVE_HAS = alt( W('have'), W('has') )
 # ###### p_have_question
 # r_have_question, rv_HOW_MANY_noun_HAVE_noun(r_SKOLKO_noun_U_noun, r_SKOLKO_U_noun_noun)
 
-# In[ ]:
+# In[22]:
 
 
 @debug_pp
@@ -709,13 +712,14 @@ def r_SKOLKO_U_noun_noun(how,many,_n1,have,_n2):  return StC([
     I(nodep=_n2,   pad='rp', npad='n' ),# у Него
     I(nodep=_n1, pad='rp'),
 ])
-rv_HOW_MANY_noun_HAVE_noun = RuleVars([2,r_SKOLKO_noun_U_noun,r_SKOLKO_U_noun_noun])
+rv_HOW_MANY_noun_HAVE_noun = RuleVars('r_SKOLKO_U_noun_noun',
+                                      dict_funs(r_SKOLKO_noun_U_noun,r_SKOLKO_U_noun_noun))
 
 
 # ###### pe_noun_HAVE_noun
 # rv_noun_HAVE_noun(r_U_noun_EST_noun, r_U_noun_noun), r_U_noun_NET_noun
 
-# In[ ]:
+# In[23]:
 
 
 @debug_pp
@@ -741,7 +745,7 @@ def r_U_noun_noun(_n1_,_h_,_n2_):    return StC([
     ]), pull_attrs=1, attrs_from_right = _h_.attrs ),
     I(nodep=_n2_)
 ])
-rv_noun_HAVE_noun = RuleVars([2,r_U_noun_noun, r_U_noun_EST_noun])
+rv_noun_HAVE_noun = RuleVars('r_U_noun_EST_noun',dict_funs(r_U_noun_noun, r_U_noun_EST_noun))
 
 def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
     I(nodep=StC([
@@ -756,7 +760,7 @@ def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
 # ###### pe_noun_HAVE
 # r_U_noun_EST, r_U_noun_NET
 
-# In[ ]:
+# In[24]:
 
 
 @debug_pp
@@ -787,7 +791,7 @@ def r_U_noun_NET(_n1_,_h_,_no_):    return StC([
 # ###### p_HAVE_noun
 # r_IMET_noun_vp, r_NE_IMET_noun_vp, r_IMET, r_NE_IMET
 
-# In[ ]:
+# In[25]:
 
 
 @debug_pp
@@ -821,7 +825,7 @@ def r_NE_IMET(_v,no): return StVerb([
 # ###### pe_noun_TOBE_where
 # re_ETO_X_where, re_TO_X_where, r_noun_X_where
 
-# In[ ]:
+# In[26]:
 
 
 @debug_pp
@@ -849,7 +853,7 @@ def re_TO_X_where(_n,x,_w): return StC([
 # ###### pe_noun_TOBE_where_TOO
 # re_ETO_X_TOJE_where, re_TO_X_TOJE_where, r_noun_X_TOJE_where
 
-# In[ ]:
+# In[27]:
 
 
 @debug_pp
@@ -880,7 +884,7 @@ def re_TO_X_TOJE_where(_n,x,_w,too): return StC([
 # ###### pe_noun_TOBE_noun
 # re_ETO_X_noun, re_TO_X_noun, r_noun_X_noun, r_noun_X_NE_noun
 
-# In[ ]:
+# In[28]:
 
 
 @debug_pp
@@ -916,7 +920,7 @@ def re_TO_X_noun(_n1,_tobe,_n2): return StC([
 # ###### pe_noun_TOBE_noun_TOO
 # re_ETO_X_TOJE_noun, re_TO_X_TOJE_noun, r_noun_X_TOJE_noun, r_noun_X_TOJE_NE_noun
 
-# In[ ]:
+# In[29]:
 
 
 @debug_pp
@@ -956,7 +960,7 @@ def re_TO_X_TOJE_noun(_n1,_tobe,_n2,_too): return StC([
 # ###### p_TOBE
 # r_EST
 
-# In[ ]:
+# In[30]:
 
 
 @debug_pp
@@ -974,7 +978,7 @@ def r_EST(_v): return StVerb([
 # ###### p_TOBE_noun
 # rv_TOBE_noun(r_EST_noun_ip, r_JAVLYATSA_noun_tp)
 
-# In[ ]:
+# In[31]:
 
 
 @debug_pp
@@ -991,13 +995,13 @@ def r_JAVLYATSA_noun_tp(_v,_n): return StVerb([
     I(maindep=CW('являться',_v)),
     I(tp=_n,   pad='tp')
 ])
-rv_TOBE_noun = RuleVars([1, r_EST_noun_ip, r_JAVLYATSA_noun_tp])
+rv_TOBE_noun = RuleVars('r_EST_noun_ip',dict_funs(r_EST_noun_ip, r_JAVLYATSA_noun_tp))
 
 
 # ###### p_tobe_question
 # r_GDE_noun_ip, r_noun_noun_question, r_noun_question, r_noun_adj_question, r_noun_where_TOO_question
 
-# In[ ]:
+# In[32]:
 
 
 @debug_pp
@@ -1044,7 +1048,7 @@ def r_noun_where_TOO_question(_v,_n,_wh,too): return StC([
 # ###### разделяемые правила
 # r_verb_noun_vp, r_verb_noun_dp
 
-# In[ ]:
+# In[33]:
 
 
 # разделяемые правила
@@ -1060,7 +1064,7 @@ def r_verb_noun_dp(_v,_p): return StVerb([
 
 # ###### p_verb3_komu
 
-# In[ ]:
+# In[34]:
 
 
 # сделать кому-то
@@ -1075,7 +1079,7 @@ def p_verb3_komu(s,p): return p_alt(s,p,
 # ###### p_verb3_komu_chto
 # r_verb_c_phrase, r_verb_q_text, r_verb_c_q_text
 
-# In[ ]:
+# In[35]:
 
 
 # сделать кому-то что-то
@@ -1114,7 +1118,7 @@ def r_verb_c_q_text(_v,c,q1,_p,q2): return StVerb([
 # ###### p_verb2
 # re_verb_OT_noun_DO_noun, r_verb_dops
 
-# In[ ]:
+# In[36]:
 
 
 # глагол с дополнением
@@ -1141,7 +1145,7 @@ def re_verb_OT_noun_DO_noun(_v,ot,_n1,do,_n2): return StVerb([
 
 # ###### p_verb3_simple
 
-# In[ ]:
+# In[37]:
 
 
 # сделать что-то
@@ -1155,7 +1159,7 @@ def p_verb3_simple(s,p): return p_alt(s,p,
 
 # ###### p_verb3_1
 
-# In[ ]:
+# In[38]:
 
 
 # сделать (кому-то что-то)
@@ -1171,7 +1175,7 @@ def p_verb3_1(s,p): return p_alt(s,p,
 # ###### p_verb3
 # r_CAN_verb
 
-# In[ ]:
+# In[39]:
 
 
 # могу сделать
@@ -1191,7 +1195,7 @@ def r_CAN_verb(c,v): return StVerb([
 # ###### p_noun_verb1
 # r_noun_verb, r_noun_TOZHE_verb
 
-# In[ ]:
+# In[40]:
 
 
 # некто делает
@@ -1223,7 +1227,7 @@ def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
 # ###### p_verb1
 # r_to_verb, rv_rule_povel_verb(r_povel_verb_ed, r_povel_verb_mn)
 
-# In[ ]:
+# In[41]:
 
 
 # некто делает/ делать/ делай
@@ -1243,13 +1247,13 @@ def r_povel_verb_ed(_v): return StVerb([
 def r_povel_verb_mn(_v): return StVerb([
     I(maindep=_v, asp='sov', form='povel',chis='mn') # asp='sov',
 ])
-rv_rule_povel_verb = RuleVars([1,r_povel_verb_ed,r_povel_verb_mn])
+rv_rule_povel_verb = RuleVars('r_povel_verb_ed',dict_funs(r_povel_verb_ed,r_povel_verb_mn))
 
 
 # ###### p_verb
 # r_verb_NO_verb, r_verb_c_verb, r_verb_I_verb, re_U_noun_EST_noun_C_noun_I_verb
 
-# In[ ]:
+# In[42]:
 
 
 # сделать одно и/но сделать сдругое
@@ -1306,7 +1310,7 @@ def re_U_noun_EST_noun_C_noun_I_verb(_n1_,_h_,sn,c,n,_i_,_v2_):    return StC([
 # ###### p_phrase
 # r_DA_ETO_TAK, r_NET_ETO_NE_TAK, r_DA_COMMA_verb, r_NET_COMMA_verb, r_noun_COMMA_verb, r_SPASIBO
 
-# In[ ]:
+# In[43]:
 
 
 @debug_pp
@@ -1366,7 +1370,7 @@ def r_noun_COMMA_verb(_n,comma,_v):    return StC([
 # ###### p_question_phrase
 # r_noun_COMMA_tobe_question, r_have_question_COMMA_noun
 
-# In[ ]:
+# In[44]:
 
 
 @debug_pp
@@ -1391,13 +1395,13 @@ def r_tobehave_question_COMMA_noun(_q,comma,_n): return StC([
 
 # ###### p_sentence
 
-# In[ ]:
+# In[45]:
 
 
 dict_proper={}# имена собственные
 
 
-# In[ ]:
+# In[46]:
 
 
 @debug_pp
@@ -1431,12 +1435,174 @@ def p_sentence(s,p):
 
 # ###### p_text
 
-# In[ ]:
+# In[47]:
 
 
 CONTEXT_DEBUGGING = False
 
 import bisect
+
+def context_fetch_1(s,sentence_points,first,next_,default_variants):
+    '''преобразует узел next_ в соотетствии с контекстом first
+
+    first - указатель на первый узел
+    next_ - указатель на текущий узел'''
+    #global CONTEXT_DEBUGGING
+
+    def current_rule(rule_group):
+        '''превращает rule_group в строку - для отладки'''
+        return '<'+str(id(rule_group))+'>'+            str(rule_group.default)+            '('+repr_rule(rule_group.vars[rule_group.default])+')'
+
+    def update_cache(oldrez,newrez):
+        '''в кэше oldrez заменяет на newrez'''
+        if hasattr(oldrez.parse_info,'patterns'):
+            for pat in oldrez.parse_info.patterns:
+                if callable(pat):
+                    cache = parse_system.global_cache
+                    fn = (oldrez.parse_info.p_start,pat.__name__)
+                    if fn in cache:
+                        yes = False
+                        for i in range(len(cache[fn])):
+                            if cache[fn][i][1] is oldrez:
+                                if yes: raise TextError('в кэше дублируется результат')
+                                yes = True
+                                cache[fn][i] = (cache[fn][i][0],newrez,cache[fn][i][2])
+                        if not yes:  raise TextError('в кэше не найден результат')
+
+    if first is next_: # дошли до контекстного узла
+        assert first.context_info.context, first
+        rule_group = first.context_info.context
+        # находим номер текущего предложения
+        ns = bisect.bisect_right(sentence_points,first.context_info.pos)-1
+        if CONTEXT_DEBUGGING: print('на входе',current_rule(rule_group))
+        # выбираем правило
+
+    # ----------
+        def tmp_rez_checker(rez):
+            assert isinstance(rez,classes.Struct) or type(rez)==S or type(rez)==str, (type(rez),rez)
+            return rez
+
+        old_checker = parse_system.rez_checker
+        parse_system.rez_checker = tmp_rez_checker
+        old_context_enabled = parse_system.ContextInfo.enabled
+        parse_system.ContextInfo.enabled = False
+        try:
+            # по всем селекторам
+            for start, stop, p_selector in rule_group.selectors:
+                if ns+start<0 or ns+stop>len(sentence_points):
+                    continue
+                # запускаем с нужной позиции
+                tmp = p_selector(s,sentence_points[ns+start])
+                # проверяем позицию всех результатов
+                assert all([p1==(
+                    len(s) if ns+stop==len(sentence_points) else sentence_points[ns+stop]
+                    ) for p1,r1 in tmp])
+                # отбрасываем None, если результатов нет, идем дальше
+                tmp = [(p1,r1) for p1,r1 in tmp if r1!=None]
+                # берем первый результат
+                if len(tmp):
+                    if CONTEXT_DEBUGGING and len(tmp)>1: 
+                        print('больше одного варианта контекста')
+                    rez = tmp[0][1]
+                    break
+            else:
+                if CONTEXT_DEBUGGING: print('выбираем вариант по умолчанию')
+                rez = rule_group.default
+        finally:
+            parse_system.rez_checker = old_checker
+            parse_system.ContextInfo.enabled = old_context_enabled
+        if CONTEXT_DEBUGGING: 
+            print('выбрали ',rez)
+            
+        #  если строка - запоминаем его, получаем результат
+        if type(rez)==str:
+            if not id(rule_group) in default_variants:
+                default_variants[id(rule_group)] = (rule_group,rule_group.default)
+            rule_group.select(rez)
+            if CONTEXT_DEBUGGING: print('selected',id(rule_group),rez)
+            rez = rule_group.vars[rez]
+        # если есть аргументы - применяем его и получаем результат
+        if first.context_info.args:
+            newrez = rez(*first.context_info.args)
+        else:
+            newrez = deepcopy(rez)
+        # подготавливаем и возвращаем результат
+        rule_group = copy(rule_group) # для parse_info
+        assert len(first.context_info.first_context)==0
+        newrez.parse_info = copy(first.parse_info)
+        if ParseInfo.enabled:
+            newrez.parse_info.rule_group = rule_group
+        update_cache(first,newrez)
+        return rez_checker(newrez)
+    # ----------
+        go_break = False
+        for k in range(1,len(rule_group)): # по всем правилам
+            j = 0
+            for n,test in rule_group[k][1]: # по всем тестам данного правила
+                if ns+n>=0 and test(s,first.context_info.pos,sentence_points[ns+n]):
+                    tmp = rule_group[0]
+                    rule_group[0] = k
+                    if CONTEXT_DEBUGGING: print('set',id(rule_group),k)
+                    if not id(rule_group) in default_variants:
+                        default_variants[id(rule_group)] = (rule_group,tmp)
+                    old_rule_group = rule_group
+                    rule_group = copy(rule_group) # для parse_info
+                    if CONTEXT_DEBUGGING:
+                        print('at',first.context_info.pos,
+                              'найдено правило',current_rule(old_rule_group),#current_rule(rule_group),
+                              'по тесту',j,'('+str(sentence_points[ns+n])+')')
+                    go_break = True
+                    break
+                j+=1
+            if go_break: break
+        else:
+            if CONTEXT_DEBUGGING:
+                print('at',first.context_info.pos,
+                      'используем правило',current_rule(rule_group),
+                      'т.к. ни один вариант не подходит')
+        rule = rule_group[rule_group[0]][0]
+        #if CONTEXT_DEBUGGING: print('итого',current_rule(rule_group))
+        # применяем правило
+        if first.context_info.args:
+            newrez = rule(*args)
+        else:
+            newrez = deepcopy(rule)
+        assert len(first.context_info.first_context)==0
+        newrez.parse_info = copy(first.parse_info)
+        if ParseInfo.enabled:
+            newrez.parse_info.rule_group = rule_group
+        update_cache(first,newrez)
+        return newrez
+
+    else: #шаг рекурсии
+        first_context = next_.context_info.first_context
+        for i in range(len(first_context)):
+            if first_context[i][0]==first: break
+        else: raise TextError('обрыв пути к контексту')
+        n = first_context[i][1]
+        del first_context[i]
+        next_.context_info.args[n] =             context_fetch_1(s,sentence_points,first,next_.context_info.args[n],default_variants)
+        newrez = next_.context_info.rule(*next_.context_info.args)
+        newrez.context_info = next_.context_info
+        if ParseInfo.enabled:
+            newrez.parse_info = next_.parse_info
+        update_cache(next_,newrez)
+        return rez_checker(newrez)
+
+def context_fetch(s,sentence_points,rez,default_variants):
+    '''преобразует узел rez в соотетствии со всеми контекстами, которые указаны в узле'''
+    # global parse_system.rez_checker
+    while len(rez.context_info.first_context): # по всем контекстам
+        # ищем независимый контекстный узел
+        for first ,n in rez.context_info.first_context:
+            if len(first.context_info.first_context)==0:
+                break
+        else:
+            raise TextError('не могу выбрать подходящий контекстный узел',rez.context_info.first_context)
+        rez = context_fetch_1(s,sentence_points,first,rez,default_variants)
+    return rez
+
+
 @debug_pp
 def p_text(s,p):
     '''или последовательность предложений или 1 фраза
@@ -1444,108 +1610,11 @@ def p_text(s,p):
     '''
     default_variants = {} # сюда замыкается context_fetch_1
 
-    def context_fetch_1(s,sentence_points,first,next_):
-        '''преобразует узел next_ в соотетствии с контекстом first
-
-        first - указатель на первый узел
-        next_ - указатель на текущий узел'''
-        global CONTEXT_DEBUGGING
-        nonlocal default_variants
-        
-        def current_rule(rule_group):
-            return '('+str(id(rule_group))+')'+                str(rule_group[0])+                '('+repr_rule(rule_group[rule_group[0]][0])+')'
-        
-        def update_cache(first,newrez):
-            if hasattr(first.parse_info,'patterns'):
-                for pat in first.parse_info.patterns:
-                    if callable(pat):
-                        cache = parse_system.global_cache
-                        fn = (first.parse_info.p_start,pat.__name__)
-                        if fn in cache:
-                            yes = False
-                            for i in range(len(cache[fn])):
-                                if cache[fn][i][1] is first:
-                                    if yes: raise TextError('в кэше дублируется результат')
-                                    yes = True
-                                    cache[fn][i] = (cache[fn][i][0],newrez,cache[fn][i][2])
-                            if not yes:  raise TextError('в кэше не найден результат')
-        
-        if first is next_: # дошли до контекстного узла
-            assert first.context_info.context, first
-            rule_group = first.context_info.context
-            # находим номер текущего предложения
-            ns = bisect.bisect_right(sentence_points,first.context_info.pos)-1
-            #if CONTEXT_DEBUGGING: print('на входе',current_rule(rule_group))
-            # выбираем правило
-            go_break = False
-            for k in range(1,len(rule_group)): # по всем правилам
-                j = 0
-                for n,test in rule_group[k][1]: # по всем тестам данного правила
-                    if ns+n>=0 and test(s,first.context_info.pos,sentence_points[ns+n]):
-                        tmp = rule_group[0]
-                        rule_group[0] = k
-                        if CONTEXT_DEBUGGING: print('set',id(rule_group),k)
-                        if not id(rule_group) in default_variants:
-                            default_variants[id(rule_group)] = (rule_group,tmp)
-                        old_rule_group = rule_group
-                        rule_group = copy(rule_group) # для parse_info
-                        if CONTEXT_DEBUGGING:
-                            print('at',first.context_info.pos,
-                                  'найдено правило',current_rule(old_rule_group),#current_rule(rule_group),
-                                  'по тесту',j,'('+str(sentence_points[ns+n])+')')
-                        go_break = True
-                        break
-                    j+=1
-                if go_break: break
-            else:
-                if CONTEXT_DEBUGGING:
-                    print('at',first.context_info.pos,
-                          'используем правило',current_rule(rule_group),
-                          'т.к. ни один вариант не подходит')
-            rule = rule_group[rule_group[0]][0]
-            #if CONTEXT_DEBUGGING: print('итого',current_rule(rule_group))
-            # применяем правило
-            if first.context_info.args:
-                newrez = rule(*args)
-            else:
-                newrez = deepcopy(rule)
-            assert len(first.context_info.first_context)==0
-            newrez.parse_info = copy(first.parse_info)
-            if ParseInfo.enabled:
-                newrez.parse_info.rule_group = rule_group
-            update_cache(first,newrez)
-            return newrez
-
-        else: #шаг рекурсии
-            first_context = next_.context_info.first_context
-            for i in range(len(first_context)):
-                if first_context[i][0]==first: break
-            else: raise TextError('обрыв пути к контексту')
-            n = first_context[i][1]
-            del first_context[i]
-            next_.context_info.args[n] =                 context_fetch_1(s,sentence_points,first,next_.context_info.args[n])
-            newrez = next_.context_info.rule(*next_.context_info.args)
-            newrez.context_info = next_.context_info
-            if ParseInfo.enabled:
-                newrez.parse_info = next_.parse_info
-            update_cache(next_,newrez)
-            return newrez
-
-    def context_fetch(s,sentence_points,rez):
-        '''преобразует узел rez в соотетствии со всеми контекстами, которые указаны в узле'''
-        while len(rez.context_info.first_context): # по всем контекстам
-            # ищем независимый контекстный узел
-            for first ,n in rez.context_info.first_context:
-                if len(first.context_info.first_context)==0:
-                    break
-            else:
-                raise TextError('не могу выбрать подходящий контекстный узел',rez.context_info.first_context)
-            rez = context_fetch_1(s,sentence_points,first,rez)
-        return rez
-
     # p_text(s,p):
     rez=[]
     sentence_points = []
+    pie = ParseInfo.enabled
+    ParseInfo.enabled = True
     try:
         while p<len(s):
             sentence_points.append(p)
@@ -1566,18 +1635,25 @@ def p_text(s,p):
                 sp = sentence_points[-1]
                 print(sp,':',SAttrs().join(s[sp:]))
                 print('--- text end ---')
+        #    rezs2 =  [(p,StC([ I(nodep=r1) for r1 in rez ]))]
             rezs2 =  [(p,StC([
-                I(nodep=context_fetch(s,sentence_points,r1)) for r1 in rez
+                I(nodep=context_fetch(s,sentence_points,r1,default_variants)) for r1 in rez
             ]))]
         else:
             rez = maxlen_filter(alt(p_phrase,p_question_phrase)(s,p))
-            rezs2 = [] if len(rez)==0 else                 [(rez[0][0],context_fetch(s,sentence_points,rez[0][1]))]
+        #    rezs2 = [] if len(rez)==0 else [(rez[0][0],rez[0][1])]
+            rezs2 = [] if len(rez)==0 else                 [(rez[0][0],context_fetch(s,sentence_points,rez[0][1],default_variants))]
     finally:
+        ParseInfo.enabled = pie
         for idd,(r,n) in default_variants.items():
             #print(k)
-            r[0] = n
+            r.select(n)
     return rezs2
         
+
+
+# In[48]:
+
 
 def maxlen_filter(rezs):
     '''находит самые длинные результаты, а остальные отбрасывает
@@ -1606,7 +1682,7 @@ def maxlen_filter(rezs):
 
 # ## Контекстные паттерны
 
-# In[ ]:
+# In[49]:
 
 
 def rc_collect_all(*args):
@@ -1625,81 +1701,52 @@ def rc_8_3(x1,x2,x3,x4,x5,x6,x7,x8):
     return x3
 
 
-# In[ ]:
+# In[50]:
 
 
-def apc_IT_1(rod):
-    def pc_HOW_MANY_noun_HAVE_noun__noun_HAVE_noun(s,p,sp):
-        rez1 = seq([W('how'), W('many'), p_noun, px_HAVE_HAS, p_noun_ip, W('?'), 
+# pc - parse context
+# arc - abstract rule context
+def arc_IT(rule):
+    def rc_IT(*args):
+        rez = rule(*args)
+        assert isinstance(rez,classes.StDeclinable)
+        if rez.chis=='mn': return None
+        if   rez.rod=='m': return 'он'
+        elif rez.rod=='g': return 'она'
+        elif rez.rod=='s': return 'оно'
+        else: raise TextError('wrong rod')
+    return rc_IT
+
+pc_IT_1 = alt(
+            seq([W('how'), W('many'), p_noun, px_HAVE_HAS, p_noun_ip, W('?'), 
                    p_noun_ip, px_HAVE_HAS,  p_noun, W('.')
-                   ],rc_10_5)(s,sp)
-        #print('test: how many:',p,sp)
-        if len(rez1)==0: 
-            #print('test rez: False # len(rez1)==0')
-            return False
-        assert len(rez1)==1, (rez1, p,sp, s)
-        nonlocal rod
-        #print('test rez:',rez1[0][1].rod==rod,'#',rez1[0][1].rod,rod)
-        if rez1[0][1].rod==rod and CONTEXT_DEBUGGING:
-            print('found',str(rez1[0][1]))
-        return rez1[0][1].rod==rod
-    return pc_HOW_MANY_noun_HAVE_noun__noun_HAVE_noun
-
-def apc_IT_2(rod):
-    def fun(s,p,sp):
-        rez1 = p_alt(s,sp,
+            ],arc_IT(rc_10_5)),
             seq([p_noun_ip, alt(px_HAVE_HAS,p_TOBE), p_noun, W(';'), 
                    p_noun_ip, p_TOBE,  alt(p_noun,p_where), W('.')
-            ],rc_8_3),
+            ],arc_IT(rc_8_3)),
             seq([W('where'), p_TOBE, p_noun_ip, W('?'), 
                    p_noun_ip, p_TOBE,  p_where, W('.')
-            ],rc_8_3),
+            ],arc_IT(rc_8_3)),
             seq([p_noun_ip,W(','),W('where'), p_TOBE, p_noun_ip, W('?'), 
                    p_noun_ip, p_TOBE,  p_where, W('.')
-            ],rc_10_5),
+            ],arc_IT(rc_10_5)),
             seq([W('where'), p_TOBE, p_noun_ip, W('?'), 
                    p_noun_ip, p_TOBE,  p_where, W('too'), W('.')
-            ],rc_9_3),
+            ],arc_IT(rc_9_3)),
             seq([W('what'),W('colour'),p_TOBE,p_noun_ip, W('?'), 
                    p_noun_ip, p_TOBE,  p_noun, W('.')
-            ],rc_9_4)
-        )
-        #print('test: noun have noun;:',p,sp)
-        if len(rez1)==0: 
-            #print('test rez: False # len(rez1)==0')
-            return False
-        assert len(rez1)==1, (rez1, p,sp, s)
-        nonlocal rod
-        #print('test rez:',rez1[0][1].rod==rod,'#',rez1[0][1].rod,rod)
-        if rez1[0][1].rod==rod and CONTEXT_DEBUGGING:
-            print('found',str(rez1[0][1]))
-        return rez1[0][1].rod==rod
-    return fun
-
-def apc_IT_3(rod):
-    def fun(s,p,sp):
-        rez1 = p_alt(s,sp,
-            seq([px_HAVE_HAS, p_noun_ip, p_noun, W('?'), p_sentence,
+            ],arc_IT(rc_9_4))
+)
+pc_IT_2 = alt(
+            seq([px_HAVE_HAS, p_noun_ip, p_noun, W('?'), 
+                 p_sentence,
                  W('where'), p_TOBE, p_noun_ip, W('?')
-            ],rc_9_3),
+            ],arc_IT(rc_9_3)),
         )
-        #print('test: noun have noun;:',p,sp)
-        if len(rez1)==0: 
-            #print('test rez: False # len(rez1)==0')
-            return False
-        assert len(rez1)==1, (rez1, p,sp, s)
-        nonlocal rod
-        #print('test rez:',rez1[0][1].rod==rod,'#',rez1[0][1].rod,rod)
-        if rez1[0][1].rod==rod and CONTEXT_DEBUGGING:
-            print('found',str(rez1[0][1]))
-        return rez1[0][1].rod==rod
-    return fun
 
-dict_pronoun_ip['it'] = RuleContext([1,
-    (ruwords['оно'],[(-1,apc_IT_1('s')),(-1,apc_IT_2('s')),(-2,apc_IT_3('s'))]),
-    (ruwords['он'], [(-1,apc_IT_1('m')),(-1,apc_IT_2('m')),(-2,apc_IT_3('m'))]),
-    (ruwords['она'],[(-1,apc_IT_1('g')),(-1,apc_IT_2('g')),(-2,apc_IT_3('g'))])
-                                    ])
+dict_pronoun_ip['it'] = RuleContext('оно',dict_pronoun_ip['it'].vars,selectors = [
+    (-1,1,pc_IT_1),(-2,1,pc_IT_2)
+])
 
 
 # ## Запуск и отладка
@@ -1720,7 +1767,7 @@ dict_pronoun_ip['it'] = RuleContext([1,
 #         2 - дополнительно печатает нестрингифицированные объекты
 # 
 
-# In[ ]:
+# In[51]:
 
 
 def _en2ru(s): # main
@@ -1789,15 +1836,14 @@ def pr_l_repr(s):
     
 
 
-# In[ ]:
+# In[52]:
 
 
 def with_variants(variants,fun,s):
     '''variants - список пар (RuleVars,n)'''
     saves = {}
     for k,v in variants:
-        saves[id(k)]=k.default()
-        if type(v)==str: v = ruwords[v]
+        saves[id(k)]=k.default
         k.select(v)
     try:
         s = fun(s)
@@ -1807,7 +1853,7 @@ def with_variants(variants,fun,s):
     return s
 
 
-# In[ ]:
+# In[53]:
 
 
 def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
@@ -1828,7 +1874,7 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
     return m
 
 
-# In[ ]:
+# In[54]:
 
 
 def _parse_pat(patt,s):
@@ -1847,13 +1893,13 @@ def d_parse_pat(patt,s):
     l_d = parse_system.DEBUGGING
     parse_system.DEBUGGING=True
     try:
-        r=parsepat(s,patt)
+        r=_parse_pat(patt,s)
     finally:
         parse_system.DEBUGGING=l_d
     return r
 
 
-# In[ ]:
+# In[55]:
 
 
 from IPython.core.display import HTML
@@ -1938,9 +1984,9 @@ def sch_make_tree(struct):
             node.patterns = info.patterns2str()
             if hasattr(info,'rule_group'):
                 if isinstance(info.rule_group,RuleVars):
-                    assert info.rule_group[0]!=0, info.rule_group
-                    rule =                         info.rule_group[info.rule_group[0]][0] if type(info.rule_group)==RuleContext                         else info.rule_group[info.rule_group[0]]
-                    rules= ('c-' if type(info.rule_group)==RuleContext else '')+                        str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
+                    assert info.rule_group.default!=None, info.rule_group
+                    rule = info.rule_group.get_default()
+                    rules= ('c-' if type(info.rule_group)==RuleContext else '')+                        str(info.rule_group.default)+'/'+str(len(info.rule_group.vars))+' '
                 else:
                     rule = info.rule_group
                     rules = ''
@@ -1973,9 +2019,8 @@ def sch_make_tree(struct):
         node.patterns = info.patterns2str()
         if hasattr(info,'rule_group'):
             if isinstance(info.rule_group,RuleVars):
-                no = info.rule_group[0] if info.rule_group[0]!=0 else 1
-                rule =                     info.rule_group[info.rule_group[0]][0] if type(info.rule_group)==RuleContext                     else info.rule_group[info.rule_group[0]]
-                rules= ('c-' if type(info.rule_group)==RuleContext else '')+                    str(info.rule_group[0])+'/'+str(len(info.rule_group)-1)+' '
+                rule = info.rule_group.get_default()
+                rules= ('c-' if type(info.rule_group)==RuleContext else '')+                    str(info.rule_group.default)+'/'+str(len(info.rule_group.vars))+' '
             else:
                 rule = info.rule_group
                 rules = ''
@@ -2232,13 +2277,13 @@ def scheme_print(s,rezs,detailed=1,nohtml = False):
 
 # # Тесты
 
-# In[ ]:
+# In[56]:
 
 
 en2ru('I see jam and one cup.')
 
 
-# In[ ]:
+# In[57]:
 
 
 import inspect
@@ -2246,7 +2291,7 @@ lines = inspect.getsource(en2ru)
 print(lines)
 
 
-# In[ ]:
+# In[58]:
 
 
 import tests
@@ -2272,7 +2317,32 @@ tests.finalize()
 tests.TEST_ERRORS
 
 
-# In[ ]:
+# In[59]:
+
+
+stat = {}
+for (pos,fun),v in parse_system.global_cache.items():
+    if pos in stat:
+        stat[pos]+=1
+    else:
+        stat[pos]=1
+{k:(
+    [(d[0],str(d[1])) for d in v] \
+    #len(v)\
+    if type(v)==list 
+    else v
+) for k,v in parse_system.global_cache.items() }
+print(sum(stat)/len(stat))
+stat
+
+
+# In[60]:
+
+
+tokenize('cat')
+
+
+# In[61]:
 
 
 add_ennoun2('colour'  ,'colours'  ,"цвет","цвета"   ,'m',False)
@@ -2293,13 +2363,13 @@ add_ennoun2('mammy'  ,'mammis'  ,"мама","мамы"   ,'g',True)
 dict_other['what'] = S('что')
 
 
-# In[ ]:
+# In[62]:
 
 
 en2ru('What colour is this flag? It is red.')
 
 
-# In[ ]:
+# In[63]:
 
 
 pr_l_repr(en2ru('''What colour is your shirt?
@@ -2313,7 +2383,7 @@ Is black.
 '''))
 
 
-# In[ ]:
+# In[64]:
 
 
 pr_l_repr(en2ru('''I have a kitten; my
@@ -2325,7 +2395,7 @@ is blue.
 '''))
 
 
-# In[ ]:
+# In[65]:
 
 
 pr_l_repr(en2ru('''You have a car; your
@@ -2337,7 +2407,7 @@ his horse is black too.
 '''))
 
 
-# In[ ]:
+# In[66]:
 
 
 seq([px_HAVE_HAS, p_noun_ip, p_noun, W('?'), p_sentence,
@@ -2346,7 +2416,7 @@ seq([px_HAVE_HAS, p_noun_ip, p_noun, W('?'), p_sentence,
             Yes, I have. Where is it? It is in the box.'),0)
 
 
-# In[ ]:
+# In[67]:
 
 
 c_en2ru('''Have you a green hat, Mammy? Yes, I
@@ -2354,7 +2424,7 @@ have.
 Where is it? It is in the box.''')
 
 
-# In[ ]:
+# In[68]:
 
 
 pr_l_repr(en2ru('''Has he a flag? Yes, he has.
@@ -2380,13 +2450,13 @@ Take this copy-book!
 '''))
 
 
-# In[ ]:
+# In[69]:
 
 
 scheme('Where is it?')
 
 
-# In[ ]:
+# In[70]:
 
 
 pr_l_repr(en2ru('''What colour is your
@@ -2405,13 +2475,13 @@ I like lemons.
 '''))
 
 
-# In[ ]:
+# In[71]:
 
 
 scheme('Have you a green hat, Mammy?')
 
 
-# In[ ]:
+# In[72]:
 
 
 c_en2ru('''Have you a green hat, Mammy? Yes, I
@@ -2420,6 +2490,18 @@ Where is it? It is in the box.''')
 
 
 # In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[73]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
@@ -2479,13 +2561,13 @@ get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
 # add_skl_suffix
 # ```
 
-# In[ ]:
+# In[74]:
 
 
 #decline('two watches')
 
 
-# In[ ]:
+# In[75]:
 
 
 pr_l_repr(en2ru('''
@@ -2501,7 +2583,7 @@ Boy: Show me your ribbons! Thank you.
 '''))
 
 
-# In[ ]:
+# In[76]:
 
 
 en2ru('It \nis black.')

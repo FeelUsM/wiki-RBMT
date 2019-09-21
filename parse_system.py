@@ -57,7 +57,7 @@ class TestError(ValueError):
 
 
 def default_warning(s): 
-	global DEBUGGING
+	#global DEBUGGING
 	if DEBUGGING:
 	 	print(s)
 	print(s,file=sys.stderr)
@@ -194,41 +194,6 @@ class SAttrs:
 		self.tags|=r.tags
 		return self
 
-class ParseInfo:
-	"""система отладки для scheme
-	инф-а добавляется в результат (в S и в Struct) в функциях D() и debug_pp()
-	информация о том, как был получен данный узел
-
-	p_start - начало
-	p_end - конец
-	rule_group - rule_group
-	patterns - массив паттернов (и не только), которые возвращали этот узел корневым
-		dict - словарь, см. d['__name__']
-		function - fun.__name__
-		'__ELSE__' - означает, что было исключение
-		RuleVars - означает, что могло быть исключение, но оно было отключено
-	"""
-	enabled = False
-	__slots__=['p_start','p_end','rule_group','patterns']
-	def patterns2str(self):
-		str_p=[]
-		for patt in self.patterns:
-			if type(patt)==dict:
-				str_p.append(patt['__name__'])
-			elif callable(patt):
-				str_p.append(patt.__name__)
-			elif type(patt)==RuleVars:
-				assert patt[0]==0
-				if patt.link:
-					str_p.append(patt.link)
-				else:
-					str_p.append('?')
-
-			else:
-				assert patt=='__ELSE__'
-				str_p.append(patt)
-		return str_p
-
 class S(str):
 	"""строка с атрибутом и ParseInfo"""
 	__slots__=['attrs','parse_info','context_info']
@@ -236,8 +201,8 @@ class S(str):
 		return str.__new__(cls,s)
 	def __init__(self,s,attrs=None):
 		self.attrs = attrs if attrs!=None else SAttrs()
-		self.parse_info = ParseInfo()
-		self.context_info = ContextInfo()
+		self.parse_info = ParseInfo() # определяется ниже токенезации
+		self.context_info = ContextInfo() # определяется ниже токенезации
 		
 	def __repr__(self):
 		return 'S'+repr_id(self)+'('+str.__repr__(self)+','+repr(self.attrs)+')'
@@ -245,187 +210,6 @@ class S(str):
 		return self.attrs.change(str.__str__(self))
 	def tostr(self):
 		return str(self)
-
-class RuleVars(list):
-	__slots__=['can_be_disabled','link']
-	def __init__(self,x,can_be_disabled=False,link=None):
-		self.can_be_disabled = can_be_disabled
-		self.link = link
-		if type(x)==list or isinstance(x,RuleVars):
-			assert len(x)>0
-			if type(x[0])==int: # инициализируем от списка с числом
-				assert len(x)>1
-				assert x[0]<len(x)
-				for e in x:
-					list.append(self,e)
-				self[0] = x[0]
-			else: # инициализируем от списка без числа
-				list.append(self,1)
-				for e in x:
-					list.append(self,e)
-		else: # инициализируем от единственного объекта
-			list.append(self,1)
-			list.append(self,x)
-	def __copy__(self):
-		return RuleVars(self)
-	def append(self,ruw,reset=False):
-		'''добавляет вариант к переводу (только в виде списка) и устанавливает указатель на него
-
-		если reset==True - предварительно удалит все предыдущие варианты
-		'''
-		if not reset:
-			for w in self:
-				if w==ruw:
-					warning('RuleVars.append(): добавляем уже имеющееся слово')
-					return False
-			list.append(self,ruw)
-			self[0]=len(self)-1 # 
-		else:
-			del self[2:]
-			self[0]=1
-			self[1]=ruw
-			#self=[1,ruw]
-
-	def remove(self,n):
-		'''удаляет вариант (из списка) и по возможности не меняет указатель варианта
-
-		проверяет, чтобы остался хотябы 1 вариант
-		'''
-		assert len(self)>=2
-		if type(n)!=int: # удаляем конкретный объект
-			assert n in self, ("такого объекта нет в списке вариантов", n , self)
-			for i in range(1,len(self)):
-				if self[i]==n:
-					n=i
-					break
-		assert n>0
-		del self[n]
-		if n>1 and self[0]>=n: # если указатель варианта указывает на удаляемое слово, будет выбран предыдущий вариант
-			self[0]-=1 # иначе указатель продолжиит указывать на прежнее слово
-			# но если был выбран 1й или 0й вариант, то он останется прежним
-		if self[0]>=len(self):
-			self[0]=len(self)-1
-
-	def default(self):
-		'''возвращает дефолтный вариант
-		
-		если вариантов нет - возвращает None
-		'''
-		return self[0]
-
-	def select(self,n):
-		'''устанавливает дефолтный вариант в группе правил
-		
-		если это сделать невозможно - ничего не меняет
-		'''
-		if n==None: 
-			warning("can't select variant 'None'")
-			return False
-		assert len(self)>0
-		if type(n)!=int:
-			assert n in self, ("такого объекта нет в списке вариантов", n , self)
-			for i in range(1,len(self)):
-				if self[i]==n:
-					n=i
-					break
-		assert type(n)==int and n>=0
-		if n>=len(self): 
-			warning('number out of range')
-			return False
-		elif n==0 and not self.can_be_disabled:
-			warning('can not be disabled')
-			return False
-		else:
-			self[0]=n
-			return True
-
-	def print(self):
-		'''печатает список вариантов'''
-		print(len(self)-1,'varians, selected number',self[0])
-		for i in range(1,len(self)):
-			if callable(self[i]):
-				if i==self[0]: print(self[i].__name__,'<---')
-				else:	   print(self[i].__name__)
-			else:
-				if i==self[0]: print(self[i],'<---')
-				else:	   print(self[i])
-		return self
-
-class RuleContext(RuleVars):
-	def __init__(self,x,can_be_disabled=False,link=None):
-		RuleVars.__init__(self,x,can_be_disabled,link)
-		assert self[0]!=0
-		for i in range(1,len(self)):
-			assert len(self[i])==2
-			for p in self[i][1]:
-				assert len(p)==2
-				assert p[0]>=-5 and p[0]<=0
-	def __copy__(self):
-		return RuleContext(self)
-	def remove(self,n):
-		'''удаляет вариант (из списка) и по возможности не меняет указатель варианта
-
-		проверяет, чтобы остался хотябы 1 вариант
-		'''
-		assert len(self)>=2
-		if type(n)!=int: # удаляем конкретный объект
-			#assert n in self, ("такого объекта нет в списке вариантов", n , self)
-			for i in range(1,len(self)):
-				if self[i][0]==n:
-					n=i
-					break
-			else:
-				raise AssertionError("такого объекта нет в списке вариантов", n , self)
-		assert n>0
-		del self[n]
-		if n>1 and self[0]>=n: # если указатель варианта указывает на удаляемое слово, будет выбран предыдущий вариант
-			self[0]-=1 # иначе указатель продолжиит указывать на прежнее слово
-			# но если был выбран 1й или 0й вариант, то он останется прежним
-		if self[0]>=len(self):
-			self[0]=len(self)-1
-
-	def select(self,n):
-		'''устанавливает дефолтный вариант в группе правил
-		
-		если это сделать невозможно - ничего не меняет
-		'''
-		if n==None: 
-			warning("can't select variant 'None'")
-			return False
-		assert len(self)>0
-		if type(n)!=int:
-			#assert n in self, ("такого объекта нет в списке вариантов", n , self)
-			for i in range(1,len(self)):
-				if self[i][0]==n:
-					n=i
-					break
-			else:
-				raise AssertionError("такого объекта нет в списке вариантов", n , self)
-		assert type(n)==int and n>=0
-		if n>=len(self): 
-			warning('number out of range')
-			return False
-		elif n==0 and not self.can_be_disabled:
-			warning('can not be disabled')
-			return False
-		else:
-			self[0]=n
-			return True
-
-class ContextInfo:
-	'''
-	context - у 1го результата ссылдка на RuleContext, у остальных None
-	pos - позиция, на которой возник контекст - чтобы узнать номер текущего предложения
-	rule - правило, по которому получен данный узел
-	args - список аргументов, из которых получен данный узел
-	first_context - список пар (ссылка на 1й результат, номер в args)
-		1й результат сам на себя не ссылается
-	'''
-	__slots__ = ['context','pos','rule','args','first_context']
-	def __init__(self):
-		self.context = None
-		self.first_context = []
-		self.args = None
 
 #------------------------------------------------------------
 # # Токенизация
@@ -536,6 +320,8 @@ def tokenizer(s):
 
 
 def tokenize(s) : 
+	'''обновляет длобальный кэш и токенизирует строку
+	'''
 	global global_cache
 	global_cache = {}
 	return [i for i in tokenizer(s)]
@@ -543,6 +329,141 @@ def tokenize(s) :
 
 #------------------------------------------------------------
 # # парсинг
+
+class ParseInfo:
+	"""система отладки для scheme
+	инф-а добавляется в результат (в S и в Struct) в функциях D() и debug_pp()
+	информация о том, как был получен данный узел
+
+	p_start - начало
+	p_end - конец
+	rule_group - rule_group
+	patterns - массив паттернов (и не только), которые возвращали этот узел корневым
+		dict - словарь, см. d['__name__']
+		function - fun.__name__
+		'__ELSE__' - означает, что результат получен как исключение
+		RuleVars - означает, что для этого результата могло быть исключение, но оно было отключено
+	"""
+	enabled = False
+	__slots__=['p_start','p_end','rule_group','patterns']
+	def patterns2str(self):
+		str_p=[]
+		for patt in self.patterns:
+			if type(patt)==dict:
+				str_p.append(patt['__name__'])
+			elif callable(patt):
+				str_p.append(patt.__name__)
+			elif type(patt)==RuleVars:
+				assert patt[0]==0
+				if patt.link:
+					str_p.append(patt.link)
+				else:
+					str_p.append('?')
+
+			else:
+				assert patt=='__ELSE__'
+				str_p.append(patt)
+		return str_p
+
+class RuleVars:
+	'''варианты
+	default - ключ в vars
+	vars - map
+	'''
+	__slots__=['default','vars']
+	def __init__(self,default,vars,can_be_disabled=False):
+		assert type(vars)==dict
+		assert default in vars
+		self.vars = vars
+		self.default = default
+	def __copy__(self):
+		return RuleVars(self.default,copy(delf.vars))
+	def append(self,key,ruw,reset=False):
+		'''добавляет вариант к переводу (только в виде списка) и устанавливает указатель на него
+
+		если reset==True - предварительно удалит все предыдущие варианты
+		'''
+		self.default = key
+		if reset:
+			self.vars = {key,ruw}
+		else:
+			self.vars[key] = ruw
+
+	def remove(self,key):
+		'''удаляет вариант (из списка) и по возможности не меняет указатель варианта
+
+		проверяет, чтобы остался хотябы 1 вариант
+		'''
+		assert key in self.vars, ("такого объекта нет в списке вариантов", key , self.vars)
+		del self.vars[key]
+		self.default = next(iter(self.vars))
+
+	def get_default(self):
+		'''возвращает дефолтный вариант
+		
+		если вариантов нет - возвращает None
+		'''
+		return None if self.default==None else self.vars[self.default]
+
+	def select(self,key):
+		'''устанавливает дефолтный вариант в группе правил
+		
+		если это сделать невозможно - ничего не меняет
+		'''
+		if key==None:
+			self.default = key	
+			return
+		assert key in self.vars, ("такого объекта нет в списке вариантов", key , self.vars)
+		self.default = key
+
+	def print(self):
+		'''печатает список вариантов'''
+		print(len(self.vars),'varians, selected ',self.default)
+		for k,v in self.vars.items():
+			if callable(v):
+				if k==self.default: print(v.__name__,'<---')
+				else:	   print(v.__name__)
+			else:
+				if k==self.default: print(v,'<---')
+				else:	   print(v)
+		return self
+
+class RuleContext(RuleVars):
+	'''.selectors - [(позиция старта, позиция окончания, селектор),...]
+	селектор возвращает:
+		None - не сработал
+		str - индекс в vars - будет запомнен
+		S,Struct - результат - не будет запомнен
+		callable - правило - не будет запомнено
+	'''
+	__slots__=['selectors']
+	def __init__(self,vars,default,can_be_disabled=False,selectors=None):
+		RuleVars.__init__(self,vars,default,can_be_disabled)
+		assert self.default!=None
+		for p in selectors:
+			assert len(p)==3
+			assert p[0]>=-5 and p[0]<=0
+			assert p[1]>=0 and p[1]<=5
+			assert callable(p[2])
+		self.selectors = selectors
+	def __copy__(self):
+		return RuleContext(self.default,copy(self.vars),selectors=self.selectors)
+
+class ContextInfo:
+	'''
+	context - у 1го результата ссылка на RuleContext, у остальных None
+	pos - позиция, на которой возник контекст - чтобы узнать номер текущего предложения
+	rule - правило, по которому получен данный узел
+	args - список аргументов, из которых получен данный узел
+	first_context - список пар (ссылка на 1й результат, номер в args)
+		1й результат сам на себя не ссылается
+	'''
+	enabled = True
+	__slots__ = ['context','pos','rule','args','first_context']
+	def __init__(self):
+		self.context = None
+		self.first_context = []
+		self.args = None
 
 def rez_checker(rez): return rez # переопределяется в classes.py
 
@@ -572,15 +493,15 @@ def D(d):
 			rule_group = d[s[p]]
 			assert type(rule_group)!=list, rule_group
 			if type(rule_group)==RuleContext:
-				r = rule_group[rule_group[0]][0]
+				r = rule_group.get_default()
 			elif type(rule_group)==RuleVars:
 				# номер дефолтного варианта находится на 0й позиции.
 				# 0 означает что все варианты отключены
-				if rule_group[0]==0:
+				if rule_group.default==None:
 					warning(d['__name__']+' '+s[p]+' отключен')
 					return [(p+1,rule_group)]
 				else:
-					r = rule_group[rule_group[0]]
+					r = rule_group.get_default()
 			else: r = rule_group
 			tmp=deepcopy(rez_checker(r))
 			tmp.attrs=deepcopy(s[p].attrs)
@@ -589,7 +510,7 @@ def D(d):
 				tmp.parse_info.p_start = p
 				tmp.parse_info.p_end = p+1
 				tmp.parse_info.rule_group = rule_group
-			if type(rule_group)==RuleContext:
+			if ContextInfo.enabled and type(rule_group)==RuleContext:
 				tmp.context_info.context = rule_group
 				tmp.context_info.pos = p
 			return [(p+1,tmp)]
@@ -745,17 +666,16 @@ def seq(patterns,rule_group):#,numbrs=None
 	if type(rule_group)==RuleContext:
 		# [no,(rule,[(s_pos,test)])]
 		# test(s,p,s_p)
-		assert rule_group[0]!=0
-		rule = rule_group[rule_group[0]][0]
+		assert rule_group.default!=None
+		rule = rule_group.get_default()
 	elif type(rule_group)==RuleVars:
-		rule = null_handler if rule_group[0]==0 else rule_group[rule_group[0]]
+		rule = null_handler if rule_group.get_default()==None else rule_group.get_default()
 	else:
 		rule = rule_group
 	def rule_group_adder(r):
-		r.parse_info.rule_group = rule_group
+		if r!=None and hasattr(r,'parse_info'): r.parse_info.rule_group = rule_group
 		return r
 	def context_adder(rule,rezs,pos):
-		nonlocal rule_group
 		first_context = []
 		for i in range(len(rezs)):
 			rez = rezs[i]
@@ -765,7 +685,8 @@ def seq(patterns,rule_group):#,numbrs=None
 				first_context.append((rez,i))
 		context = rule_group if type(rule_group)==RuleContext else None
 		rez = rule(*rezs)
-		if rule!=rule_group:
+		if rez==None: return rez
+		if rule!=null_handler:
 			rez = rez_checker(rez)
 		if len(first_context)>0:
 			rez.context_info.first_context = first_context
@@ -776,11 +697,28 @@ def seq(patterns,rule_group):#,numbrs=None
 			rez.context_info.pos = pos
 			rez.context_info.args = rezs
 		return rez
-	def p_seq_info(s,p):
-		return [(pos,rule_group_adder(context_adder(rule,rez,p))) for pos,rez in sp_seq(s,p,patterns)]
-	def p_seq(s,p):
-		return [(pos,                 context_adder(rule,rez,p) ) for pos,rez in sp_seq(s,p,patterns)]
-	return p_seq_info if ParseInfo.enabled else p_seq
+	def apply_rule(rule,rezs,pos):
+		rez = rule(*rezs)
+		if rez==None: return rez
+		if rule!=null_handler:
+			rez = rez_checker(rez)		
+		return rez
+	def none_filter(rezs):
+		return [(p,r) for p,r in rezs if r!=None]
+	def p_seq_context_info(s,p):
+		if ParseInfo.enabled and ContextInfo.enabled:
+			return none_filter([  (pos,rule_group_adder(context_adder(rule,rez,p))) \
+									for pos,rez in sp_seq(s,p,patterns)])
+		elif not ParseInfo.enabled and ContextInfo.enabled:
+			return none_filter([  (pos,                 context_adder(rule,rez,p) ) \
+									for pos,rez in sp_seq(s,p,patterns)])
+		elif ParseInfo.enabled and not ContextInfo.enabled:
+			return none_filter([  (pos,rule_group_adder(apply_rule(rule,rez,p))) \
+									for pos,rez in sp_seq(s,p,patterns)])
+		elif not ParseInfo.enabled and not ContextInfo.enabled:
+			return none_filter([  (pos,                 apply_rule(rule,rez,p) ) \
+									for pos,rez in sp_seq(s,p,patterns)])
+	return p_seq_context_info
 
 global_cache = {}
 s_point=[] # когда изменяется s - означает, что нужно сбросить кэш
@@ -801,90 +739,87 @@ def debug_pp(fun):
 		global CURRENT_DEBUG_DEPTH
 		global global_cache
 		global s_point
-		if not(s is s_point):
-			global_cache={}
-			s_point = s
-		fn = (p,fun.__name__)
-		cache = global_cache
-		if DEBUGGING:
-			indent = '    '*CURRENT_DEBUG_DEPTH
-			debug_s = '.'*p+'*'+'.'*(len(s)-p-1)+(' ' if p<len(s) else '')+\
-				fun.__name__+'___'+str(p)
-		if fn in cache:
-			if cache[fn]==None:
-				raise ParseError('зацикливание '+fun.__name__+'(s,'+str(p)+')')
-			if DEBUGGING: 
-				print(indent+'|'+debug_s)
-				if ParseInfo.enabled:
-					for p1,r1,patts in cache[fn]:
-						print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
-							 str(r1)+' <'+str(id(patts))+'>'+repr(patts))
-				else:
-					for p1,r1 in cache[fn]:
-						print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
-							 str(r1))
-			#if ParseInfo.enabled:
-			def cache_info_adder(r1,patterns):
-				r1.parse_info.patterns = patterns
-				return r1
-			return [(p1,cache_info_adder(r1,patterns)) \
-					for p1,r1,patterns in cache[fn]]
-			#else:
-			#	return cache[p]
-		else:
-			if DEBUGGING: print(indent+'{'+debug_s)
-		
-		cache[fn]=None
-		rezs=fun(s,p)   # <<<<<================== CALL FUN ======================
-		assert type(rezs)==list , 'паттерн '+fun.__name__+' вернул неправильный тип'
-		#if not ParseInfo.enabled:
-		#	cache[p]=rezs
-		#else:
-		def info_adder(p1,r1):
-			r1.parse_info.p_start = p
-			r1.parse_info.p_end = p1
-			if not hasattr(r1.parse_info,'patterns'):
-				r1.parse_info.patterns = []
-			patt = copy(r1.parse_info.patterns)
-			patt.append(fun)
-			r1.parse_info.patterns = patt
-			return r1
-		rezs = [(p1,info_adder(p1,r1)) for p1,r1 in rezs]
-		cache[fn]=[ ( p1,r1,r1.parse_info.patterns ) for p1,r1 in rezs]
-		
-		#for p1,r1 in rezs:
-		#    assert p1>p, r1
-		
-		if DEBUGGING:
-			print(indent+'}'+debug_s)
-			if ParseInfo.enabled:
-				for p1,r1 in rezs:
-					print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
-						 str(r1)+' <'+str(id(r1.parse_info.patterns))+'>'+\
-						  repr(r1.parse_info.patterns))
-			else:
-				for p1,r1 in rezs:
-					print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
-						 str(r1))
-			
-			#print('_'+'.'*p+str(len(rezs)),'in ',fun.__name__,'}',
-			#      [(p,str(r)) for (p,r) in rezs],'\n')
-			#for i in rezs:
-			#    if isinstance(i[1],StDeclinable):
-			#        i[1].check_attrs('wrapper:'+fun.__name__)
-		
-		return rezs
-	
-	def wrapper2(s,p):
-		global CURRENT_DEBUG_DEPTH
 		CURRENT_DEBUG_DEPTH+=1
 		try:
-			r = wrapper(s,p)
+			if not(s is s_point):
+				global_cache={}
+				s_point = s
+			fn = (p,fun.__name__)
+			cache = global_cache
+			if DEBUGGING:
+				indent = '    '*CURRENT_DEBUG_DEPTH
+				debug_s = '.'*p+'*'+'.'*(len(s)-p-1)+(' ' if p<len(s) else '')+\
+					fun.__name__+'___'+str(p)
+			if fn in cache:
+				if cache[fn]==None:
+					raise ParseError('зацикливание '+fun.__name__+'(s,'+str(p)+')')
+				if DEBUGGING: 
+					print(indent+'|'+debug_s)
+					if ParseInfo.enabled:
+						for p1,r1,patts in cache[fn]:
+							print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+								str(r1) #+' <'+str(id(patts))+'>'+repr(patts)
+							)
+					else:
+						for p1,r1 in cache[fn]:
+							print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+								 str(r1))
+				if ParseInfo.enabled:
+					def cache_info_adder(r1,patterns):
+						r1.parse_info.patterns = patterns
+						return r1
+					return [(p1,cache_info_adder(r1,patterns)) \
+							for p1,r1,patterns in cache[fn]]
+				else:
+					return cache[fn]
+			else:
+				if DEBUGGING: print(indent+'{'+debug_s)
+			
+			cache[fn]=None
+			rezs=fun(s,p)   # <<<<<================== CALL FUN ======================
+			assert type(rezs)==list , 'паттерн '+fun.__name__+' вернул неправильный тип'
+			if not ParseInfo.enabled:
+				cache[fn]=rezs
+			else:
+				def info_adder(p1,r1):
+					r1.parse_info.p_start = p
+					r1.parse_info.p_end = p1
+					if not hasattr(r1.parse_info,'patterns'):
+						r1.parse_info.patterns = []
+					patt = copy(r1.parse_info.patterns)
+					patt.append(fun)
+					r1.parse_info.patterns = patt
+					return r1
+				rezs = [(p1,info_adder(p1,r1)) for p1,r1 in rezs]
+				cache[fn]=[ ( p1,r1,r1.parse_info.patterns ) for p1,r1 in rezs]
+			
+			#for p1,r1 in rezs:
+			#    assert p1>p, r1
+			
+			if DEBUGGING:
+				print(indent+'}'+debug_s)
+				if ParseInfo.enabled:
+					for p1,r1 in rezs:
+						print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+							str(r1)#+' <'+str(id(r1.parse_info.patterns))+'>'+\
+							#repr(r1.parse_info.patterns)
+						)
+				else:
+					for p1,r1 in rezs:
+						print(indent+'-'+'.'*p+'_'*(p1-p)+'.'*(len(s)-p1)+' '+\
+							 str(r1))
+				
+				#print('_'+'.'*p+str(len(rezs)),'in ',fun.__name__,'}',
+				#      [(p,str(r)) for (p,r) in rezs],'\n')
+				#for i in rezs:
+				#    if isinstance(i[1],StDeclinable):
+				#        i[1].check_attrs('wrapper:'+fun.__name__)
+			
+			return rezs
 		finally:
 			CURRENT_DEBUG_DEPTH-=1
-		return r
 	
-	return wrapper2
+	return wrapper
 
 def reset_globals():
 	global DEBUGGING

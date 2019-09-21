@@ -38,12 +38,14 @@ def add_dict_variant(dic,enw,ruw,reset=False):
 	'''
 	if enw in dic and not reset:
 		if type(dic[enw])!=RuleVars:
-			dic[enw] = RuleVars(dic[enw])
-		dic[enw].append(ruw)
+			dic[enw] = RuleVars('1',{'1':dic[enw]})
+		dic[enw].append(ruw,ruwords[ruw])
 	else:
-		dic[enw]=RuleVars(ruw)
+		dic[enw]=RuleVars(ruw,{ruw:ruwords[ruw]})
 	if rd.VERBOSE_ADDS:
 		print('в',dic['__name__'],'добавлено',enw)
+def dict_ruwords(*set_):
+	return {k:ruwords[k] for k in set_}
 
 # ## Noun ----------------------------
 
@@ -61,13 +63,13 @@ def add_ennoun2(enw,enwmn,ruw,ruwmn,r,o,skl=None,sense=None,reset=False):
 	# в интерактивном режиме мы ruwords перезаписываем в любом случае
 	if rd.VERBOSE_ADDS:
 		if add_runoun2(ruw,ruwmn,r,o,skl,sense):
-			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
-			add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
+			add_dict_variant(dict_noun,enw,  ruw  ,reset)
+			add_dict_variant(dict_noun,enwmn,ruwmn)
 	# в режиме исходника если слово уже есть, то мы его не добавляем
 	else:
 		if (ruw in ruwords and ruwmn in ruwords) or add_runoun2(ruw,ruwmn,r,o,skl,sense):
-			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
-			add_dict_variant(dict_noun,enwmn,ruwords[ruwmn])
+			add_dict_variant(dict_noun,enw,  ruw  ,reset)
+			add_dict_variant(dict_noun,enwmn,ruwmn)
 	
 def add_ennoun1(enw,ruw,c,r,o,skl=None,sense=None,reset=False):
 	''' add_runoun1 обновляет ruwords[ruw]
@@ -76,11 +78,11 @@ def add_ennoun1(enw,ruw,c,r,o,skl=None,sense=None,reset=False):
 	# в интерактивном режиме мы ruwords перезаписываем в любом случае
 	if rd.VERBOSE_ADDS:
 		if ruw in ruwords or add_runoun1(ruw,c,r,o,skl,sense):
-			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
+			add_dict_variant(dict_noun,enw,  ruw  ,reset)
 	# в режиме исходника если слово уже есть, то мы его не добавляем
 	else:
 		if ruw in ruwords or add_runoun1(ruw,c,r,o,skl,sense):
-			add_dict_variant(dict_noun,enw,  ruwords[ruw]  ,reset)
+			add_dict_variant(dict_noun,enw,  ruw  ,reset)
 	
 def ____Noun():
 	
@@ -246,10 +248,10 @@ dict_pronoun_ip={'__name__':'dict_pronoun_ip'}
 dict_pronoun_dp={'__name__':'dict_pronoun_dp'}
 def ____Pronoun():
 
-	dict_pronoun_ip['I']=   RuleVars([1, ruwords["я (муж)"],  ruwords["я (жен)"] ])
-	dict_pronoun_dp['me']=  RuleVars([1, ruwords["я (муж)"],  ruwords["я (жен)"] ])
-	dict_pronoun_ip['you']= RuleVars([1, ruwords["ты (муж)"], ruwords["ты (жен)"],  ruwords["вы"] ])
-	dict_pronoun_dp['you']= RuleVars([1, ruwords["ты (муж)"], ruwords["ты (жен)"],  ruwords["вы"] ])
+	dict_pronoun_ip['I']=   RuleVars("я (муж)",dict_ruwords("я (муж)", "я (жен)" ))
+	dict_pronoun_dp['me']=  RuleVars("я (муж)",dict_ruwords("я (муж)", "я (жен)" ))
+	dict_pronoun_ip['you']= RuleVars("ты (муж)",dict_ruwords("ты (муж)", "ты (жен)", "вы" ) )
+	dict_pronoun_dp['you']= RuleVars("ты (муж)",dict_ruwords("ты (муж)", "ты (жен)", "вы" ) )
 
 	dict_pronoun_ip['we']=  ruwords["мы"]
 	dict_pronoun_dp['us']=  ruwords["мы"]
@@ -263,13 +265,7 @@ def ____Pronoun():
 	dict_pronoun_ip['they']= ruwords["они"]
 	dict_pronoun_dp['them']= ruwords["они"]
 
-	it = dict_pronoun_ip['it']
-	tmp = 1 # it.default()
-	add_dict_variant(dict_pronoun_ip,'it',dict_pronoun_ip['he'])
-	it = dict_pronoun_ip['it']
-	it.append(dict_pronoun_ip['she'])
-	it.select(tmp)
-	#print(it.default())
+	dict_pronoun_ip['it'] = RuleVars('оно',dict_ruwords('оно','он','она'))
 
 ____Pronoun()
 
@@ -335,8 +331,8 @@ ____Adv()
 dict_numeral={'__name__':'dict_numeral'}
 def ____Numeral():
 
-	dict_numeral['one']=	   RuleVars([1,ruwords['один'],ruwords['одна'],ruwords['одно']])
-	dict_numeral['two']=	   RuleVars([1,ruwords['два'],ruwords['две']])
+	dict_numeral['one']=	   RuleVars('один',dict_ruwords('один','одна','одно'))
+	dict_numeral['two']=	   RuleVars('два',dict_ruwords('два','две'))
 	dict_numeral['three']=	 ruwords['три']
 	dict_numeral['four']=	  ruwords['четыре']
 	dict_numeral['many']=	  ruwords['много']
@@ -378,8 +374,8 @@ def ____Verb():
 	
 	dict_verb_komu['give']=  ruwords['давать']
 	dict_verb_komu['gives']= ruwords['давать']
-	dict_verb_komu['show']=  RuleVars([ 2, ruwords['показать'], ruwords['показывать'] ])
-	dict_verb_komu['shows']= RuleVars([ 2, ruwords['показать'], ruwords['показывать'] ])
+	dict_verb_komu['show']=  RuleVars('показать',dict_ruwords('показать','показывать'))
+	dict_verb_komu['shows']= RuleVars('показать',dict_ruwords('показать','показывать'))
 	dict_verb_komu['say']=   ruwords['говорить']
 	dict_verb_komu['says']=  ruwords['говорить']
 

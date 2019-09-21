@@ -77,7 +77,7 @@ from parse_system import SAttrs, ParseInfo, S, ch_anti_prefix, repr_id, ContextI
 from copy import copy
 
 def tmp_rez_checker(rez):
-	assert isinstance(rez,Struct) or type(rez)==S, rez
+	assert isinstance(rez,Struct) or type(rez)==S, (type(rez),rez)
 	return rez
 parse_system.rez_checker = tmp_rez_checker
 
@@ -514,7 +514,7 @@ class StDeclinable(Struct):
 		
 	у зависимых узлов меняется pad
 	'''
-	__slots__=['word','odush','rod','chis','_pad']
+	#__slots__=['word','odush','rod','chis','_pad']#  
 
 	@staticmethod
 	def odush_checker(odush):

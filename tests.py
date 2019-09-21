@@ -113,6 +113,9 @@ def init(_parse_system, _en_dictionary,
 	_en2ru, _with_variants, _decline, _scheme, _d_en2ru, _pr_l_repr, 
 	_p_noun, _p_noun1, _r_noun_comma_noun, _rv_noun_HAVE_noun,
 	_multiplier,_print_timing):
+
+	global TEST_ERRORS
+
 	global tmp_warning_fun
 	global parse_system
 	global en_dictionary
@@ -138,6 +141,8 @@ def init(_parse_system, _en_dictionary,
 
 	global multiplier
 	global print_timing
+
+	TEST_ERRORS = []
 
 	parse_system = _parse_system
 	en_dictionary = _en_dictionary
@@ -251,7 +256,7 @@ def test1():
 	# In[21]:
 
 
-	test(p_noun(tokenize('cat,_cat,_a cat'),0)[0][1].tostr(),'кот,_кот,_кот')
+	test(p_noun(tokenize('cat,_cat,_a cat'),0)[1][1].tostr(),'кот,_кот,_кот')
 
 
 	# In[22]:
@@ -1164,7 +1169,7 @@ def test11():
 	десять утят.''')
 
 	ttest(en2ru_with_variants,[
-		(rv_noun_HAVE_noun,1) # не контекст
+		(rv_noun_HAVE_noun,'r_U_noun_noun') # не контекст
 	],'''How many chickens has the hen?
 	It has eleven.
 	How many ducklings has the duck?
@@ -1175,7 +1180,7 @@ def test11():
 	У неё восемь.''')
 
 	ttest(en2ru_with_variants,[
-		(rv_noun_HAVE_noun,1), # не контекст
+		(rv_noun_HAVE_noun,'r_U_noun_noun'), # не контекст
 		(dict_numeral['one'],"одна"),
 		(dict_numeral['two'],"две")
 	],'''How many kittens has the cat?
