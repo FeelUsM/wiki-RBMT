@@ -1697,6 +1697,8 @@ def rc_9_4(x1,x2,x3,x4,x5,x6,x7,x8,x9):
     return x4
 def rc_9_3(x1,x2,x3,x4,x5,x6,x7,x8,x9):
     return x3
+def rc_11_3(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11):
+    return x3
 def rc_8_3(x1,x2,x3,x4,x5,x6,x7,x8):
     return x3
 
@@ -1738,6 +1740,10 @@ pc_IT_1 = alt(
             ],arc_IT(rc_9_4))
 )
 pc_IT_2 = alt(
+            seq([px_HAVE_HAS, p_noun_ip, p_noun, W(','), p_noun_ip, W('?'), 
+                 p_sentence,
+                 W('where'), p_TOBE, p_noun_ip, W('?')
+            ],arc_IT(rc_11_3)),
             seq([px_HAVE_HAS, p_noun_ip, p_noun, W('?'), 
                  p_sentence,
                  W('where'), p_TOBE, p_noun_ip, W('?')
@@ -2275,15 +2281,37 @@ def scheme_print(s,rezs,detailed=1,nohtml = False):
            
 
 
+# In[56]:
+
+
+def cache_stat():
+    stat = {}
+    for (pos,fun),v in parse_system.global_cache.items():
+        if pos in stat:
+            stat[pos]+=1
+        else:
+            stat[pos]=1
+    {k:(
+        [(d[0],str(d[1])) for d in v] \
+        #len(v)\
+        if type(v)==list 
+        else v
+    ) for k,v in parse_system.global_cache.items() }
+    if len(stat)>0:
+        print(sum(stat)/len(stat))
+    return stat
+cache_stat()
+
+
 # # Тесты
 
-# In[56]:
+# In[57]:
 
 
 en2ru('I see jam and one cup.')
 
 
-# In[57]:
+# In[58]:
 
 
 import inspect
@@ -2291,7 +2319,7 @@ lines = inspect.getsource(en2ru)
 print(lines)
 
 
-# In[58]:
+# In[59]:
 
 
 import tests
@@ -2317,32 +2345,7 @@ tests.finalize()
 tests.TEST_ERRORS
 
 
-# In[59]:
-
-
-stat = {}
-for (pos,fun),v in parse_system.global_cache.items():
-    if pos in stat:
-        stat[pos]+=1
-    else:
-        stat[pos]=1
-{k:(
-    [(d[0],str(d[1])) for d in v] \
-    #len(v)\
-    if type(v)==list 
-    else v
-) for k,v in parse_system.global_cache.items() }
-print(sum(stat)/len(stat))
-stat
-
-
 # In[60]:
-
-
-tokenize('cat')
-
-
-# In[61]:
 
 
 add_ennoun2('colour'  ,'colours'  ,"цвет","цвета"   ,'m',False)
@@ -2363,13 +2366,13 @@ add_ennoun2('mammy'  ,'mammis'  ,"мама","мамы"   ,'g',True)
 dict_other['what'] = S('что')
 
 
-# In[62]:
+# In[61]:
 
 
 en2ru('What colour is this flag? It is red.')
 
 
-# In[63]:
+# In[62]:
 
 
 pr_l_repr(en2ru('''What colour is your shirt?
@@ -2383,7 +2386,7 @@ Is black.
 '''))
 
 
-# In[64]:
+# In[63]:
 
 
 pr_l_repr(en2ru('''I have a kitten; my
@@ -2395,7 +2398,7 @@ is blue.
 '''))
 
 
-# In[65]:
+# In[64]:
 
 
 pr_l_repr(en2ru('''You have a car; your
@@ -2407,24 +2410,7 @@ his horse is black too.
 '''))
 
 
-# In[66]:
-
-
-seq([px_HAVE_HAS, p_noun_ip, p_noun, W('?'), p_sentence,
-                 W('where'), p_TOBE, p_noun_ip, W('?')
-            ],rc_9_3)(tokenize('Have you a green hat, Mammy? \
-            Yes, I have. Where is it? It is in the box.'),0)
-
-
-# In[67]:
-
-
-c_en2ru('''Have you a green hat, Mammy? Yes, I
-have.
-Where is it? It is in the box.''')
-
-
-# In[68]:
+# In[65]:
 
 
 pr_l_repr(en2ru('''Has he a flag? Yes, he has.
@@ -2450,13 +2436,7 @@ Take this copy-book!
 '''))
 
 
-# In[69]:
-
-
-scheme('Where is it?')
-
-
-# In[70]:
+# In[66]:
 
 
 pr_l_repr(en2ru('''What colour is your
@@ -2475,20 +2455,6 @@ I like lemons.
 '''))
 
 
-# In[71]:
-
-
-scheme('Have you a green hat, Mammy?')
-
-
-# In[72]:
-
-
-c_en2ru('''Have you a green hat, Mammy? Yes, I
-have.
-Where is it? It is in the box.''')
-
-
 # In[ ]:
 
 
@@ -2501,7 +2467,7 @@ Where is it? It is in the box.''')
 
 
 
-# In[73]:
+# In[67]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
@@ -2561,13 +2527,13 @@ get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
 # add_skl_suffix
 # ```
 
-# In[74]:
+# In[68]:
 
 
 #decline('two watches')
 
 
-# In[75]:
+# In[69]:
 
 
 pr_l_repr(en2ru('''
@@ -2583,7 +2549,7 @@ Boy: Show me your ribbons! Thank you.
 '''))
 
 
-# In[76]:
+# In[70]:
 
 
 en2ru('It \nis black.')
