@@ -2319,7 +2319,7 @@ lines = inspect.getsource(en2ru)
 print(lines)
 
 
-# In[59]:
+# In[71]:
 
 
 import tests
@@ -2341,118 +2341,9 @@ tests.test10()
 tests.test11()
 tests.test12()
 tests.test13()
+tests.test14()
 tests.finalize()
 tests.TEST_ERRORS
-
-
-# In[60]:
-
-
-add_ennoun2('colour'  ,'colours'  ,"цвет","цвета"   ,'m',False)
-add_ennoun2('flag'  ,'flags'  ,"флаг","флаги"   ,'m',False)
-add_ennoun2('shirt'  ,'shirts'  ,"рубашка","рубашки"   ,'g',False)
-add_skl2('s',False,make_skl2(
-'платье'   ,'платья',
-'платья'   ,'платьев',
-'платью'   ,'платьям',
-'платье'   ,'платья',
-'платьем'  ,'платьями',
-'платье'   ,'платьях'))
-         
-add_ennoun2('dress'  ,'dresses'  ,"платье","платья"   ,'s',False,skl=6)
-add_ennoun2('pencil'  ,'pencils'  ,"карандаш","карандаши"   ,'m',False)
-add_ennoun2('daddy'  ,'daddis'  ,"папа","папы"   ,'m',True)
-add_ennoun2('mammy'  ,'mammis'  ,"мама","мамы"   ,'g',True)
-dict_other['what'] = S('что')
-
-
-# In[61]:
-
-
-en2ru('What colour is this flag? It is red.')
-
-
-# In[62]:
-
-
-pr_l_repr(en2ru('''What colour is your shirt?
-It is green.
-What colour is your cap?
-It is grey.
-What colour is my dress?
-It is blue.
-What colour is my hat? It
-Is black.
-'''))
-
-
-# In[63]:
-
-
-pr_l_repr(en2ru('''I have a kitten; my
-kitten is white.
-He has a dog; his dog
-is black.
-She has a dress; her dress
-is blue.
-'''))
-
-
-# In[64]:
-
-
-pr_l_repr(en2ru('''You have a car; your
-car is big.
-His shirt is very good.
-His cap is good too.
-His pistol is black and
-his horse is black too.
-'''))
-
-
-# In[65]:
-
-
-pr_l_repr(en2ru('''Has he a flag? Yes, he has.
-Has he a stick? No, he has not.
-Has she a doll? Yes, she has.
-Have you a black pencil, Daddy? Yes,
-I have.
-Have you a green hat, Mammy? Yes, I
-have.
-Where is it? It is in the box.
-Have you a blue dress? Yes, I have.
-Where is it? It is on the bed.
-Have you a goat? Yes, I have.
-Where is it? It is in the garden.
-Have you a horse? Yes, I have.
-Where is it? It is in the garden too.
-He has a big dog.
-His dog is under that tree.
-She has a kitten.
-Her kitten is in the box.
-Take my ball!
-Take this copy-book!
-'''))
-
-
-# In[66]:
-
-
-pr_l_repr(en2ru('''What colour is your
-pencil? My pencil is
-green.
-Show me your blue
-shirt!
-Give me her grey
-dress!
-Daddy, where is the
-red flag?
-It is on the house.
-Mammy, take my cake,
-it is very good.
-I like lemons.
-'''))
 
 
 # In[ ]:

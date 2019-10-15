@@ -211,6 +211,22 @@ def ____Noun():
 	add_ennoun2('copybook','copybooks',"тетрадь","тетради"	  ,'g',False)
 	add_ennoun2('tree'	  ,'trees'	 ,"дерево"	,"деревья"	  ,'s',False)
 
+	add_ennoun2('colour'  ,'colours'  ,"цвет","цвета"   ,'m',False)
+	add_ennoun2('flag'  ,'flags'  ,"флаг","флаги"   ,'m',False)
+	add_ennoun2('shirt'  ,'shirts'  ,"рубашка","рубашки"   ,'g',False)
+	add_skl2('s',False,make_skl2(
+	'платье'   ,'платья',
+	'платья'   ,'платьев',
+	'платью'   ,'платьям',
+	'платье'   ,'платья',
+	'платьем'  ,'платьями',
+	'платье'   ,'платьях'))
+	         
+	add_ennoun2('dress'  ,'dresses'  ,"платье","платья"   ,'s',False,skl=6)
+	add_ennoun2('pencil'  ,'pencils'  ,"карандаш","карандаши"   ,'m',False)
+	add_ennoun2('daddy'  ,'daddis'  ,"папа","папы"   ,'m',True)
+	add_ennoun2('mammy'  ,'mammis'  ,"мама","мамы"   ,'g',True)
+
 	#add_runoun('часы (предмет)',None,False,'m','mn','час','ы','ов','ам','ы','ами','ах')
 	#dict_noun['watch']= ruwords['часы (предмет)']
 	#dict_noun['watches']= ruwords['часы (предмет)']
@@ -420,6 +436,7 @@ def ____Other():
 	dict_other['where']=S("где")
 	dict_other['under']=S("под")
 	dict_other['thank']=S("спасибо")
+	dict_other['what'] = S('что')
 ____Other()
 
 

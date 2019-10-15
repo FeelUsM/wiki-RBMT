@@ -1437,6 +1437,129 @@ def test13():
 	Покажи мне ту вазу!
 	Спасибо.''')
 
+def test14():
+	print('--- Lesson 14 ---')
+	global N
+	N=14
+
+	ttest(en2ru,'Where is the girl? She is in the room.',
+	'Где девочка? Она в комнате.')
+
+	ttest(en2ru,'What colour is this flag? It is red.',
+		'Какого цвета этот флаг? Он -- красный.')
+
+	ttest(en2ru,'''What colour is your shirt?
+	It is green.
+	What colour is your cap?
+	It is grey.
+	What colour is my dress?
+	It is blue.
+	What colour is my hat? It
+	Is black.
+	''',
+	'''Какого цвета твоя рубашка?
+	Она -- зелёная.
+	Какого цвета твоя кепка?
+	Она -- серая.
+	Какого цвета моё платье?
+	Оно -- синее.
+	Какого цвета моя шляпа? Она -- чёрная.''')
+
+	ttest(en2ru,'''I have a kitten; my
+	kitten is white.
+	He has a dog; his dog
+	is black.
+	She has a dress; her dress
+	is blue.
+	''',
+	'''У меня есть котёнок; мой
+	котёнок -- белый.
+	У него есть собака; его собака -- чёрная.
+	У неё есть платье; её платье -- синее.''')
+
+	ttest(en2ru,'''You have a car; your
+	car is big.
+	His shirt is very good.
+	His cap is good too.
+	His pistol is black and
+	his horse is black too.
+	''',
+	'''У тебя есть автомобиль; твой
+	автомобиль -- большой.
+	Его рубашка -- очень хорошая.
+	Его кепка -- тоже хорошая.
+	Его пистолет -- чёрный и
+	его лошадь -- тоже чёрная.''')
+
+	ttest(en2ru,'''Has he a flag? Yes, he has.
+	Has he a stick? No, he has not.
+	Has she a doll? Yes, she has.
+	Have you a black pencil, Daddy? Yes,
+	I have.
+	Have you a green hat, Mammy? Yes, I
+	have.
+	Where is it? It is in the box.
+	Have you a blue dress? Yes, I have.
+	Where is it? It is on the bed.
+	Have you a goat? Yes, I have.
+	Where is it? It is in the garden.
+	Have you a horse? Yes, I have.
+	Where is it? It is in the garden too.
+	He has a big dog.
+	His dog is under that tree.
+	She has a kitten.
+	Her kitten is in the box.
+	Take my ball!
+	Take this copy-book!
+	''',
+	'''У него есть флаг? Да, у него есть.
+	У него есть палка? Нет, у него нет.
+	У неё есть кукла? Да, у неё есть.
+	У тебя есть чёрный карандаш, Папа? Да,
+	у меня есть.
+	У тебя есть зелёная шляпа, Мама? Да, у меня
+	есть.
+	Где она? Она в ящике.
+	У тебя есть синее платье? Да, у меня есть.
+	Где оно? Оно на кровати.
+	У тебя есть коза? Да, у меня есть.
+	Где она? Она в саду.
+	У тебя есть лошадь? Да, у меня есть.
+	Где она? Она тоже в саду.
+	У него есть большая собака.
+	Его собака под тем деревом.
+	У неё есть котёнок.
+	Её котёнок в ящике.
+	Возьми мой мяч!
+	Возьми эту тетрадь!''')
+
+	ttest(en2ru,'''What colour is your
+	pencil? My pencil is
+	green.
+	Show me your blue
+	shirt!
+	Give me her grey
+	dress!
+	Daddy, where is the
+	red flag?
+	It is on the house.
+	Mammy, take my cake,
+	it is very good.
+	I like lemons.
+	''',
+	'''Какого цвета твой
+	карандаш? Мой карандаш --
+	зелёный.
+	Покажи мне твою синюю
+	рубашку!
+	Дай мне её серое
+	платье!
+	Папа, где
+	красный флаг?
+	Он на доме.
+	Мама, возьми мой торт, он -- очень хороший.
+	Я люблю лимоны.''')
+
 #	ttest(en2ru,,
 #	)
 
