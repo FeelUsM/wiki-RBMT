@@ -999,21 +999,32 @@ rv_TOBE_noun = RuleVars('r_EST_noun_ip',dict_funs(r_EST_noun_ip, r_JAVLYATSA_nou
 
 
 # ###### p_tobe_question
-# r_GDE_noun_ip, r_noun_noun_question, r_noun_question, r_noun_adj_question, r_noun_where_TOO_question
+# r_GDE_noun_ip, r_noun_noun_question, r_noun_question, r_noun_adj_question, r_noun_where_TOO_question, r_CHTO_ETO, r_CHTO_TAKOE_noun_ip
 
-# In[32]:
+# In[77]:
 
 
 @debug_pp
 def p_tobe_question(s,p): return p_alt(s,p,
     seq([p_TOBE,p_noun_ip],r_noun_question),
     seq([p_TOBE,p_noun_ip,p_adj],r_noun_adj_question),
+    seq([W('what'),p_TOBE,W('this')],r_CHTO_ETO),
     ELSE,
+    seq([W('what'),p_TOBE,p_noun_ip],r_CHTO_TAKOE_noun_ip),
     seq([W('where'),p_TOBE,p_noun_ip],r_GDE_noun_ip),
     seq([W('what'),W('colour'),p_TOBE,p_noun_ip],r_KAKOGO_TSVETA_noun_ip),
     seq([p_TOBE,p_noun_ip,p_noun],r_noun_noun_question),
     seq([p_TOBE,p_noun_ip,p_where,W('too')],r_noun_where_TOO_question)
 )
+def r_CHTO_ETO(what,_v,this): return StC([
+    I(nodep=S('что',what.attrs), attrs_from_right=_v.attrs),
+    I(nodep=S('это',this.attrs))
+])
+def r_CHTO_TAKOE_noun_ip(what,_v,_n): return StC([
+    I(nodep=S('что',what.attrs)),
+    I(nodep=S('такое',what.attrs), attrs_from_right=_v.attrs),
+    I(nodep=_n, pad='ip')
+])
 def r_GDE_noun_ip(where,_v,_n): return StC([
     I(nodep=S('где',where.attrs), attrs_from_right=_v.attrs),
     I(nodep=_n, pad='ip')
@@ -2319,7 +2330,7 @@ lines = inspect.getsource(en2ru)
 print(lines)
 
 
-# In[71]:
+# In[59]:
 
 
 import tests
@@ -2346,19 +2357,132 @@ tests.finalize()
 tests.TEST_ERRORS
 
 
-# In[ ]:
+# In[78]:
 
 
+en2ru('what is this?')
 
 
-
-# In[ ]:
-
+# In[79]:
 
 
+en2ru('''Look, what is this? It is a flower.
+These flowers are red and those flowers
+are blue.''')
+
+
+# In[65]:
+
+
+pr_l_repr(en2ru('''What is this? It is
+a rose.
+What is this? It is
+a violet.
+Is this	a	violet	or
+a	rose? It	is	a rose.
+Is this	a rose too?
+No, it is not.'''))
+
+
+# In[75]:
+
+
+pr_l_repr(en2ru('''That girl has many violets in her garden. She has
+many red roses too. She
+has many flowers in her
+garden.'''))
 
 
 # In[67]:
+
+
+pr_l_repr(en2ru('''Is this a chicken?
+No, it is not. What
+is this? It is a bird.
+Where is the bird?
+It is in the cage.
+Is this bird big or
+little? It is little.'''))
+
+
+# In[74]:
+
+
+pr_l_repr(en2ru('''Is this a stick? No, it is
+not. What is this? It is
+an umbrella. What colour is
+the umbrella? It is black.
+How many umbrellas
+have you? I have two umbrellas.
+Give me one umbrella!'''))
+
+
+# In[69]:
+
+
+pr_l_repr(en2ru('''This bird is in the cage.
+This girl is in the room.
+That rose is red.
+That flower is yellow.
+This book is on the table.
+This kitten is in the box.
+This spoon is in the cup.
+That violet is little.
+That rose is good.'''))
+
+
+# In[70]:
+
+
+pr_l_repr(en2ru('''These birds are in the tree.
+These girls are in the garden.
+Those roses are red.
+Those flowers are not yellow.
+These books are on the table.
+These kittens are under the bed.
+These spoons are on the dish.
+Those violets are very big.
+Those roses are little.'''))
+
+
+# In[72]:
+
+
+pr_l_repr(en2ru('''I have good trousers. What colour are
+they?
+They are grey. These trousers are not
+bad.'''))
+
+
+# In[73]:
+
+
+pr_l_repr(en2ru('''What has that girl in
+her garden?
+Has she many flowers
+in her garden?
+Where is this book?
+Where are these birds?
+Where is that kitten?
+What colour are those
+roses?
+Are these trousers bad?
+Is that violet big?'''))
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
+
+# In[60]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
@@ -2418,13 +2542,13 @@ get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
 # add_skl_suffix
 # ```
 
-# In[68]:
+# In[61]:
 
 
 #decline('two watches')
 
 
-# In[69]:
+# In[62]:
 
 
 pr_l_repr(en2ru('''
@@ -2440,7 +2564,7 @@ Boy: Show me your ribbons! Thank you.
 '''))
 
 
-# In[70]:
+# In[63]:
 
 
 en2ru('It \nis black.')
