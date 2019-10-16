@@ -312,6 +312,8 @@ def ____Adj():
 
 	dict_adj['this']=ruwords["этот"]
 	dict_adj['that']=ruwords["тот"]
+	dict_adj['these']=ruwords["этот"]
+	dict_adj['those']=ruwords["тот"]
 
 	dict_adj['my']=ruwords["мой"]
 	dict_adj['your']=ruwords["твой"]
