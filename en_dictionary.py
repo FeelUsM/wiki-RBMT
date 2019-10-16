@@ -24,7 +24,7 @@ dict_verb_s
 '''
 from parse_system import S, warning, RuleVars
 from classes import I,StNoun
-from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2, add_runoun1
+from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2, add_runoun1, add_skl1
 
 import ru_dictionary as rd
 rd.VERBOSE_ADDS=False
@@ -77,7 +77,7 @@ def add_ennoun1(enw,ruw,c,r,o,skl=None,sense=None,reset=False):
 	а add_dict_variant просто добавляет еще один вариант'''
 	# в интерактивном режиме мы ruwords перезаписываем в любом случае
 	if rd.VERBOSE_ADDS:
-		if ruw in ruwords or add_runoun1(ruw,c,r,o,skl,sense):
+		if add_runoun1(ruw,c,r,o,skl,sense):
 			add_dict_variant(dict_noun,enw,  ruw  ,reset)
 	# в режиме исходника если слово уже есть, то мы его не добавляем
 	else:
@@ -326,6 +326,11 @@ def ____Adj():
 	dict_adj['grey']=ruwords["серый"]
 	dict_adj['blue']=ruwords["синий"]
 
+	dict_adj['little']=ruwords["маленький"]
+	dict_adj['yellow']=ruwords["жёлтый"]
+	dict_adj['bad']=ruwords["плохой"]
+
+
 ____Adj()
 
 
@@ -428,6 +433,7 @@ def ____Other():
 	dict_other['no']=S('нет')
 	dict_other['not']=S('не')
 	dict_other['and']=S('и')
+	dict_other['or']=S('или')
 	dict_other['but']=S('но')
 	dict_other['to']=S('к')
 	dict_other['too']=S('тоже')

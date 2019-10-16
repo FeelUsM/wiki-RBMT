@@ -182,7 +182,7 @@ import classes
 from classes import StC, StNum, StNoun, StAdj, StVerb, I
 
 import ru_dictionary
-from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2
+from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2, add_skl1, make_skl
 
 import en_dictionary
 from en_dictionary import dict_adj, dict_adv, dict_noun, dict_pronoun_ip, dict_pronoun_dp,                         dict_numeral, dict_verb_simple, dict_verb_komu, r_adj_noun, dict_other,                        add_ennoun2, add_ennoun1, add_dict_variant
@@ -2383,15 +2383,25 @@ add_skl2('m',False,make_skl2(
 add_ennoun2('flower'  ,'flowers' ,"цветок"		,"цветы"	  ,'m',False)
 add_ennoun2('rose'  ,'roses' ,"роза"		,"розы"	  ,'g',False)
 add_ennoun2('violet'  ,'violets' ,"фиалка"		,"фиалки"	  ,'g',False)
+add_ennoun2('bird'  ,'birds' ,"птица"		,"птицы"	  ,'g',True)
+add_ennoun2('cage'  ,'cages' ,"клетка"		,"клетки"	  ,'g',False)
+add_ennoun2('umbrella'  ,'umbrellas' ,"зонт"		,"зонты"	  ,'m',False)
+add_ennoun2('umbrella'  ,'umbrellas' ,"зонт"		,"зонты"	  ,'m',False)
 
 
 # In[61]:
 
 
-en2ru('what is this?')
+add_ennoun1('trousers'				  ,"брюки"  ,'mn'		,'g',False,2)
 
 
 # In[62]:
+
+
+en2ru('what is this?')
+
+
+# In[63]:
 
 
 en2ru('''Look, what is this? It is a flower.
@@ -2399,7 +2409,7 @@ These flowers are red and those flowers
 are blue.''')
 
 
-# In[63]:
+# In[64]:
 
 
 pr_l_repr(en2ru('''What is this? It is
@@ -2412,19 +2422,7 @@ Is this	a rose too?
 No, it is not.'''))
 
 
-# In[64]:
-
-
-scheme('many roses')
-
-
 # In[65]:
-
-
-en2ru('many red roses')
-
-
-# In[66]:
 
 
 pr_l_repr(en2ru('''That girl has many violets in her garden. She has
@@ -2433,7 +2431,7 @@ has many flowers in her
 garden.'''))
 
 
-# In[67]:
+# In[66]:
 
 
 pr_l_repr(en2ru('''Is this a chicken?
@@ -2445,7 +2443,7 @@ Is this bird big or
 little? It is little.'''))
 
 
-# In[68]:
+# In[67]:
 
 
 pr_l_repr(en2ru('''Is this a stick? No, it is
@@ -2457,7 +2455,7 @@ have you? I have two umbrellas.
 Give me one umbrella!'''))
 
 
-# In[69]:
+# In[68]:
 
 
 pr_l_repr(en2ru('''This bird is in the cage.
@@ -2471,7 +2469,7 @@ That violet is little.
 That rose is good.'''))
 
 
-# In[70]:
+# In[69]:
 
 
 pr_l_repr(en2ru('''These birds are in the tree.
@@ -2485,7 +2483,7 @@ Those violets are very big.
 Those roses are little.'''))
 
 
-# In[71]:
+# In[70]:
 
 
 pr_l_repr(en2ru('''I have good trousers. What colour are
@@ -2494,7 +2492,7 @@ They are grey. These trousers are not
 bad.'''))
 
 
-# In[72]:
+# In[71]:
 
 
 pr_l_repr(en2ru('''What has that girl in
@@ -2522,7 +2520,7 @@ Is that violet big?'''))
 
 
 
-# In[73]:
+# In[72]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
@@ -2582,13 +2580,13 @@ get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
 # add_skl_suffix
 # ```
 
-# In[74]:
+# In[73]:
 
 
 #decline('two watches')
 
 
-# In[75]:
+# In[74]:
 
 
 pr_l_repr(en2ru('''
@@ -2604,7 +2602,7 @@ Boy: Show me your ribbons! Thank you.
 '''))
 
 
-# In[76]:
+# In[75]:
 
 
 en2ru('It \nis black.')

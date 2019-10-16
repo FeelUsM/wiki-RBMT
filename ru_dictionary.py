@@ -452,7 +452,7 @@ def add_skl2(r,o,ends):
 def add_skl1(c,r,o,ends):
 	skl_ro = skl_noun[(r,o)]
 	for i in range(len(skl_ro)):
-		if skl_ro[i][с]==ends:
+		if skl_ro[i][c]==ends:
 			errmes('Это склонение уже существует:',i)
 			return
 	skl_ro.append({c:ends})
@@ -625,6 +625,7 @@ def ____Adj():
 		'mn':('ие','их' ,'им' ,('их', 'ие'),'ими','их',None),
 	}
 	add_ruadj('большой','больш' ,adj_std_ends_ooai_N)
+	add_ruadj('плохой','плох' ,adj_std_ends_ooai_N)
 
 	adj_std_ends_ieai={# и
 		'm' :('ий','его','ему',('его','ий'),'им' ,'ем','' ),
@@ -650,6 +651,7 @@ def ____Adj():
 		'mn':('кие','ких' ,'ким' ,('ких', 'кие'),'кими','ких','ки'),
 	}
 	add_ruadj('короткий','корот' ,adj_std_ends_k_yoay)
+	add_ruadj('маленький','малень' ,adj_std_ends_k_yoay)
 
 	adj_std_ends_yoay={# ы
 		'm' :('ый','ого','ому',('ого','ый'),'ым' ,'ом','' ),
@@ -661,6 +663,7 @@ def ____Adj():
 	add_ruadj('белый' ,'бел' ,adj_std_ends_yoay)
 	add_ruadj('зелёный' ,'зелён' ,adj_std_ends_yoay)
 	add_ruadj('серый' ,'сер' ,adj_std_ends_yoay)
+	add_ruadj('жёлтый' ,'жёлт' ,adj_std_ends_yoay)
 
 	adj_std_ends_yoay_N={# ы
 		'm' :('ый','ого','ому',('ого','ый'),'ым' ,'ом',None),
