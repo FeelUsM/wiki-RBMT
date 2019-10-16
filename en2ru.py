@@ -891,11 +891,12 @@ def re_TO_X_TOJE_where(_n,x,_w,too): return StC([
 # ###### pe_noun_TOBE_noun
 # re_ETO_X_noun, re_TO_X_noun, r_noun_X_noun, r_noun_X_NE_noun
 
-# In[28]:
+# In[79]:
 
 
 @debug_pp
 def pe_noun_TOBE_noun(s,p): return p_alt(s,p,
+    seq([W('it'),p_TOBE,p_noun],re_ETO_X_noun),
     seq([W('this'),p_TOBE,p_noun],re_ETO_X_noun),
     seq([W('that'),p_TOBE,p_noun],re_TO_X_noun),
     ELSE,
@@ -2401,7 +2402,13 @@ add_ennoun1('trousers'				  ,"брюки"  ,'mn'		,'g',False,2)
 en2ru('what is this?')
 
 
-# In[63]:
+# In[80]:
+
+
+scheme('It is a flower.')
+
+
+# In[81]:
 
 
 en2ru('''Look, what is this? It is a flower.
@@ -2520,7 +2527,7 @@ Is that violet big?'''))
 
 
 
-# In[72]:
+# In[76]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
