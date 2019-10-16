@@ -25,6 +25,7 @@ dict_verb_s
 from parse_system import S, warning, RuleVars
 from classes import I,StNoun
 from ru_dictionary import ruwords, CW, add_runoun2, add_skl2, make_skl2, add_runoun1, add_skl1
+from copy import deepcopy
 
 import ru_dictionary as rd
 rd.VERBOSE_ADDS=False
@@ -227,6 +228,22 @@ def ____Noun():
 	add_ennoun2('daddy'  ,'daddis'  ,"папа","папы"   ,'m',True)
 	add_ennoun2('mammy'  ,'mammis'  ,"мама","мамы"   ,'g',True)
 
+	add_skl2('m',False,make_skl2(
+	'цветок'   ,'цветы',
+	'цветка'   ,'цветов',
+	'цветку'   ,'цветам',
+	'цветок'   ,'цветы',
+	'цветком'  ,'цветами',
+	'цветке'   ,'цветах'))
+	add_ennoun2('flower'  ,'flowers' ,"цветок"		,"цветы"	  ,'m',False)
+	add_ennoun2('rose'  ,'roses' ,"роза"		,"розы"	  ,'g',False)
+	add_ennoun2('violet'  ,'violets' ,"фиалка"		,"фиалки"	  ,'g',False)
+	add_ennoun2('bird'  ,'birds' ,"птица"		,"птицы"	  ,'g',True)
+	add_ennoun2('cage'  ,'cages' ,"клетка"		,"клетки"	  ,'g',False)
+	add_ennoun2('umbrella'  ,'umbrellas' ,"зонт"		,"зонты"	  ,'m',False)
+	add_ennoun2('umbrella'  ,'umbrellas' ,"зонт"		,"зонты"	  ,'m',False)
+	add_ennoun1('trousers'				  ,"брюки"  ,'mn'		,'g',False,2)
+
 	#add_runoun('часы (предмет)',None,False,'m','mn','час','ы','ов','ам','ы','ами','ах')
 	#dict_noun['watch']= ruwords['часы (предмет)']
 	#dict_noun['watches']= ruwords['часы (предмет)']
@@ -281,7 +298,11 @@ def ____Pronoun():
 	dict_pronoun_ip['they']= ruwords["они"]
 	dict_pronoun_dp['them']= ruwords["они"]
 
-	dict_pronoun_ip['it'] = RuleVars('оно',dict_ruwords('оно','он','она'))
+	tmp = dict_ruwords('оно','он','она')
+	x = deepcopy(ruwords['этот'])
+	x.rod = 's'
+	tmp['это'] = x
+	dict_pronoun_ip['it'] = RuleVars('оно',tmp)
 
 ____Pronoun()
 

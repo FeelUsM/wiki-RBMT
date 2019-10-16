@@ -364,7 +364,6 @@ def r_GOOD_MORNING(_g,_m):  return r_adj_noun(
 @debug_pp
 def p_noun3(s,p): return p_alt(s,p,
     p_adj_noun3, #ELSE, # переход к следующему уровню
-    p_adj, #ELSE, # переход к следующему уровню
     p_numeral,
     D(dict_noun)
 )
@@ -397,12 +396,14 @@ def r_noun_dops(n,d): return StNoun([
 @debug_pp
 def p_noun2(s,p): return p_alt(s,p,
     seq([ p_noun2_1, p_numeral ], r_noun_numeral), #ELSE, # переход к следующему уровню
-    p_noun2_1
+    p_noun2_1,
+    p_adj #ELSE, # переход к следующему уровню
 )
 @debug_pp
 def p_dop_noun2(s,p): return p_alt(s,p,
     seq([ p_noun3, p_numeral ], r_noun_numeral), #ELSE, # переход к следующему уровню
-    p_noun3
+    p_noun3,
+    p_adj, #ELSE, # переход к следующему уровню
 )
 def r_noun_numeral(n,num): return StNoun([
     I(maindep=n),
@@ -457,6 +458,8 @@ def r_numeral_noun(num,n):
 @debug_pp
 def p_noun(s,p):
     return p_alt(s,p,
+        seq([ p_adj, W('or'), p_adj ],r_adj_ILI_adj  ),
+        ELSE,
         seq([ p_noun1, W('and'), p_noun ],r_noun_and_noun  ),
         seq([ p_noun1, W('or'), p_noun ],r_noun_ILI_noun  ),
         seq([ p_noun1, W(',')  , p_noun ],r_noun_comma_noun),
@@ -491,7 +494,12 @@ def r_noun_ILI_noun(sn,o,n):    return StNoun([
     I(dep=sn),
     I(nodep=S('или',o.attrs)),
     I(dep=n)
-],c='mn', p='ip',o=False,r='m')
+],c='ed', p='ip',o=False,r='m')
+def r_adj_ILI_adj(sn,o,n):    return StAdj([
+    I(dep=sn),
+    I(nodep=S('или',o.attrs)),
+    I(dep=n)
+],c='ed', p='ip',o=False,r='m')
 def r_noun_comma_noun(sn,c,n):    return StNoun([
     I(dep=sn),
     I(punct=S(',',c.attrs)),
@@ -687,7 +695,7 @@ px_HAVE_HAS = alt( W('have'), W('has') )
 
 
 # ###### p_have_question
-# r_have_question, rv_HOW_MANY_noun_HAVE_noun(r_SKOLKO_noun_U_noun, r_SKOLKO_U_noun_noun)
+# r_have_question, rv_HOW_MANY_noun_HAVE_noun(r_SKOLKO_noun_U_noun, r_SKOLKO_U_noun_noun), r_CHTO_EST_U_noun
 
 # In[22]:
 
@@ -696,6 +704,7 @@ px_HAVE_HAS = alt( W('have'), W('has') )
 def p_have_question(s,p):
     return p_alt(s,p,
         seq([px_HAVE_HAS,p_noun_ip,p_noun],r_have_question),
+        seq([W('what'),px_HAVE_HAS,p_noun_ip],r_CHTO_EST_U_noun),
         seq([W('how'), W('many'), p_noun, px_HAVE_HAS, p_noun_ip], rv_HOW_MANY_noun_HAVE_noun)
     )
 
@@ -706,6 +715,12 @@ def r_have_question(_h,_n1,_n2):    return StC([
     ]), pull_attrs=1 ),
     I(nodep=S('есть',_h.attrs)),
     I(nodep=_n2)
+])
+def r_CHTO_EST_U_noun(what,_h,_n2):  return StC([
+    I(nodep=S('что',what.attrs)),
+    I(nodep=S('есть',_h.attrs)),
+    I(nodep=S('у')),
+    I(nodep=_n2,   pad='rp', npad='n' )# у Него
 ])
 def r_SKOLKO_noun_U_noun(how,many,_n1,have,_n2):  return StC([
     I(nodep=S('сколько',how.attrs), attrs_from_right=many.attrs),
@@ -839,9 +854,16 @@ def r_NE_IMET(_v,no): return StVerb([
 def pe_noun_TOBE_where(s,p): return p_alt(s,p,
     seq([W('this'),p_TOBE,p_where],re_ETO_X_where),
     seq([W('that'),p_TOBE,p_where],re_TO_X_where),
+    seq([W('these'),W('birds'),p_TOBE,W('in'),W('the'),W('tree')],re_ETI_PTICI_NA_DEREVE),
     ELSE,
     seq([p_noun_ip,p_TOBE,p_where],r_noun_X_where)
 )
+def re_ETI_PTICI_NA_DEREVE(this,birds,_v,_in,the,tree): return StC([
+    I(nodep=S('эти',this.attrs)),
+    I(nodep=S('птицы',birds.attrs)),
+    I(nodep=S('на',_in.attrs), attrs_from_left=_v.attrs),
+    I(nodep=S('дереве',tree.attrs), attrs_from_left=the.attrs)
+])
 
 def r_noun_X_where(_n,x,_w): return StC([
     I(nodep=_n),
@@ -896,7 +918,7 @@ def re_TO_X_TOJE_where(_n,x,_w,too): return StC([
 
 @debug_pp
 def pe_noun_TOBE_noun(s,p): return p_alt(s,p,
-    seq([W('it'),p_TOBE,p_noun],re_ETO_X_noun),
+    #seq([W('it'),p_TOBE,p_noun],re_ETO_X_noun),
     seq([W('this'),p_TOBE,p_noun],re_ETO_X_noun),
     seq([W('that'),p_TOBE,p_noun],re_TO_X_noun),
     ELSE,
@@ -1014,15 +1036,29 @@ rv_TOBE_noun = RuleVars('r_EST_noun_ip',dict_funs(r_EST_noun_ip, r_JAVLYATSA_nou
 
 @debug_pp
 def p_tobe_question(s,p): return p_alt(s,p,
-    seq([p_TOBE,p_noun_ip],r_noun_question),
-    seq([p_TOBE,p_noun_ip,p_adj],r_noun_adj_question),
-    seq([W('what'),p_TOBE,W('this')],r_CHTO_ETO),
-    ELSE,
-    seq([W('what'),p_TOBE,p_noun_ip],r_CHTO_TAKOE_noun_ip),
+    alt(
+        seq([W('what'),p_TOBE,W('this')],r_CHTO_ETO),
+        ELSE,
+        seq([W('what'),p_TOBE,p_noun_ip],r_CHTO_TAKOE_noun_ip),
+    ),
     seq([W('where'),p_TOBE,p_noun_ip],r_GDE_noun_ip),
     seq([W('what'),W('colour'),p_TOBE,p_noun_ip],r_KAKOGO_TSVETA_noun_ip),
-    seq([p_TOBE,p_noun_ip,p_noun],r_noun_noun_question),
-    seq([p_TOBE,p_noun_ip,p_where,W('too')],r_noun_where_TOO_question)
+    alt(
+        seq([p_TOBE,W('this'),p_noun],r_ETO_noun_question),
+        ELSE,
+        alt(
+            seq([p_TOBE,p_noun_ip],r_noun_question),
+            seq([p_TOBE,p_noun_ip,p_adj],r_noun_adj_question),
+            ELSE,
+            seq([p_TOBE,p_noun_ip,p_noun],r_noun_noun_question),
+        )
+    ),
+    alt(
+        seq([p_TOBE,p_noun_ip,p_where,W('too')],r_noun_where_TOO_question),
+        seq([p_TOBE,W('this'),p_noun,W('too')],r_ETO_noun_TOO_question),
+        ELSE,
+        seq([p_TOBE,p_noun_ip,p_noun,W('too')],r_noun_noun_TOO_question),
+    ),
 )
 def r_CHTO_ETO(what,_v,this): return StC([
     I(nodep=S('что',what.attrs), attrs_from_right=_v.attrs),
@@ -1044,13 +1080,28 @@ def r_KAKOGO_TSVETA_noun_ip(what,color,_v,_n): return StC([
 ])
 def r_noun_noun_question(_v,_n1,_n2): return StC([
     I(nodep=_n1, pad='ip'),
-    I(nodep=S('--')),
+    I(nodep=S('--',_v.attrs)),
+    I(nodep=_n2, pad='ip', rod=_n1.rod, chis=_n1.chis)
+])
+def r_noun_noun_TOO_question(_v,_n1,_n2,too): return StC([
+    I(nodep=_n1, pad='ip'),
+    I(nodep=S('--',_v.attrs)),
+    I(nodep=S('тоже',too.attrs)),
+    I(nodep=_n2, pad='ip')
+])
+def r_ETO_noun_question(_v,this,_n2): return StC([
+    I(nodep=S('это',this.attrs)),
+    I(nodep=_n2, pad='ip')
+])
+def r_ETO_noun_TOO_question(_v,this,_n2,too): return StC([
+    I(nodep=S('это',this.attrs)),
+    I(nodep=S('тоже',too.attrs)),
     I(nodep=_n2, pad='ip')
 ])
 def r_noun_adj_question(_v,_n,_a): return StC([
     I(nodep=_n, pad='ip'),
-    I(nodep=S('--')),
-    I(nodep=_a, pad='ip', rod=_n.rod)
+    I(nodep=S('--',_v.attrs)),
+    I(nodep=_a, pad='ip', rod=_n.rod, chis=_n.chis)
 ])
 def r_noun_question(_v,_n): return StC([
     I(nodep=_n, pad='ip'),
@@ -1762,7 +1813,13 @@ pc_IT_1 = alt(
             ],arc_IT(rc_9_3)),
             seq([W('what'),W('colour'),p_TOBE,p_noun_ip, W('?'), 
                    p_noun_ip, p_TOBE,  p_noun, W('.')
-            ],arc_IT(rc_9_4))
+            ],arc_IT(rc_9_4)),
+            seq([W('what'),p_TOBE,W('this'), W('?'), 
+                   p_noun_ip, p_TOBE,  p_noun, W('.')
+            ],lambda *args: 'это'),
+            seq([p_verb1,W(','),W('what'),p_TOBE,W('this'), W('?'), 
+                   p_noun_ip, p_TOBE,  p_noun, W('.')
+            ],lambda *args: 'это'),
 )
 pc_IT_2 = alt(
             seq([px_HAVE_HAS, p_noun_ip, p_noun, W(','), p_noun_ip, W('?'), 
@@ -1775,9 +1832,15 @@ pc_IT_2 = alt(
             ],arc_IT(rc_9_3)),
         )
 
-dict_pronoun_ip['it'] = RuleContext('оно',dict_pronoun_ip['it'].vars,selectors = [
-    (-1,1,pc_IT_1),(-2,1,pc_IT_2)
+dict_pronoun_ip['it'] = RuleContext('оно',dict_pronoun_ip['it'].vars,
+    selectors = [ (-1,1,pc_IT_1),(-2,1,pc_IT_2)
 ])
+
+
+# In[51]:
+
+
+dict_pronoun_ip['it'].vars
 
 
 # ## Запуск и отладка
@@ -1798,7 +1861,7 @@ dict_pronoun_ip['it'] = RuleContext('оно',dict_pronoun_ip['it'].vars,selector
 #         2 - дополнительно печатает нестрингифицированные объекты
 # 
 
-# In[51]:
+# In[52]:
 
 
 def _en2ru(s): # main
@@ -1867,7 +1930,7 @@ def pr_l_repr(s):
     
 
 
-# In[52]:
+# In[53]:
 
 
 def with_variants(variants,fun,s):
@@ -1884,7 +1947,7 @@ def with_variants(variants,fun,s):
     return s
 
 
-# In[53]:
+# In[54]:
 
 
 def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
@@ -1905,7 +1968,7 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
     return m
 
 
-# In[54]:
+# In[55]:
 
 
 def _parse_pat(patt,s):
@@ -1930,7 +1993,7 @@ def d_parse_pat(patt,s):
     return r
 
 
-# In[55]:
+# In[56]:
 
 
 from IPython.core.display import HTML
@@ -2306,7 +2369,7 @@ def scheme_print(s,rezs,detailed=1,nohtml = False):
            
 
 
-# In[56]:
+# In[57]:
 
 
 def cache_stat():
@@ -2330,13 +2393,13 @@ cache_stat()
 
 # # Тесты
 
-# In[57]:
+# In[58]:
 
 
 en2ru('I see jam and one cup.')
 
 
-# In[58]:
+# In[59]:
 
 
 import inspect
@@ -2344,7 +2407,7 @@ lines = inspect.getsource(en2ru)
 print(lines)
 
 
-# In[59]:
+# In[78]:
 
 
 import tests
@@ -2367,167 +2430,24 @@ tests.test11()
 tests.test12()
 tests.test13()
 tests.test14()
+tests.test15()
 tests.finalize()
 tests.TEST_ERRORS
 
 
-# In[60]:
+# In[ ]:
 
 
-add_skl2('m',False,make_skl2(
-'цветок'   ,'цветы',
-'цветка'   ,'цветов',
-'цветку'   ,'цветам',
-'цветок'   ,'цветы',
-'цветком'  ,'цветами',
-'цветке'   ,'цветах'))
-add_ennoun2('flower'  ,'flowers' ,"цветок"		,"цветы"	  ,'m',False)
-add_ennoun2('rose'  ,'roses' ,"роза"		,"розы"	  ,'g',False)
-add_ennoun2('violet'  ,'violets' ,"фиалка"		,"фиалки"	  ,'g',False)
-add_ennoun2('bird'  ,'birds' ,"птица"		,"птицы"	  ,'g',True)
-add_ennoun2('cage'  ,'cages' ,"клетка"		,"клетки"	  ,'g',False)
-add_ennoun2('umbrella'  ,'umbrellas' ,"зонт"		,"зонты"	  ,'m',False)
-add_ennoun2('umbrella'  ,'umbrellas' ,"зонт"		,"зонты"	  ,'m',False)
 
 
-# In[61]:
+
+# In[ ]:
 
 
-add_ennoun1('trousers'				  ,"брюки"  ,'mn'		,'g',False,2)
 
-
-# In[62]:
-
-
-en2ru('what is this?')
-
-
-# In[78]:
-
-
-scheme('These flowers are red.')
-
-
-# In[64]:
-
-
-en2ru('''Look, what is this? It is a flower.
-These flowers are red and those flowers
-are blue.''')
-
-
-# In[65]:
-
-
-pr_l_repr(en2ru('''What is this? It is
-a rose.
-What is this? It is
-a violet.
-Is this	a	violet	or
-a	rose? It	is	a rose.
-Is this	a rose too?
-No, it is not.'''))
-
-
-# In[66]:
-
-
-pr_l_repr(en2ru('''That girl has many violets in her garden. She has
-many red roses too. She
-has many flowers in her
-garden.'''))
-
-
-# In[68]:
-
-
-pr_l_repr(en2ru('''Is this a chicken?
-No, it is not. What
-is this? It is a bird.
-Where is the bird?
-It is in the cage.
-Is this bird big or
-little? It is little.'''))
-
-
-# In[69]:
-
-
-pr_l_repr(en2ru('''Is this a stick? No, it is
-not. What is this? It is
-an umbrella. What colour is
-the umbrella? It is black.
-How many umbrellas
-have you? I have two umbrellas.
-Give me one umbrella!'''))
-
-
-# In[70]:
-
-
-pr_l_repr(en2ru('''This bird is in the cage.
-This girl is in the room.
-That rose is red.
-That flower is yellow.
-This book is on the table.
-This kitten is in the box.
-This spoon is in the cup.
-That violet is little.
-That rose is good.'''))
-
-
-# In[71]:
-
-
-pr_l_repr(en2ru('''These birds are in the tree.
-These girls are in the garden.
-Those roses are red.
-Those flowers are not yellow.
-These books are on the table.
-These kittens are under the bed.
-These spoons are on the dish.
-Those violets are very big.
-Those roses are little.'''))
-
-
-# In[72]:
-
-
-pr_l_repr(en2ru('''I have good trousers. What colour are
-they?
-They are grey. These trousers are not
-bad.'''))
 
 
 # In[73]:
-
-
-pr_l_repr(en2ru('''What has that girl in
-her garden?
-Has she many flowers
-in her garden?
-Where is this book?
-Where are these birds?
-Where is that kitten?
-What colour are those
-roses?
-Are these trousers bad?
-Is that violet big?'''))
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[74]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
@@ -2587,13 +2507,13 @@ get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
 # add_skl_suffix
 # ```
 
-# In[75]:
+# In[74]:
 
 
 #decline('two watches')
 
 
-# In[76]:
+# In[75]:
 
 
 pr_l_repr(en2ru('''
@@ -2609,7 +2529,7 @@ Boy: Show me your ribbons! Thank you.
 '''))
 
 
-# In[77]:
+# In[76]:
 
 
 en2ru('It \nis black.')

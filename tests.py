@@ -1560,6 +1560,145 @@ def test14():
 	Мама, возьми мой торт, он -- очень хороший.
 	Я люблю лимоны.''')
 
+def test15():
+	print('--- Lesson 15 ---')
+	global N
+	N=15
+
+	ttest(en2ru,'what is this?',
+	'что это?')
+
+	ttest(en2ru,'''Look, what is this? It is a flower.
+	These flowers are red and those flowers
+	are blue.''',
+	'Посмотри, что это? Это -- цветок.\n\tЭти цветы -- красные и те цветы -- синие.')
+
+	ttest(en2ru,'''What is this? It is
+	a rose.
+	What is this? It is
+	a violet.
+	Is this	a	violet	or
+	a	rose? It	is	a rose.
+	Is this	a rose too?
+	No, it is not.''',
+	'''Что это? Это --
+	роза.
+	Что это? Это --
+	фиалка.
+	Это	фиалка	или	роза? Это --	роза.
+	Это тоже	роза?
+	Нет, это не так.''')
+
+	ttest(en2ru,'''That girl has many violets in her garden. She has
+	many red roses too. She
+	has many flowers in her
+	garden.''',
+	'''У той девочки есть много фиалок в её саду. Она тоже имеет
+	много красных роз. У неё
+	есть много цветов в её
+	саду.''')
+
+	ttest(en2ru,'''Is this a chicken?
+	No, it is not. What
+	is this? It is a bird.
+	Where is the bird?
+	It is in the cage.
+	Is this bird big or
+	little? It is little.''',
+	'''Это цыплёнок?
+	Нет, это не так. Что это? Это -- птица.
+	Где птица?
+	Она в клетке.
+	Эта птица -- большая или
+	маленькая? Она -- маленькая.''')
+
+	ttest(en2ru,'''Is this a stick? No, it is
+	not. What is this? It is
+	an umbrella. What colour is
+	the umbrella? It is black.
+	How many umbrellas
+	have you? I have two umbrellas.
+	Give me one umbrella!''',
+	'''Это палка? Нет, это
+	не так. Что это? Это --
+	зонт. Какого цвета
+	зонт? Он -- чёрный.
+	Сколько у тебя зонтов? У меня есть два зонта.
+	Дай мне один зонт!''')
+
+	ttest(en2ru,'''This bird is in the cage.
+	This girl is in the room.
+	That rose is red.
+	That flower is yellow.
+	This book is on the table.
+	This kitten is in the box.
+	This spoon is in the cup.
+	That violet is little.
+	That rose is good.''',
+	'''Эта птица в клетке.
+	Эта девочка в комнате.
+	Та роза -- красная.
+	Тот цветок -- жёлтый.
+	Эта книга на столе.
+	Этот котёнок в ящике.
+	Эта ложка в чашке.
+	Та фиалка -- маленькая.
+	Та роза -- хорошая.''')
+
+	ttest(en2ru,'''These birds are in the tree.
+	These girls are in the garden.
+	Those roses are red.
+	Those flowers are not yellow.
+	These books are on the table.
+	These kittens are under the bed.
+	These spoons are on the dish.
+	Those violets are very big.
+	Those roses are little.''',
+	'''Эти птицы на дереве.
+	Эти девочки в саду.
+	Те розы -- красные.
+	Те цветы -- не жёлтые.
+	Эти книги на столе.
+	Эти котята под кроватью.
+	Эти ложки на блюде.
+	Те фиалки -- очень большие.
+	Те розы -- маленькие.''')
+
+	ttest(en2ru,'''I have good trousers. What colour are
+	they?
+	They are grey. These trousers are not
+	bad.''',
+	'''У меня есть хорошие брюки. Какого цвета
+	они?
+	Они -- серые. Эти брюки -- не
+	плохие.''')
+
+	ttest(en2ru,'''What has that girl in
+	her garden?
+	Has she many flowers
+	in her garden?
+	Where is this book?
+	Where are these birds?
+	Where is that kitten?
+	What colour are those
+	roses?
+	Are these trousers bad?
+	Is that violet big?''',
+	'''Что есть у той девочки в
+	её саду?
+	У неё есть много цветов
+	в её саду?
+	Где эта книга?
+	Где эти птицы?
+	Где тот котёнок?
+	Какого цвета те
+	розы?
+	Эти брюки -- плохие?
+	Та фиалка -- большая?''')
+
+
+
+
 #	ttest(en2ru,,
 #	)
 

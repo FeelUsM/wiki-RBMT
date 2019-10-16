@@ -791,6 +791,7 @@ class StAdj(StDeclinable):
 	__slots__=['_chis','_rod']
 	obediences = {
 		'maindep': lambda x:_types_assert(x,StDeclinable),
+		'dep': lambda x:_types_assert(x,StDeclinable),
 		'nodep'  : none_fun,
 	}
 	@staticmethod
