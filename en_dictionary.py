@@ -349,11 +349,12 @@ ____Adv()
 dict_numeral={'__name__':'dict_numeral'}
 def ____Numeral():
 
+	dict_numeral['many']=	  ruwords['много']
+
 	dict_numeral['one']=	   RuleVars('один',dict_ruwords('один','одна','одно'))
 	dict_numeral['two']=	   RuleVars('два',dict_ruwords('два','две'))
 	dict_numeral['three']=	 ruwords['три']
 	dict_numeral['four']=	  ruwords['четыре']
-	dict_numeral['many']=	  ruwords['много']
 	dict_numeral['five']=	  ruwords['пять']
 	dict_numeral['six']=	   ruwords['шесть']
 	dict_numeral['seven']=	 ruwords['семь']

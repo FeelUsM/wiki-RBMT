@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:java="http://www.yworks.com/xml/yfiles-common/1.0/java" xmlns:sys="http://www.yworks.com/xml/yfiles-common/markup/primitives/2.0" xmlns:x="http://www.yworks.com/xml/yfiles-common/markup/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
-  <!--Created by yEd 3.17.1-->
+  <!--Created by yEd 3.14.4-->
   <key attr.name="Description" attr.type="string" for="graph" id="d0"/>
   <key for="port" id="d1" yfiles.type="portgraphics"/>
   <key for="port" id="d2" yfiles.type="portgeometry"/>
@@ -19,8 +19,8 @@
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="116.08203125" x="451.958984375" y="-336.40234375"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="106.08203125" x="5.0" y="5.0">p_text
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="106.08203125" x="5.0" y="5.0">p_text
 p_sentence*
 p_phrase
 p_question_phrase<y:LabelModel>
@@ -39,8 +39,8 @@ p_question_phrase<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="58.103515625" width="130.671875" x="444.6640625" y="-239.0517578125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="120.671875" x="5.0" y="5.0">p_sentence
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" modelName="custom" textColor="#000000" visible="true" width="120.671875" x="5.0" y="5.0">p_sentence
 p_phrase ('.'|'!'|';')
 p_question_phrase '?'<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -58,8 +58,8 @@ p_question_phrase '?'<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="146.310546875" width="105.318359375" x="367.3408203125" y="-163.1552734375"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="136.310546875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="95.318359375" x="5.0" y="5.0">p_phrase
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="136.310546875" modelName="custom" textColor="#000000" visible="true" width="95.318359375" x="5.0" y="5.0">p_phrase
 p_verb
 p_noun_ip
 p_noun_dp
@@ -83,8 +83,8 @@ p_noun ',' p_verb<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="30.0" width="66.69921875" x="266.650390625" y="-15.0"/>
           <y:Fill color="#00FF00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="56.69921875" x="5.0" y="5.6494140625">dict_other<y:LabelModel>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="56.69921875" x="5.0" y="5.6494140625">dict_other<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -100,8 +100,8 @@ p_noun ',' p_verb<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="131.609375" width="342.74609375" x="248.626953125" y="84.1953125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="121.609375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="332.74609375" x="5.0" y="5.0"># сделать одно и/но сделать сдругое
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="121.609375" modelName="custom" textColor="#000000" visible="true" width="332.74609375" x="5.0" y="5.0"># сделать одно и/но сделать сдругое
 p_verb
 p_noun_ip px_HAVE_HAS p_noun1 ','  p_noun  'and' p_verb1
 ELSE
@@ -124,8 +124,8 @@ p_verb1<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="132.03125" x="293.984375" y="1223.59765625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="122.03125" x="5.0" y="5.0">p_noun
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="122.03125" x="5.0" y="5.0">p_noun
 p_noun1 'and' p_noun
 p_noun1 ',' p_noun
 p_noun1<y:LabelModel>
@@ -144,8 +144,8 @@ p_noun1<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="58.103515625" width="103.408203125" x="218.2958984375" y="1080.9482421875"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="93.408203125" x="5.0" y="5.0">p_noun_dp
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" modelName="custom" textColor="#000000" visible="true" width="93.408203125" x="5.0" y="5.0">p_noun_dp
 dict_pronoun_dp
 'to' p_noun<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -163,8 +163,8 @@ dict_pronoun_dp
         <y:ShapeNode>
           <y:Geometry height="43.40234375" width="55.361328125" x="62.3193359375" y="1898.298828125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="33.40234375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="45.361328125" x="5.0" y="5.0">p_adj
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="33.40234375" modelName="custom" textColor="#000000" visible="true" width="45.361328125" x="5.0" y="5.0">p_adj
 dict_adj<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
@@ -181,8 +181,8 @@ dict_adj<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="87.505859375" width="184.07421875" x="327.962890625" y="256.2470703125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="174.07421875" x="5.0" y="5.0"># некто делает/ делать/ делай
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" modelName="custom" textColor="#000000" visible="true" width="174.07421875" x="5.0" y="5.0"># некто делает/ делать/ делай
 p_verb1
 p_noun_verb1
 'to' p_verb3
@@ -202,8 +202,8 @@ p_verb3<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="146.310546875" width="141.353515625" x="349.3232421875" y="376.8447265625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="136.310546875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="131.353515625" x="5.0" y="5.0"># некто делает
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="136.310546875" modelName="custom" textColor="#000000" visible="true" width="131.353515625" x="5.0" y="5.0"># некто делает
 p_noun_verb1
 pe_noun_HAVE_noun
 pe_noun_HAVE
@@ -227,8 +227,8 @@ p_noun_ip p_verb3 'too'<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="102.20703125" width="240.634765625" x="389.6826171875" y="938.896484375"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="92.20703125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="230.634765625" x="5.0" y="5.0"># глагол с дополнением
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="92.20703125" modelName="custom" textColor="#000000" visible="true" width="230.634765625" x="5.0" y="5.0"># глагол с дополнением
 p_verb2
 dict_verb_simple 'from' p_noun 'to' p_noun
 ELSE
@@ -249,8 +249,8 @@ dict_verb_simple<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="58.103515625" width="221.404296875" x="-500.7021484375" y="630.9482421875"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="211.404296875" x="5.0" y="5.0">pe_noun_HAVE_noun
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" modelName="custom" textColor="#000000" visible="true" width="211.404296875" x="5.0" y="5.0">pe_noun_HAVE_noun
 p_noun_ip px_HAVE_HAS p_noun
 p_noun_ip px_HAVE_HAS 'no' p_noun<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -268,8 +268,8 @@ p_noun_ip px_HAVE_HAS 'no' p_noun<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="87.505859375" width="168.775390625" x="-54.3876953125" y="616.2470703125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="158.775390625" x="5.0" y="5.0">pe_noun_TOBE_where
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" modelName="custom" textColor="#000000" visible="true" width="158.775390625" x="5.0" y="5.0">pe_noun_TOBE_where
 'this' p_TOBE p_where
 'that' p_TOBE p_where
 ELSE
@@ -289,8 +289,8 @@ p_noun_ip p_TOBE p_where<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="102.20703125" width="160.6953125" x="429.65234375" y="698.896484375"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="92.20703125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="150.6953125" x="5.0" y="5.0"># сделать (кому-то что-то)
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="92.20703125" modelName="custom" textColor="#000000" visible="true" width="150.6953125" x="5.0" y="5.0"># сделать (кому-то что-то)
 p_verb3_1
 p_verb3_simple
 p_verb3_komu_chto
@@ -311,8 +311,8 @@ p_TOBE_noun<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="58.103515625" width="90.072265625" x="974.9638671875" y="1200.9482421875"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="80.072265625" x="5.0" y="5.0">p_dops
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" modelName="custom" textColor="#000000" visible="true" width="80.072265625" x="5.0" y="5.0">p_dops
 p_dop
 p_dop p_dops<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -330,8 +330,8 @@ p_dop p_dops<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="87.505859375" width="112.654296875" x="843.6728515625" y="1186.2470703125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="102.654296875" x="5.0" y="5.0">p_dop
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" modelName="custom" textColor="#000000" visible="true" width="102.654296875" x="5.0" y="5.0">p_dop
 'to' p_dop_noun
 'from' p_dop_noun
 'with' p_dop_noun
@@ -351,8 +351,8 @@ p_where<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="87.505859375" width="122.720703125" x="688.6396484375" y="1186.2470703125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="112.720703125" x="5.0" y="5.0">p_where
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" modelName="custom" textColor="#000000" visible="true" width="112.720703125" x="5.0" y="5.0">p_where
 pe_IN_adj_STREET
 ELSE
 'in' p_dop_noun
@@ -372,8 +372,8 @@ ELSE
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="107.029296875" x="456.4853515625" y="833.59765625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="97.029296875" x="5.0" y="5.0"># сделать что-то
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="97.029296875" x="5.0" y="5.0"># сделать что-то
 p_verb3_simple
 p_verb2 p_noun
 p_verb2<y:LabelModel>
@@ -392,8 +392,8 @@ p_verb2<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="30.0" width="104.041015625" x="457.9794921875" y="1065.0"/>
           <y:Fill color="#00FF00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="94.041015625" x="5.0" y="5.6494140625">dict_verb_simple<y:LabelModel>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="94.041015625" x="5.0" y="5.6494140625">dict_verb_simple<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -409,8 +409,8 @@ p_verb2<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="102.20703125" width="165.0078125" x="157.49609375" y="788.896484375"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="92.20703125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="155.0078125" x="5.0" y="5.0"># сделать кому-то что-то
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="92.20703125" modelName="custom" textColor="#000000" visible="true" width="155.0078125" x="5.0" y="5.0"># сделать кому-то что-то
 p_verb3_komu_chto
 p_verb3_komu p_noun
 p_verb3_komu ':' p_phrase
@@ -431,8 +431,8 @@ p_verb3_komu ':' '"' p_text '"'<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="162.107421875" x="158.9462890625" y="923.59765625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="152.107421875" x="5.0" y="5.0"># сделать кому-то
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="152.107421875" x="5.0" y="5.0"># сделать кому-то
 p_verb3_komu
 dict_verb_komu p_noun_dp
 dict_verb_komu<y:LabelModel>
@@ -451,8 +451,8 @@ dict_verb_komu<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="30.0" width="98.708984375" x="190.6455078125" y="1035.0"/>
           <y:Fill color="#00FF00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="88.708984375" x="5.0" y="5.6494140625">dict_verb_komu<y:LabelModel>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="88.708984375" x="5.0" y="5.6494140625">dict_verb_komu<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -468,8 +468,8 @@ dict_verb_komu<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="30.0" width="103.408203125" x="428.2958984375" y="1425.0"/>
           <y:Fill color="#00FF00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="93.408203125" x="5.0" y="5.6494140625">dict_pronoun_dp<y:LabelModel>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="93.408203125" x="5.0" y="5.6494140625">dict_pronoun_dp<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -485,8 +485,8 @@ dict_verb_komu<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="58.103515625" width="103.396484375" x="-21.6982421875" y="840.9482421875"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="93.396484375" x="5.0" y="5.0">p_TOBE_noun
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" modelName="custom" textColor="#000000" visible="true" width="93.396484375" x="5.0" y="5.0">p_TOBE_noun
 p_TOBE p_noun
 p_TOBE<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -504,8 +504,8 @@ p_TOBE<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="87.505859375" width="60.01953125" x="-90.009765625" y="946.2470703125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="50.01953125" x="5.0" y="5.0">p_TOBE
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" modelName="custom" textColor="#000000" visible="true" width="50.01953125" x="5.0" y="5.0">p_TOBE
 'be'
 'am'
 'is'
@@ -525,8 +525,8 @@ p_TOBE<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="87.505859375" width="162.013671875" x="-471.0068359375" y="826.2470703125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="152.013671875" x="5.0" y="5.0">p_HAVE_noun
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" modelName="custom" textColor="#000000" visible="true" width="152.013671875" x="5.0" y="5.0">p_HAVE_noun
 px_HAVE_HAS p_noun
 px_HAVE_HAS 'no' p_noun
 px_HAVE_HAS
@@ -546,9 +546,9 @@ px_HAVE_HAS ('no' | 'not')<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="127.42578125" x="296.287109375" y="1313.59765625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="117.42578125" x="5.0" y="5.0">p_noun1
-p_noumeral p_noun2
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="110.751953125" x="8.3369140625" y="5.0">p_noun1
+p_numeral p_noun2
 p_noun2
 dict_pronoun_dp<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -566,8 +566,8 @@ dict_pronoun_dp<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="58.103515625" width="134.099609375" x="292.9501953125" y="1500.9482421875"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="124.099609375" x="5.0" y="5.0">p_noun2
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" modelName="custom" textColor="#000000" visible="true" width="124.099609375" x="5.0" y="5.0">p_noun2
 p_noun2_1 p_numeral
 p_noun2_1<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -585,8 +585,8 @@ p_noun2_1<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="43.40234375" width="82.701171875" x="498.6494140625" y="1718.298828125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="33.40234375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="72.701171875" x="5.0" y="5.0">p_numeral
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="33.40234375" modelName="custom" textColor="#000000" visible="true" width="72.701171875" x="5.0" y="5.0">p_numeral
 dict_numeral<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
@@ -603,8 +603,8 @@ dict_numeral<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="87.505859375" width="83.404296875" x="318.2978515625" y="1696.2470703125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="73.404296875" x="5.0" y="5.0">p_noun3
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" modelName="custom" textColor="#000000" visible="true" width="73.404296875" x="5.0" y="5.0">p_noun3
 p_adj_noun3
 p_adj
 p_numeral
@@ -624,8 +624,8 @@ dict_noun<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="30.0" width="66.04296875" x="326.978515625" y="1815.0"/>
           <y:Fill color="#00FF00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="56.04296875" x="5.0" y="5.6494140625">dict_noun<y:LabelModel>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="56.04296875" x="5.0" y="5.6494140625">dict_noun<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -641,8 +641,8 @@ dict_noun<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="30.0" width="99.400390625" x="100.2998046875" y="1425.0"/>
           <y:Fill color="#00FF00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="89.400390625" x="5.0" y="5.6494140625">dict_pronoun_ip<y:LabelModel>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="89.400390625" x="5.0" y="5.6494140625">dict_pronoun_ip<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -658,8 +658,8 @@ dict_noun<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="102.20703125" width="111.013671875" x="154.4931640625" y="1778.896484375"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="92.20703125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="101.013671875" x="5.0" y="5.0">p_adj_noun3
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="92.20703125" modelName="custom" textColor="#000000" visible="true" width="101.013671875" x="5.0" y="5.0">p_adj_noun3
 ('an' | 'a') p_noun3
 'the' p_noun3
 'good' 'morning'
@@ -680,8 +680,8 @@ p_adj p_noun3<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="30.0" width="55.361328125" x="62.3193359375" y="1965.0"/>
           <y:Fill color="#00FF00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="45.361328125" x="5.0" y="5.6494140625">dict_adj<y:LabelModel>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="45.361328125" x="5.0" y="5.6494140625">dict_adj<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -697,8 +697,8 @@ p_adj p_noun3<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="30.0" width="82.701171875" x="498.6494140625" y="1785.0"/>
           <y:Fill color="#00FF00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="72.701171875" x="5.0" y="5.6494140625">dict_numeral<y:LabelModel>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="72.701171875" x="5.0" y="5.6494140625">dict_numeral<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -714,8 +714,8 @@ p_adj p_noun3<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="43.40234375" width="97.373046875" x="-588.6865234375" y="938.298828125"/>
           <y:Fill color="#FFFFFF" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="33.40234375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="87.373046875" x="5.0" y="5.0">px_HAVE_HAS
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="33.40234375" modelName="custom" textColor="#000000" visible="true" width="87.373046875" x="5.0" y="5.0">px_HAVE_HAS
 'have' | 'has'<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
@@ -732,8 +732,8 @@ p_adj p_noun3<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="43.40234375" width="116.08203125" x="541.958984375" y="-111.701171875"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="33.40234375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="106.08203125" x="5.0" y="5.0">p_question_phrase
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="33.40234375" modelName="custom" textColor="#000000" visible="true" width="106.08203125" x="5.0" y="5.0">p_question_phrase
 p_have_question<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
@@ -750,8 +750,8 @@ p_have_question<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="58.103515625" width="267.330078125" x="-523.6650390625" y="420.9482421875"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="257.330078125" x="5.0" y="5.0">p_have_question
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" modelName="custom" textColor="#000000" visible="true" width="257.330078125" x="5.0" y="5.0">p_have_question
 px_HAVE_HAS p_noun_ip p_noun
 'how' 'many' p_noun px_HAVE_HAS p_noun_ip<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -769,8 +769,8 @@ px_HAVE_HAS p_noun_ip p_noun
         <y:ShapeNode>
           <y:Geometry height="58.103515625" width="217.068359375" x="-768.5341796875" y="630.9482421875"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="207.068359375" x="5.0" y="5.0">pe_noun_HAVE
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" modelName="custom" textColor="#000000" visible="true" width="207.068359375" x="5.0" y="5.0">pe_noun_HAVE
 p_noun_ip px_HAVE_HAS
 p_noun_ip px_HAVE_HAS ('no' | 'not')<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -788,8 +788,8 @@ p_noun_ip px_HAVE_HAS ('no' | 'not')<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="58.103515625" width="103.419921875" x="308.2900390625" y="1590.9482421875"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="93.419921875" x="5.0" y="5.0">p_noun2_1
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" modelName="custom" textColor="#000000" visible="true" width="93.419921875" x="5.0" y="5.0">p_noun2_1
 p_noun3 p_dops
 p_noun3<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -807,8 +807,8 @@ p_noun3<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="164.05859375" x="67.970703125" y="1223.59765625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="154.05859375" x="5.0" y="5.0">p_noun_ip
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="154.05859375" x="5.0" y="5.0">p_noun_ip
 p_noun1_ip 'and' p_noun_ip
 p_noun1_ip ',' p_noun_ip
 p_noun1_ip<y:LabelModel>
@@ -827,9 +827,9 @@ p_noun1_ip<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="127.42578125" x="86.287109375" y="1313.59765625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="117.42578125" x="5.0" y="5.0">p_noun1_ip
-p_noumeral p_noun2
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="110.751953125" x="8.3369140625" y="5.0">p_noun1_ip
+p_numeral p_noun2
 p_noun2
 dict_pronoun_ip<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -847,8 +847,8 @@ dict_pronoun_ip<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="30.0" width="74.03515625" x="622.982421875" y="-225.0"/>
           <y:Fill color="#00FF00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="64.03515625" x="5.0" y="5.6494140625">dict_proper<y:LabelModel>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="18.701171875" modelName="custom" textColor="#000000" visible="true" width="64.03515625" x="5.0" y="5.6494140625">dict_proper<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -864,8 +864,8 @@ dict_pronoun_ip<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="185.421875" x="477.2890625" y="1223.59765625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="175.421875" x="5.0" y="5.0">p_dop_noun
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="175.421875" x="5.0" y="5.0">p_dop_noun
 p_dop_noun1 'and' p_dop_noun
 p_dop_noun1 ',' p_dop_noun
 p_dop_noun1<y:LabelModel>
@@ -884,9 +884,9 @@ p_dop_noun1<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="154.12109375" x="492.939453125" y="1313.59765625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="144.12109375" x="5.0" y="5.0">p_dop_noun1
-p_noumeral p_dop_noun2
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="137.447265625" x="8.3369140625" y="5.0">p_dop_noun1
+p_numeral p_dop_noun2
 p_dop_noun2
 dict_pronoun_dp<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -904,8 +904,8 @@ dict_pronoun_dp<y:LabelModel>
         <y:ShapeNode>
           <y:Geometry height="58.103515625" width="120.751953125" x="509.6240234375" y="1500.9482421875"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="110.751953125" x="5.0" y="5.0">p_dop_noun2
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="48.103515625" modelName="custom" textColor="#000000" visible="true" width="110.751953125" x="5.0" y="5.0">p_dop_noun2
 p_noun3 p_numeral
 p_noun3<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -919,13 +919,12 @@ p_noun3<y:LabelModel>
       </data>
     </node>
     <node id="n46">
-      <data key="d5"/>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="97.9765625" x="461.01171875" y="593.59765625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="87.9765625" x="5.0" y="5.0"># могу сделать
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="87.9765625" x="5.0" y="5.0"># могу сделать
 p_verb3
 p_verb3_1
 'can' p_verb3_1<y:LabelModel>
@@ -944,8 +943,8 @@ p_verb3_1
         <y:ShapeNode>
           <y:Geometry height="87.505859375" width="162.787109375" x="-231.3935546875" y="616.2470703125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="152.787109375" x="5.0" y="5.0">pe_noun_TOBE_noun
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="77.505859375" modelName="custom" textColor="#000000" visible="true" width="152.787109375" x="5.0" y="5.0">pe_noun_TOBE_noun
 'this' p_TOBE p_noun
 'that' p_TOBE p_noun
 ELSE
@@ -961,13 +960,12 @@ p_noun_ip p_TOBE p_noun<y:LabelModel>
       </data>
     </node>
     <node id="n48">
-      <data key="d5"/>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="72.8046875" width="124.033203125" x="-92.0166015625" y="1193.59765625"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="114.033203125" x="5.0" y="5.0">pe_IN_adj_STREET
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" modelName="custom" textColor="#000000" visible="true" width="114.033203125" x="5.0" y="5.0">pe_IN_adj_STREET
 p_IN_THE_STREET
 ELSE
 'in' p_adj 'street'<y:LabelModel>
@@ -982,13 +980,12 @@ ELSE
       </data>
     </node>
     <node id="n49">
-      <data key="d5"/>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="43.40234375" width="130.70703125" x="-95.353515625" y="1298.298828125"/>
           <y:Fill color="#FFCC00" transparent="false"/>
-          <y:BorderStyle color="#000000" raised="false" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="33.40234375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="bottom" visible="true" width="120.70703125" x="5.0" y="5.0">pe_IN_THE_STREET
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="33.40234375" modelName="custom" textColor="#000000" visible="true" width="120.70703125" x="5.0" y="5.0">pe_IN_THE_STREET
 'in' 'the' 'street'<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
@@ -1805,7 +1802,6 @@ ELSE
       </data>
     </edge>
     <edge id="e76" source="n44" target="n22">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1816,7 +1812,6 @@ ELSE
       </data>
     </edge>
     <edge id="e77" source="n45" target="n29">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1827,7 +1822,6 @@ ELSE
       </data>
     </edge>
     <edge id="e78" source="n9" target="n46">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1838,7 +1832,6 @@ ELSE
       </data>
     </edge>
     <edge id="e79" source="n8" target="n46">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1849,7 +1842,6 @@ ELSE
       </data>
     </edge>
     <edge id="e80" source="n17" target="n10">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1860,7 +1852,6 @@ ELSE
       </data>
     </edge>
     <edge id="e81" source="n10" target="n18">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1871,7 +1862,6 @@ ELSE
       </data>
     </edge>
     <edge id="e82" source="n4" target="n35">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -1884,7 +1874,6 @@ ELSE
       </data>
     </edge>
     <edge id="e83" source="n4" target="n40">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -1897,7 +1886,6 @@ ELSE
       </data>
     </edge>
     <edge id="e84" source="n4" target="n26">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1908,7 +1896,6 @@ ELSE
       </data>
     </edge>
     <edge id="e85" source="n4" target="n5">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -1921,7 +1908,6 @@ ELSE
       </data>
     </edge>
     <edge id="e86" source="n46" target="n13">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1932,7 +1918,6 @@ ELSE
       </data>
     </edge>
     <edge id="e87" source="n9" target="n47">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1943,7 +1928,6 @@ ELSE
       </data>
     </edge>
     <edge id="e88" source="n47" target="n24">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -1954,7 +1938,6 @@ ELSE
       </data>
     </edge>
     <edge id="e89" source="n47" target="n40">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -1967,7 +1950,6 @@ ELSE
       </data>
     </edge>
     <edge id="e90" source="n47" target="n5">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -1980,7 +1962,6 @@ ELSE
       </data>
     </edge>
     <edge id="e91" source="n48" target="n7">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -1993,7 +1974,6 @@ ELSE
       </data>
     </edge>
     <edge id="e92" source="n16" target="n48">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -2004,7 +1984,6 @@ ELSE
       </data>
     </edge>
     <edge id="e93" source="n48" target="n49">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -2015,7 +1994,6 @@ ELSE
       </data>
     </edge>
     <edge id="e94" source="n37" target="n35">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -2028,7 +2006,6 @@ ELSE
       </data>
     </edge>
     <edge id="e95" source="n38" target="n35">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -2041,7 +2018,6 @@ ELSE
       </data>
     </edge>
     <edge id="e96" source="n25" target="n35">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>

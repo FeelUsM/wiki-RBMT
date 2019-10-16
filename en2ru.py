@@ -437,8 +437,9 @@ def p_noun1_ip(s,p): return p_alt(s,p,
     D(dict_pronoun_ip)
 )
 def r_numeral_noun(num,n):
-    if num.chis!=n.chis :
-        warning('не совпадают числа числ. и сущ.:'+str(num)+str(n))
+    #if num.chis!=n.chis :
+    #    warning('не совпадают числа числ. и сущ.:'+str(num)+'('+num.chis+') '+
+    #            str(n)+'('+n.chis+') ')
     return StNum([
         I(quantity=num,            chis=n.chis, rod=n.rod, odush=n.odush ),
         I(maindep=n)
@@ -662,7 +663,7 @@ def r_S_noun_tp(s,n): return StNoun([
 # ###### p_dops
 # r_seq_dops
 
-# In[ ]:
+# In[20]:
 
 
 # последовательность дополнений
@@ -679,7 +680,7 @@ def r_seq_dops(d1,d2): return StC([
 
 # ## have/has
 
-# In[ ]:
+# In[21]:
 
 
 px_HAVE_HAS = alt( W('have'), W('has') )
@@ -688,7 +689,7 @@ px_HAVE_HAS = alt( W('have'), W('has') )
 # ###### p_have_question
 # r_have_question, rv_HOW_MANY_noun_HAVE_noun(r_SKOLKO_noun_U_noun, r_SKOLKO_U_noun_noun)
 
-# In[ ]:
+# In[22]:
 
 
 @debug_pp
@@ -725,7 +726,7 @@ rv_HOW_MANY_noun_HAVE_noun = RuleVars('r_SKOLKO_U_noun_noun',
 # ###### pe_noun_HAVE_noun
 # rv_noun_HAVE_noun(r_U_noun_EST_noun, r_U_noun_noun), r_U_noun_NET_noun
 
-# In[ ]:
+# In[23]:
 
 
 @debug_pp
@@ -766,7 +767,7 @@ def r_U_noun_NET_noun(_n1_,_h_,_no_,_n2_):    return StC([
 # ###### pe_noun_HAVE
 # r_U_noun_EST, r_U_noun_NET
 
-# In[ ]:
+# In[24]:
 
 
 @debug_pp
@@ -797,7 +798,7 @@ def r_U_noun_NET(_n1_,_h_,_no_):    return StC([
 # ###### p_HAVE_noun
 # r_IMET_noun_vp, r_NE_IMET_noun_vp, r_IMET, r_NE_IMET
 
-# In[ ]:
+# In[25]:
 
 
 @debug_pp
@@ -831,7 +832,7 @@ def r_NE_IMET(_v,no): return StVerb([
 # ###### pe_noun_TOBE_where
 # re_ETO_X_where, re_TO_X_where, r_noun_X_where
 
-# In[ ]:
+# In[26]:
 
 
 @debug_pp
@@ -859,7 +860,7 @@ def re_TO_X_where(_n,x,_w): return StC([
 # ###### pe_noun_TOBE_where_TOO
 # re_ETO_X_TOJE_where, re_TO_X_TOJE_where, r_noun_X_TOJE_where
 
-# In[ ]:
+# In[27]:
 
 
 @debug_pp
@@ -890,7 +891,7 @@ def re_TO_X_TOJE_where(_n,x,_w,too): return StC([
 # ###### pe_noun_TOBE_noun
 # re_ETO_X_noun, re_TO_X_noun, r_noun_X_noun, r_noun_X_NE_noun
 
-# In[ ]:
+# In[28]:
 
 
 @debug_pp
@@ -926,7 +927,7 @@ def re_TO_X_noun(_n1,_tobe,_n2): return StC([
 # ###### pe_noun_TOBE_noun_TOO
 # re_ETO_X_TOJE_noun, re_TO_X_TOJE_noun, r_noun_X_TOJE_noun, r_noun_X_TOJE_NE_noun
 
-# In[ ]:
+# In[29]:
 
 
 @debug_pp
@@ -966,7 +967,7 @@ def re_TO_X_TOJE_noun(_n1,_tobe,_n2,_too): return StC([
 # ###### p_TOBE
 # r_EST
 
-# In[ ]:
+# In[30]:
 
 
 @debug_pp
@@ -984,7 +985,7 @@ def r_EST(_v): return StVerb([
 # ###### p_TOBE_noun
 # rv_TOBE_noun(r_EST_noun_ip, r_JAVLYATSA_noun_tp)
 
-# In[ ]:
+# In[31]:
 
 
 @debug_pp
@@ -1007,7 +1008,7 @@ rv_TOBE_noun = RuleVars('r_EST_noun_ip',dict_funs(r_EST_noun_ip, r_JAVLYATSA_nou
 # ###### p_tobe_question
 # r_GDE_noun_ip, r_noun_noun_question, r_noun_question, r_noun_adj_question, r_noun_where_TOO_question, r_CHTO_ETO, r_CHTO_TAKOE_noun_ip
 
-# In[ ]:
+# In[32]:
 
 
 @debug_pp
@@ -1065,7 +1066,7 @@ def r_noun_where_TOO_question(_v,_n,_wh,too): return StC([
 # ###### разделяемые правила
 # r_verb_noun_vp, r_verb_noun_dp
 
-# In[ ]:
+# In[33]:
 
 
 # разделяемые правила
@@ -1081,7 +1082,7 @@ def r_verb_noun_dp(_v,_p): return StVerb([
 
 # ###### p_verb3_komu
 
-# In[ ]:
+# In[34]:
 
 
 # сделать кому-то
@@ -1096,7 +1097,7 @@ def p_verb3_komu(s,p): return p_alt(s,p,
 # ###### p_verb3_komu_chto
 # r_verb_c_phrase, r_verb_q_text, r_verb_c_q_text
 
-# In[ ]:
+# In[35]:
 
 
 # сделать кому-то что-то
@@ -1135,7 +1136,7 @@ def r_verb_c_q_text(_v,c,q1,_p,q2): return StVerb([
 # ###### p_verb2
 # re_verb_OT_noun_DO_noun, r_verb_dops
 
-# In[ ]:
+# In[36]:
 
 
 # глагол с дополнением
@@ -1162,7 +1163,7 @@ def re_verb_OT_noun_DO_noun(_v,ot,_n1,do,_n2): return StVerb([
 
 # ###### p_verb3_simple
 
-# In[ ]:
+# In[37]:
 
 
 # сделать что-то
@@ -1176,7 +1177,7 @@ def p_verb3_simple(s,p): return p_alt(s,p,
 
 # ###### p_verb3_1
 
-# In[ ]:
+# In[38]:
 
 
 # сделать (кому-то что-то)
@@ -1192,7 +1193,7 @@ def p_verb3_1(s,p): return p_alt(s,p,
 # ###### p_verb3
 # r_CAN_verb
 
-# In[ ]:
+# In[39]:
 
 
 # могу сделать
@@ -1212,7 +1213,7 @@ def r_CAN_verb(c,v): return StVerb([
 # ###### p_noun_verb1
 # r_noun_verb, r_noun_TOZHE_verb
 
-# In[ ]:
+# In[40]:
 
 
 # некто делает
@@ -1244,7 +1245,7 @@ def r_noun_TOZHE_verb(_n, _v, _t): return StVerb([
 # ###### p_verb1
 # r_to_verb, rv_rule_povel_verb(r_povel_verb_ed, r_povel_verb_mn)
 
-# In[ ]:
+# In[41]:
 
 
 # некто делает/ делать/ делай
@@ -1270,7 +1271,7 @@ rv_rule_povel_verb = RuleVars('r_povel_verb_ed',dict_funs(r_povel_verb_ed,r_pove
 # ###### p_verb
 # r_verb_NO_verb, r_verb_c_verb, r_verb_I_verb, re_U_noun_EST_noun_C_noun_I_verb
 
-# In[ ]:
+# In[42]:
 
 
 # сделать одно и/но сделать сдругое
@@ -1327,7 +1328,7 @@ def re_U_noun_EST_noun_C_noun_I_verb(_n1_,_h_,sn,c,n,_i_,_v2_):    return StC([
 # ###### p_phrase
 # r_DA_ETO_TAK, r_NET_ETO_NE_TAK, r_DA_COMMA_verb, r_NET_COMMA_verb, r_noun_COMMA_verb, r_SPASIBO
 
-# In[ ]:
+# In[43]:
 
 
 @debug_pp
@@ -1387,7 +1388,7 @@ def r_noun_COMMA_verb(_n,comma,_v):    return StC([
 # ###### p_question_phrase
 # r_noun_COMMA_tobe_question, r_have_question_COMMA_noun, r_verb_COMMA_tobehave_question
 
-# In[ ]:
+# In[44]:
 
 
 @debug_pp
@@ -1418,13 +1419,13 @@ def r_tobehave_question_COMMA_noun(_q,comma,_n): return StC([
 
 # ###### p_sentence
 
-# In[ ]:
+# In[45]:
 
 
 dict_proper={}# имена собственные
 
 
-# In[ ]:
+# In[46]:
 
 
 @debug_pp
@@ -1458,7 +1459,7 @@ def p_sentence(s,p):
 
 # ###### p_text
 
-# In[ ]:
+# In[47]:
 
 
 CONTEXT_DEBUGGING = False
@@ -1675,7 +1676,7 @@ def p_text(s,p):
         
 
 
-# In[ ]:
+# In[48]:
 
 
 def maxlen_filter(rezs):
@@ -1705,7 +1706,7 @@ def maxlen_filter(rezs):
 
 # ## Контекстные паттерны
 
-# In[ ]:
+# In[49]:
 
 
 def rc_collect_all(*args):
@@ -1726,7 +1727,7 @@ def rc_8_3(x1,x2,x3,x4,x5,x6,x7,x8):
     return x3
 
 
-# In[ ]:
+# In[50]:
 
 
 # pc - parse context
@@ -1796,7 +1797,7 @@ dict_pronoun_ip['it'] = RuleContext('оно',dict_pronoun_ip['it'].vars,selector
 #         2 - дополнительно печатает нестрингифицированные объекты
 # 
 
-# In[ ]:
+# In[51]:
 
 
 def _en2ru(s): # main
@@ -1865,7 +1866,7 @@ def pr_l_repr(s):
     
 
 
-# In[ ]:
+# In[52]:
 
 
 def with_variants(variants,fun,s):
@@ -1882,7 +1883,7 @@ def with_variants(variants,fun,s):
     return s
 
 
-# In[ ]:
+# In[53]:
 
 
 def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
@@ -1903,7 +1904,7 @@ def decline(s,pads=['ip','rp','dp','vp','tp','pp']):
     return m
 
 
-# In[ ]:
+# In[54]:
 
 
 def _parse_pat(patt,s):
@@ -1928,7 +1929,7 @@ def d_parse_pat(patt,s):
     return r
 
 
-# In[ ]:
+# In[55]:
 
 
 from IPython.core.display import HTML
@@ -2304,7 +2305,7 @@ def scheme_print(s,rezs,detailed=1,nohtml = False):
            
 
 
-# In[ ]:
+# In[56]:
 
 
 def cache_stat():
@@ -2328,13 +2329,13 @@ cache_stat()
 
 # # Тесты
 
-# In[ ]:
+# In[57]:
 
 
 en2ru('I see jam and one cup.')
 
 
-# In[ ]:
+# In[58]:
 
 
 import inspect
@@ -2342,7 +2343,7 @@ lines = inspect.getsource(en2ru)
 print(lines)
 
 
-# In[ ]:
+# In[59]:
 
 
 import tests
@@ -2369,7 +2370,7 @@ tests.finalize()
 tests.TEST_ERRORS
 
 
-# In[ ]:
+# In[60]:
 
 
 add_skl2('m',False,make_skl2(
@@ -2384,13 +2385,13 @@ add_ennoun2('rose'  ,'roses' ,"роза"		,"розы"	  ,'g',False)
 add_ennoun2('violet'  ,'violets' ,"фиалка"		,"фиалки"	  ,'g',False)
 
 
-# In[ ]:
+# In[61]:
 
 
 en2ru('what is this?')
 
 
-# In[ ]:
+# In[62]:
 
 
 en2ru('''Look, what is this? It is a flower.
@@ -2398,7 +2399,7 @@ These flowers are red and those flowers
 are blue.''')
 
 
-# In[ ]:
+# In[63]:
 
 
 pr_l_repr(en2ru('''What is this? It is
@@ -2411,13 +2412,19 @@ Is this	a rose too?
 No, it is not.'''))
 
 
-# In[ ]:
+# In[64]:
 
 
-d_en2ru('many red roses')
+scheme('many roses')
 
 
-# In[ ]:
+# In[65]:
+
+
+en2ru('many red roses')
+
+
+# In[66]:
 
 
 pr_l_repr(en2ru('''That girl has many violets in her garden. She has
@@ -2426,7 +2433,7 @@ has many flowers in her
 garden.'''))
 
 
-# In[ ]:
+# In[67]:
 
 
 pr_l_repr(en2ru('''Is this a chicken?
@@ -2438,7 +2445,7 @@ Is this bird big or
 little? It is little.'''))
 
 
-# In[ ]:
+# In[68]:
 
 
 pr_l_repr(en2ru('''Is this a stick? No, it is
@@ -2450,7 +2457,7 @@ have you? I have two umbrellas.
 Give me one umbrella!'''))
 
 
-# In[ ]:
+# In[69]:
 
 
 pr_l_repr(en2ru('''This bird is in the cage.
@@ -2464,7 +2471,7 @@ That violet is little.
 That rose is good.'''))
 
 
-# In[ ]:
+# In[70]:
 
 
 pr_l_repr(en2ru('''These birds are in the tree.
@@ -2478,7 +2485,7 @@ Those violets are very big.
 Those roses are little.'''))
 
 
-# In[ ]:
+# In[71]:
 
 
 pr_l_repr(en2ru('''I have good trousers. What colour are
@@ -2487,7 +2494,7 @@ They are grey. These trousers are not
 bad.'''))
 
 
-# In[ ]:
+# In[72]:
 
 
 pr_l_repr(en2ru('''What has that girl in
@@ -2515,7 +2522,7 @@ Is that violet big?'''))
 
 
 
-# In[ ]:
+# In[73]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
@@ -2575,13 +2582,13 @@ get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
 # add_skl_suffix
 # ```
 
-# In[ ]:
+# In[74]:
 
 
 #decline('two watches')
 
 
-# In[ ]:
+# In[75]:
 
 
 pr_l_repr(en2ru('''
@@ -2597,7 +2604,7 @@ Boy: Show me your ribbons! Thank you.
 '''))
 
 
-# In[ ]:
+# In[76]:
 
 
 en2ru('It \nis black.')

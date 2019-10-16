@@ -723,7 +723,7 @@ class StNum(StDeclinable):
 		quantity - зависимое числительное
 	'''
 	obediences = {
-		'maindep': types_assert(StNoun),
+		'maindep': types_assert(StDeclinable),
 		'quantity': lambda x:_types_assert(x,StNum)
 	}
 	__slots__=['quantity']
