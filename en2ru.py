@@ -891,7 +891,7 @@ def re_TO_X_TOJE_where(_n,x,_w,too): return StC([
 # ###### pe_noun_TOBE_noun
 # re_ETO_X_noun, re_TO_X_noun, r_noun_X_noun, r_noun_X_NE_noun
 
-# In[79]:
+# In[28]:
 
 
 @debug_pp
@@ -907,13 +907,13 @@ def pe_noun_TOBE_noun(s,p): return p_alt(s,p,
 def r_noun_X_noun(_n1,_tobe,_n2): return StC([
     I(nodep=_n1),
     I(nodep=S('--',_tobe.attrs)),
-    I(nodep=_n2, rod=_n1.rod)
+    I(nodep=_n2, rod=_n1.rod, chis=_n1.chis)
 ])
 def r_noun_X_NE_noun(_n1,_tobe,_not,_n2): return StC([
     I(nodep=_n1),
     I(nodep=S('--',_tobe.attrs)),
     I(nodep=S('не',_not.attrs)),
-    I(nodep=_n2, rod=_n1.rod)
+    I(nodep=_n2, rod=_n1.rod, chis=_n1.chis)
 ])
 def re_ETO_X_noun(_n1,_tobe,_n2): return StC([
     I(nodep=CW('этот',_n1), rod='s'),
@@ -2402,13 +2402,13 @@ add_ennoun1('trousers'				  ,"брюки"  ,'mn'		,'g',False,2)
 en2ru('what is this?')
 
 
-# In[80]:
+# In[78]:
 
 
-scheme('It is a flower.')
+scheme('These flowers are red.')
 
 
-# In[81]:
+# In[64]:
 
 
 en2ru('''Look, what is this? It is a flower.
@@ -2416,7 +2416,7 @@ These flowers are red and those flowers
 are blue.''')
 
 
-# In[64]:
+# In[65]:
 
 
 pr_l_repr(en2ru('''What is this? It is
@@ -2429,7 +2429,7 @@ Is this	a rose too?
 No, it is not.'''))
 
 
-# In[65]:
+# In[66]:
 
 
 pr_l_repr(en2ru('''That girl has many violets in her garden. She has
@@ -2438,7 +2438,7 @@ has many flowers in her
 garden.'''))
 
 
-# In[66]:
+# In[68]:
 
 
 pr_l_repr(en2ru('''Is this a chicken?
@@ -2450,7 +2450,7 @@ Is this bird big or
 little? It is little.'''))
 
 
-# In[67]:
+# In[69]:
 
 
 pr_l_repr(en2ru('''Is this a stick? No, it is
@@ -2462,7 +2462,7 @@ have you? I have two umbrellas.
 Give me one umbrella!'''))
 
 
-# In[68]:
+# In[70]:
 
 
 pr_l_repr(en2ru('''This bird is in the cage.
@@ -2476,7 +2476,7 @@ That violet is little.
 That rose is good.'''))
 
 
-# In[69]:
+# In[71]:
 
 
 pr_l_repr(en2ru('''These birds are in the tree.
@@ -2490,7 +2490,7 @@ Those violets are very big.
 Those roses are little.'''))
 
 
-# In[70]:
+# In[72]:
 
 
 pr_l_repr(en2ru('''I have good trousers. What colour are
@@ -2499,7 +2499,7 @@ They are grey. These trousers are not
 bad.'''))
 
 
-# In[71]:
+# In[73]:
 
 
 pr_l_repr(en2ru('''What has that girl in
@@ -2527,7 +2527,7 @@ Is that violet big?'''))
 
 
 
-# In[76]:
+# In[74]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
@@ -2587,13 +2587,13 @@ get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
 # add_skl_suffix
 # ```
 
-# In[73]:
+# In[75]:
 
 
 #decline('two watches')
 
 
-# In[74]:
+# In[76]:
 
 
 pr_l_repr(en2ru('''
@@ -2609,7 +2609,7 @@ Boy: Show me your ribbons! Thank you.
 '''))
 
 
-# In[75]:
+# In[77]:
 
 
 en2ru('It \nis black.')
