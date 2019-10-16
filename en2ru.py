@@ -1001,7 +1001,7 @@ rv_TOBE_noun = RuleVars('r_EST_noun_ip',dict_funs(r_EST_noun_ip, r_JAVLYATSA_nou
 # ###### p_tobe_question
 # r_GDE_noun_ip, r_noun_noun_question, r_noun_question, r_noun_adj_question, r_noun_where_TOO_question, r_CHTO_ETO, r_CHTO_TAKOE_noun_ip
 
-# In[77]:
+# In[32]:
 
 
 @debug_pp
@@ -1379,9 +1379,9 @@ def r_noun_COMMA_verb(_n,comma,_v):    return StC([
 
 
 # ###### p_question_phrase
-# r_noun_COMMA_tobe_question, r_have_question_COMMA_noun
+# r_noun_COMMA_tobe_question, r_have_question_COMMA_noun, r_verb_COMMA_tobehave_question
 
-# In[44]:
+# In[65]:
 
 
 @debug_pp
@@ -1390,10 +1390,16 @@ def p_question_phrase(s,p): return p_alt(s,p,
     ELSE,
     p_have_question,
     p_tobe_question,
-    seq([p_noun_ip,W(','),alt(p_tobe_question,p_have_question)],r_noun_COMMA_tobehave_question)
+    seq([p_noun_ip,W(','),alt(p_tobe_question,p_have_question)],r_noun_COMMA_tobehave_question),
+    seq([p_verb1,W(','),alt(p_tobe_question,p_have_question)],r_verb_COMMA_tobehave_question)
 )
 def r_noun_COMMA_tobehave_question(_n,comma,_q): return StC([
     I(nodep=_n),
+    I(nodep=comma),
+    I(nodep=_q)
+])
+def r_verb_COMMA_tobehave_question(_v,comma,_q): return StC([
+    I(nodep=_v),
     I(nodep=comma),
     I(nodep=_q)
 ])
@@ -2357,13 +2363,13 @@ tests.finalize()
 tests.TEST_ERRORS
 
 
-# In[78]:
+# In[60]:
 
 
 en2ru('what is this?')
 
 
-# In[79]:
+# In[66]:
 
 
 en2ru('''Look, what is this? It is a flower.
@@ -2371,7 +2377,7 @@ These flowers are red and those flowers
 are blue.''')
 
 
-# In[65]:
+# In[62]:
 
 
 pr_l_repr(en2ru('''What is this? It is
@@ -2384,7 +2390,7 @@ Is this	a rose too?
 No, it is not.'''))
 
 
-# In[75]:
+# In[63]:
 
 
 pr_l_repr(en2ru('''That girl has many violets in her garden. She has
@@ -2393,7 +2399,7 @@ has many flowers in her
 garden.'''))
 
 
-# In[67]:
+# In[ ]:
 
 
 pr_l_repr(en2ru('''Is this a chicken?
@@ -2405,7 +2411,7 @@ Is this bird big or
 little? It is little.'''))
 
 
-# In[74]:
+# In[ ]:
 
 
 pr_l_repr(en2ru('''Is this a stick? No, it is
@@ -2417,7 +2423,7 @@ have you? I have two umbrellas.
 Give me one umbrella!'''))
 
 
-# In[69]:
+# In[ ]:
 
 
 pr_l_repr(en2ru('''This bird is in the cage.
@@ -2431,7 +2437,7 @@ That violet is little.
 That rose is good.'''))
 
 
-# In[70]:
+# In[ ]:
 
 
 pr_l_repr(en2ru('''These birds are in the tree.
@@ -2445,7 +2451,7 @@ Those violets are very big.
 Those roses are little.'''))
 
 
-# In[72]:
+# In[ ]:
 
 
 pr_l_repr(en2ru('''I have good trousers. What colour are
@@ -2454,7 +2460,7 @@ They are grey. These trousers are not
 bad.'''))
 
 
-# In[73]:
+# In[ ]:
 
 
 pr_l_repr(en2ru('''What has that girl in
@@ -2482,7 +2488,7 @@ Is that violet big?'''))
 
 
 
-# In[60]:
+# In[ ]:
 
 
 get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
@@ -2542,13 +2548,13 @@ get_ipython().system('jupyter nbconvert --to script en2ru.ipynb')
 # add_skl_suffix
 # ```
 
-# In[61]:
+# In[ ]:
 
 
 #decline('two watches')
 
 
-# In[62]:
+# In[ ]:
 
 
 pr_l_repr(en2ru('''
@@ -2564,7 +2570,7 @@ Boy: Show me your ribbons! Thank you.
 '''))
 
 
-# In[63]:
+# In[ ]:
 
 
 en2ru('It \nis black.')

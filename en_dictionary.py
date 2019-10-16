@@ -397,6 +397,8 @@ def ____Verb():
 
 	dict_verb_simple['can']=   ruwords['мочь']
 
+	dict_verb_simple['look']=   ruwords['посмотреть']
+	dict_verb_simple['looks']=  ruwords['посмотреть']
 	dict_verb_simple['take']=   ruwords['брать']
 	dict_verb_simple['takes']=  ruwords['брать']
 	dict_verb_simple['see']=   ruwords['видеть']
